@@ -11,6 +11,7 @@ const meetingDateSchema = z
 
 const createBodySchema = z.object({
     meetingDate: meetingDateSchema,
+    closeVoteDate: meetingDateSchema.optional(),
     books: z
         .array(z.object({ externalId: z.string() }))
         .min(2)
@@ -38,6 +39,9 @@ export async function POST(request: Request) {
             .insert(monthlyBook)
             .values({
                 meetingDate: parsed.data.meetingDate,
+                ...(parsed.data.closeVoteDate && {
+                    closeVoteDate: parsed.data.closeVoteDate,
+                }),
             })
             .returning({
                 id: monthlyBook.id,
@@ -95,6 +99,7 @@ export async function GET(request: Request) {
         type RoundRow = {
             id: number;
             meetingDate: string;
+            closeVoteDate: string | null;
             createdAt: Date;
             winnerExternalId: string | null;
         };
@@ -133,6 +138,7 @@ export async function GET(request: Request) {
             round: {
                 id: round.id,
                 meetingDate: round.meetingDate,
+                closeVoteDate: round.closeVoteDate ?? null,
                 createdAt: round.createdAt,
                 winnerExternalId: round.winnerExternalId ?? null,
             },

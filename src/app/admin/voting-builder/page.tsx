@@ -27,9 +27,30 @@ function getDefaultMeetingDate(): string {
     return `${year}-${m}-${dayStr}`;
 }
 
+function getTomorrowDate(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function getDefaultCloseVoteDate(meetingDate: string): string {
+    const meeting = new Date(meetingDate + 'T12:00:00');
+    const close = new Date(meeting);
+    close.setDate(close.getDate() - 7);
+    const y = close.getFullYear();
+    const m = String(close.getMonth() + 1).padStart(2, '0');
+    const day = String(close.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
 export default function VotingBuilderPage() {
     const [query, setQuery] = useState('');
-    const [meetingDate, setMeetingDate] = useState(getDefaultMeetingDate);
+    const defaultMeeting = getDefaultMeetingDate();
+    const [meetingDate, setMeetingDate] = useState(defaultMeeting);
+    const [closeVoteDate, setCloseVoteDate] = useState(getTomorrowDate);
     const [searchResults, setSearchResults] = useState<BookSearchResult[]>([]);
     const [selected, setSelected] = useState<BookSearchResult[]>([]);
     const [searchError, setSearchError] = useState<string | null>(null);
@@ -67,9 +88,11 @@ export default function VotingBuilderPage() {
     const createMutation = useMutation({
         mutationFn: async ({
             meetingDate: date,
+            closeVoteDate: closeDate,
             books,
         }: {
             meetingDate: string;
+            closeVoteDate: string;
             books: BookSearchResult[];
         }) => {
             const res = await fetch('/api/nomination', {
@@ -77,6 +100,7 @@ export default function VotingBuilderPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     meetingDate: date,
+                    closeVoteDate: closeDate,
                     books: books.map((b) => ({ externalId: b.externalId })),
                 }),
             });
@@ -129,7 +153,11 @@ export default function VotingBuilderPage() {
 
     const create = () => {
         if (selected.length < MIN_TO_CREATE) return;
-        createMutation.mutate({ meetingDate, books: selected });
+        createMutation.mutate({
+            meetingDate,
+            closeVoteDate,
+            books: selected,
+        });
     };
 
     const canCreate =
@@ -259,21 +287,48 @@ export default function VotingBuilderPage() {
             {selected.length >= 1 && (
                 <footer className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
                     <div className="max-w-2xl mx-auto px-4 py-4">
-                        <div className="mb-3">
-                            <label
-                                htmlFor="meeting-date"
-                                className="text-sm font-medium text-zinc-500 dark:text-zinc-400 block mb-1"
-                            >
-                                Meeting date (book club)
-                            </label>
-                            <input
-                                id="meeting-date"
-                                type="date"
-                                value={meetingDate}
-                                onChange={(e) => setMeetingDate(e.target.value)}
-                                className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
-                                aria-label="Meeting date"
-                            />
+                        <div className="mb-3 flex gap-4 flex-wrap">
+                            <div className="flex-1 min-w-[140px]">
+                                <label
+                                    htmlFor="meeting-date"
+                                    className="text-sm font-medium text-zinc-500 dark:text-zinc-400 block mb-1"
+                                >
+                                    Meeting date (book club)
+                                </label>
+                                <input
+                                    id="meeting-date"
+                                    type="date"
+                                    value={meetingDate}
+                                    onChange={(e) => {
+                                        setMeetingDate(e.target.value);
+                                        setCloseVoteDate(
+                                            getDefaultCloseVoteDate(
+                                                e.target.value,
+                                            ),
+                                        );
+                                    }}
+                                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                    aria-label="Meeting date"
+                                />
+                            </div>
+                            <div className="flex-1 min-w-[140px]">
+                                <label
+                                    htmlFor="close-vote-date"
+                                    className="text-sm font-medium text-zinc-500 dark:text-zinc-400 block mb-1"
+                                >
+                                    Close vote
+                                </label>
+                                <input
+                                    id="close-vote-date"
+                                    type="date"
+                                    value={closeVoteDate}
+                                    onChange={(e) =>
+                                        setCloseVoteDate(e.target.value)
+                                    }
+                                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                    aria-label="Close vote date"
+                                />
+                            </div>
                         </div>
                         <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-2">
                             Selected ({selected.length}/{MAX_SELECTED})
@@ -303,7 +358,7 @@ export default function VotingBuilderPage() {
                                 </li>
                             ))}
                         </ul>
-                        {selected.length >= MIN_TO_CREATE && (
+                        {selected.length >= 1 && (
                             <div className="mt-6 flex gap-2 justify-end">
                                 <button
                                     type="button"
@@ -317,13 +372,16 @@ export default function VotingBuilderPage() {
                                     type="button"
                                     onClick={create}
                                     disabled={
-                                        createMutation.isPending || !canCreate
+                                        createMutation.isPending ||
+                                        selected.length < MIN_TO_CREATE
                                     }
                                     className="rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-medium hover:bg-green-700 disabled:opacity-50"
                                 >
                                     {createMutation.isPending
                                         ? 'Creating…'
-                                        : 'Create'}
+                                        : selected.length >= MIN_TO_CREATE
+                                          ? 'Create vote'
+                                          : 'Required: at least 2 selections'}
                                 </button>
                             </div>
                         )}

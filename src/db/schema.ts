@@ -11,6 +11,7 @@ import { relations } from 'drizzle-orm';
 export const monthlyBook = pgTable('monthly_book', {
     id: serial('id').primaryKey(),
     meetingDate: date('meeting_date', { mode: 'string' }).notNull().unique(),
+    closeVoteDate: date('close_vote_date', { mode: 'string' }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     winnerExternalId: varchar('winner_external_id', { length: 256 }),
 });
