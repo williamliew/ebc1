@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 
 type BookSearchResult = {
     externalId: string;
@@ -48,7 +49,8 @@ function getDefaultCloseVoteDate(meetingDate: string): string {
 }
 
 export default function VotingBuilderPage() {
-    const [query, setQuery] = useState('');
+    const [titleSearch, setTitleSearch] = useState('');
+    const [authorSearch, setAuthorSearch] = useState('');
     const defaultMeeting = getDefaultMeetingDate();
     const [meetingDate, setMeetingDate] = useState(defaultMeeting);
     const [closeVoteDate, setCloseVoteDate] = useState(getTomorrowDate);
@@ -62,22 +64,27 @@ export default function VotingBuilderPage() {
         text: string;
     } | null>(null);
     const [showSuccessLightbox, setShowSuccessLightbox] = useState(false);
+    const [previewBook, setPreviewBook] = useState<BookSearchResult | null>(
+        null,
+    );
     const queryClient = useQueryClient();
 
     const PAGE_SIZE = 10;
 
     const searchMutation = useMutation({
         mutationFn: async ({
-            query: q,
+            title,
+            author,
             page = 1,
         }: {
-            query: string;
+            title: string;
+            author: string;
             page?: number;
         }) => {
             const res = await fetch('/api/books/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: q, page }),
+                body: JSON.stringify({ title, author, page }),
             });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
@@ -133,7 +140,8 @@ export default function VotingBuilderPage() {
             setShowSuccessLightbox(true);
             setCreateMessage(null);
             setSelected([]);
-            setQuery('');
+            setTitleSearch('');
+            setAuthorSearch('');
             setSearchResults([]);
             setSearchError(null);
             queryClient.invalidateQueries({ queryKey: ['nomination'] });
@@ -151,17 +159,18 @@ export default function VotingBuilderPage() {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        const trimmed = query.trim();
-        if (!trimmed) return;
-        searchMutation.mutate({ query: trimmed, page: 1 });
+        const title = titleSearch.trim();
+        const author = authorSearch.trim();
+        if (!title && !author) return;
+        searchMutation.mutate({ title, author, page: 1 });
     };
 
-    const totalSearchPages = Math.max(
-        1,
-        Math.ceil(totalSearchItems / PAGE_SIZE),
-    );
-    const canPrev = searchResults.length > 0 && searchPage > 1;
-    const canNext = searchResults.length > 0 && searchPage < totalSearchPages;
+    const MAX_PAGES = 10;
+    const effectiveTotal = Math.min(totalSearchItems, MAX_PAGES * PAGE_SIZE);
+    const totalSearchPages = Math.max(1, Math.ceil(effectiveTotal / PAGE_SIZE));
+    const showPagination = searchResults.length > 0 && totalSearchPages > 1;
+    const canPrev = showPagination && searchPage > 1;
+    const canNext = showPagination && searchPage < totalSearchPages;
 
     const addSelected = (book: BookSearchResult) => {
         if (selected.length >= MAX_SELECTED) return;
@@ -211,31 +220,37 @@ export default function VotingBuilderPage() {
             >
                 {/* Search */}
                 <section>
-                    <form onSubmit={handleSearch} className="flex gap-2">
-                        <div className="relative flex-1">
+                    <form
+                        onSubmit={handleSearch}
+                        className="flex flex-col sm:flex-row gap-2"
+                    >
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <input
                                 type="text"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Search by title or author..."
-                                className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
-                                aria-label="Book search"
+                                value={titleSearch}
+                                onChange={(e) => setTitleSearch(e.target.value)}
+                                placeholder="Title"
+                                className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                aria-label="Book title"
                             />
-                            {query.length > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={() => setQuery('')}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
-                                    aria-label="Clear search"
-                                >
-                                    ×
-                                </button>
-                            )}
+                            <input
+                                type="text"
+                                value={authorSearch}
+                                onChange={(e) =>
+                                    setAuthorSearch(e.target.value)
+                                }
+                                placeholder="Author"
+                                className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                aria-label="Author"
+                            />
                         </div>
                         <button
                             type="submit"
-                            disabled={searchMutation.isPending}
-                            className="rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50"
+                            disabled={
+                                searchMutation.isPending ||
+                                (!titleSearch.trim() && !authorSearch.trim())
+                            }
+                            className="rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50 shrink-0"
                         >
                             {searchMutation.isPending ? 'Searching…' : 'Search'}
                         </button>
@@ -290,6 +305,15 @@ export default function VotingBuilderPage() {
                                             <p className="text-xs text-zinc-500 truncate">
                                                 {book.author}
                                             </p>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setPreviewBook(book)
+                                                }
+                                                className="mt-1 text-xs text-zinc-600 dark:text-zinc-400 hover:underline"
+                                            >
+                                                Read more
+                                            </button>
                                         </div>
                                         <button
                                             type="button"
@@ -311,13 +335,14 @@ export default function VotingBuilderPage() {
                                 );
                             })}
                         </ul>
-                        {totalSearchItems > 0 && (
+                        {showPagination && (
                             <div className="mt-3 flex items-center justify-between gap-2">
                                 <button
                                     type="button"
                                     onClick={() =>
                                         searchMutation.mutate({
-                                            query: query.trim(),
+                                            title: titleSearch.trim(),
+                                            author: authorSearch.trim(),
                                             page: searchPage - 1,
                                         })
                                     }
@@ -329,14 +354,14 @@ export default function VotingBuilderPage() {
                                     Previous
                                 </button>
                                 <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                                    Page {searchPage} of {totalSearchPages} (
-                                    {totalSearchItems} results)
+                                    Page {searchPage} of {totalSearchPages}
                                 </span>
                                 <button
                                     type="button"
                                     onClick={() =>
                                         searchMutation.mutate({
-                                            query: query.trim(),
+                                            title: titleSearch.trim(),
+                                            author: authorSearch.trim(),
                                             page: searchPage + 1,
                                         })
                                     }
@@ -350,6 +375,60 @@ export default function VotingBuilderPage() {
                             </div>
                         )}
                     </section>
+                )}
+
+                {/* Read more popup */}
+                {previewBook && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="preview-title"
+                        onClick={() => setPreviewBook(null)}
+                    >
+                        <div
+                            className="rounded-xl bg-white dark:bg-zinc-900 shadow-xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="p-4 pb-2 flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <h3
+                                        id="preview-title"
+                                        className="text-lg font-semibold text-zinc-900 dark:text-zinc-100"
+                                    >
+                                        {previewBook.title}
+                                    </h3>
+                                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                                        by {previewBook.author}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setPreviewBook(null)}
+                                    className="flex-shrink-0 rounded p-1.5 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                                    aria-label="Close"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div className="px-4 pb-4 overflow-y-auto flex-1 min-h-0">
+                                {previewBook.blurb ? (
+                                    <div
+                                        className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-zinc-700 dark:[&_a]:text-zinc-300"
+                                        dangerouslySetInnerHTML={{
+                                            __html: sanitiseBlurb(
+                                                previewBook.blurb,
+                                            ),
+                                        }}
+                                    />
+                                ) : (
+                                    <p className="text-sm text-zinc-500 dark:text-zinc-400 italic">
+                                        No description available.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {createMessage && createMessage.type === 'error' && (

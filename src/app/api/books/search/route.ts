@@ -6,7 +6,8 @@ import { cleanBlurb } from '@/lib/google-books';
 const PAGE_SIZE = 10;
 
 const bodySchema = z.object({
-    query: z.string().min(1).max(200),
+    title: z.string().max(200).optional(),
+    author: z.string().max(200).optional(),
     page: z.number().int().min(1).optional().default(1),
 });
 
@@ -36,7 +37,18 @@ export async function POST(request: Request) {
         );
     }
 
-    const q = encodeURIComponent(parsed.data.query);
+    const title = (parsed.data.title ?? '').trim();
+    const author = (parsed.data.author ?? '').trim();
+    const parts: string[] = [];
+    if (title) parts.push(`intitle:${title}`);
+    if (author) parts.push(`inauthor:${author}`);
+    if (parts.length === 0) {
+        return NextResponse.json(
+            { error: 'Provide at least a title or author' },
+            { status: 400 },
+        );
+    }
+    const q = encodeURIComponent(parts.join(' '));
     const page = parsed.data.page;
     const startIndex = (page - 1) * PAGE_SIZE;
     const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&key=${apiKey}&maxResults=${PAGE_SIZE}&startIndex=${startIndex}`;
@@ -86,7 +98,7 @@ export async function POST(request: Request) {
             return bHas - aHas;
         });
 
-        const mapped: BookSearchResult[] = items
+        const results: BookSearchResult[] = items
             .slice(0, PAGE_SIZE)
             .map((item) => {
                 const vi = item.volumeInfo ?? {};
@@ -104,16 +116,6 @@ export async function POST(request: Request) {
                     link: vi.infoLink ?? null,
                 };
             });
-
-        // Deduplicate by same title + author (normalised)
-        const seen = new Set<string>();
-        const results: BookSearchResult[] = [];
-        for (const book of mapped) {
-            const key = `${book.title.trim().toLowerCase()}|${book.author.trim().toLowerCase()}`;
-            if (seen.has(key)) continue;
-            seen.add(key);
-            results.push(book);
-        }
 
         return NextResponse.json({
             results,
