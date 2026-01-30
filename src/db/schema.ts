@@ -3,35 +3,106 @@ import {
     integer,
     pgTable,
     serial,
+    text,
     timestamp,
+    unique,
     varchar,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-export const monthlyBook = pgTable('monthly_book', {
+/**
+ * One row per "suggestions open" period. When close_at is set and in the past,
+ * suggestions are closed and /next is admin-only (tally view).
+ */
+export const suggestionRounds = pgTable('suggestion_rounds', {
+    id: serial('id').primaryKey(),
+    label: varchar('label', { length: 64 }),
+    closeAt: timestamp('close_at', { withTimezone: true }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+/**
+ * One row per member suggestion. Max 2 suggestions per person per round (enforced in app).
+ * Tally = COUNT per book_external_id for the round.
+ */
+export const suggestions = pgTable('suggestions', {
+    id: serial('id').primaryKey(),
+    suggestionRoundId: integer('suggestion_round_id')
+        .notNull()
+        .references(() => suggestionRounds.id, { onDelete: 'cascade' }),
+    bookExternalId: varchar('book_external_id', { length: 256 }).notNull(),
+    suggesterKeyHash: varchar('suggester_key_hash', { length: 256 }).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+/**
+ * One row per vote round. Created by admin in vote-page-builder.
+ * When a row exists, /vote is public until close_vote_at has passed.
+ */
+export const voteRounds = pgTable('vote_rounds', {
     id: serial('id').primaryKey(),
     meetingDate: date('meeting_date', { mode: 'string' }).notNull().unique(),
-    closeVoteDate: date('close_vote_date', { mode: 'string' }),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    closeVoteAt: timestamp('close_vote_at', { withTimezone: true }),
+    selectedBookIds: text('selected_book_ids').array().notNull(),
     winnerExternalId: varchar('winner_external_id', { length: 256 }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-export const monthlyBookSelections = pgTable('monthly_book_selections', {
+/**
+ * Cached book details per vote round (title, author, cover, blurb, link).
+ */
+export const voteRoundBooks = pgTable('vote_round_books', {
     id: serial('id').primaryKey(),
-    monthlyBookId: integer('monthly_book_id')
+    voteRoundId: integer('vote_round_id')
         .notNull()
-        .references(() => monthlyBook.id, { onDelete: 'cascade' }),
-    meetingDate: date('meeting_date', { mode: 'string' }).notNull(),
+        .references(() => voteRounds.id, { onDelete: 'cascade' }),
     externalId: varchar('external_id', { length: 256 }).notNull(),
+    title: varchar('title', { length: 512 }).notNull(),
+    author: varchar('author', { length: 512 }).notNull(),
+    coverUrl: text('cover_url'),
+    blurb: text('blurb'),
+    link: text('link'),
 });
 
-export const monthlyBookRelations = relations(monthlyBook, ({ many }) => ({
-    selections: many(monthlyBookSelections),
-}));
+/**
+ * One row per member vote. One vote per person per round (unique on vote_round_id + voter_key_hash).
+ */
+export const votes = pgTable(
+    'votes',
+    {
+        id: serial('id').primaryKey(),
+        voteRoundId: integer('vote_round_id')
+            .notNull()
+            .references(() => voteRounds.id, { onDelete: 'cascade' }),
+        chosenBookExternalId: varchar('chosen_book_external_id', {
+            length: 256,
+        }).notNull(),
+        voterKeyHash: varchar('voter_key_hash', { length: 256 }).notNull(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+    },
+    (t) => [unique('votes_round_voter').on(t.voteRoundId, t.voterKeyHash)],
+);
 
-export const monthlyBookSelectionsRelations = relations(
-    monthlyBookSelections,
-    ({ one }) => ({
-        monthlyBook: one(monthlyBook),
+export const suggestionRoundsRelations = relations(
+    suggestionRounds,
+    ({ many }) => ({
+        suggestions: many(suggestions),
     }),
 );
+
+export const suggestionsRelations = relations(suggestions, ({ one }) => ({
+    suggestionRound: one(suggestionRounds),
+}));
+
+export const voteRoundsRelations = relations(voteRounds, ({ many }) => ({
+    votes: many(votes),
+    books: many(voteRoundBooks),
+}));
+
+export const voteRoundBooksRelations = relations(voteRoundBooks, ({ one }) => ({
+    voteRound: one(voteRounds),
+}));
+
+export const votesRelations = relations(votes, ({ one }) => ({
+    voteRound: one(voteRounds),
+}));

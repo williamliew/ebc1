@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { desc, isNotNull } from 'drizzle-orm';
+import { desc } from 'drizzle-orm';
 import { db } from '@/db';
-import { monthlyBook } from '@/db/schema';
-import { getBookDetails } from '@/lib/google-books';
+import { voteRounds } from '@/db/schema';
 
 export async function GET() {
     if (!db) {
@@ -13,32 +12,18 @@ export async function GET() {
     }
 
     try {
-        const [roundWithWinner] = await db
-            .select()
-            .from(monthlyBook)
-            .where(isNotNull(monthlyBook.winnerExternalId))
-            .orderBy(desc(monthlyBook.meetingDate))
+        const [latestRound] = await db
+            .select({
+                meetingDate: voteRounds.meetingDate,
+                winnerExternalId: voteRounds.winnerExternalId,
+            })
+            .from(voteRounds)
+            .orderBy(desc(voteRounds.meetingDate))
             .limit(1);
 
-        if (!roundWithWinner?.winnerExternalId) {
-            return NextResponse.json({ winner: null, meetingDate: null });
-        }
-
-        const winner = await getBookDetails(roundWithWinner.winnerExternalId);
-        if (!winner) {
-            return NextResponse.json({ winner: null, meetingDate: null });
-        }
-
         return NextResponse.json({
-            winner: {
-                id: winner.externalId,
-                title: winner.title,
-                author: winner.author,
-                coverUrl: winner.coverUrl,
-                blurb: winner.blurb,
-                link: winner.link,
-            },
-            meetingDate: roundWithWinner.meetingDate,
+            winner: latestRound?.winnerExternalId ?? null,
+            meetingDate: latestRound?.meetingDate ?? null,
         });
     } catch (err) {
         console.error('Fetch nextbook error:', err);

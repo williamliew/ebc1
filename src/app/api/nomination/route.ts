@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/db';
-import { monthlyBook, monthlyBookSelections } from '@/db/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { voteRounds, voteRoundBooks } from '@/db/schema';
+import { desc, eq } from 'drizzle-orm';
 import { getBooksDetails } from '@/lib/google-books';
 
 const meetingDateSchema = z
@@ -35,17 +35,23 @@ export async function POST(request: Request) {
     }
 
     try {
+        const selectedBookIds = parsed.data.books.map((b) => b.externalId);
+        const details = await getBooksDetails(selectedBookIds);
+
+        const closeVoteAt = parsed.data.closeVoteDate
+            ? new Date(parsed.data.closeVoteDate + 'T23:59:59Z')
+            : null;
+
         const [round] = await db
-            .insert(monthlyBook)
+            .insert(voteRounds)
             .values({
                 meetingDate: parsed.data.meetingDate,
-                ...(parsed.data.closeVoteDate && {
-                    closeVoteDate: parsed.data.closeVoteDate,
-                }),
+                closeVoteAt,
+                selectedBookIds,
             })
             .returning({
-                id: monthlyBook.id,
-                meetingDate: monthlyBook.meetingDate,
+                id: voteRounds.id,
+                meetingDate: voteRounds.meetingDate,
             });
 
         if (!round) {
@@ -55,16 +61,22 @@ export async function POST(request: Request) {
             );
         }
 
-        await db.insert(monthlyBookSelections).values(
-            parsed.data.books.map((b) => ({
-                monthlyBookId: round.id,
-                meetingDate: round.meetingDate,
-                externalId: b.externalId,
-            })),
-        );
+        const bookRows = selectedBookIds.map((externalId) => {
+            const d = details.find((b) => b.externalId === externalId);
+            return {
+                voteRoundId: round.id,
+                externalId,
+                title: d?.title ?? 'Unknown title',
+                author: d?.author ?? 'Unknown author',
+                coverUrl: d?.coverUrl ?? null,
+                blurb: d?.blurb ?? null,
+                link: d?.link ?? null,
+            };
+        });
+        await db.insert(voteRoundBooks).values(bookRows);
 
         return NextResponse.json({
-            monthlyBookId: round.id,
+            voteRoundId: round.id,
             meetingDate: round.meetingDate,
         });
     } catch (err: unknown) {
@@ -96,51 +108,62 @@ export async function GET(request: Request) {
     const expand = searchParams.get('expand') !== '0';
 
     try {
-        type RoundRow = {
-            id: number;
-            meetingDate: string;
-            closeVoteDate: string | null;
-            createdAt: Date;
-            winnerExternalId: string | null;
-        };
-        let round: RoundRow | undefined;
+        let round:
+            | { id: number; meetingDate: string; closeVoteAt: Date | null }
+            | undefined;
 
         if (dateParam) {
             const rows = await db
-                .select()
-                .from(monthlyBook)
-                .where(eq(monthlyBook.meetingDate, dateParam))
+                .select({
+                    id: voteRounds.id,
+                    meetingDate: voteRounds.meetingDate,
+                    closeVoteAt: voteRounds.closeVoteAt,
+                })
+                .from(voteRounds)
+                .where(eq(voteRounds.meetingDate, dateParam))
                 .limit(1);
-            round = rows[0] as RoundRow | undefined;
+            round = rows[0];
         } else {
             const rows = await db
-                .select()
-                .from(monthlyBook)
-                .orderBy(desc(monthlyBook.meetingDate))
+                .select({
+                    id: voteRounds.id,
+                    meetingDate: voteRounds.meetingDate,
+                    closeVoteAt: voteRounds.closeVoteAt,
+                })
+                .from(voteRounds)
+                .orderBy(desc(voteRounds.meetingDate))
                 .limit(1);
-            round = rows[0] as RoundRow | undefined;
+            round = rows[0];
         }
 
         if (!round) {
             return NextResponse.json({ round: null, books: [] });
         }
 
-        const selections = await db
+        const cached = await db
             .select()
-            .from(monthlyBookSelections)
-            .where(eq(monthlyBookSelections.monthlyBookId, round.id));
+            .from(voteRoundBooks)
+            .where(eq(voteRoundBooks.voteRoundId, round.id));
 
         const books = expand
-            ? await getBooksDetails(selections.map((s) => s.externalId))
-            : selections.map((s) => ({ externalId: s.externalId }));
+            ? cached.map((b) => ({
+                  externalId: b.externalId,
+                  title: b.title,
+                  author: b.author,
+                  coverUrl: b.coverUrl,
+                  blurb: b.blurb,
+                  link: b.link,
+              }))
+            : cached.map((b) => ({ externalId: b.externalId }));
+
+        const selectedBookIds = cached.map((b) => b.externalId);
 
         return NextResponse.json({
             round: {
                 id: round.id,
                 meetingDate: round.meetingDate,
-                closeVoteDate: round.closeVoteDate ?? null,
-                createdAt: round.createdAt,
-                winnerExternalId: round.winnerExternalId ?? null,
+                closeVoteAt: round.closeVoteAt?.toISOString() ?? null,
+                selectedBookIds,
             },
             books,
         });
@@ -153,9 +176,9 @@ export async function GET(request: Request) {
     }
 }
 
-const setWinnerBodySchema = z.object({
+const updateSelectedBooksBodySchema = z.object({
     meetingDate: meetingDateSchema,
-    winnerExternalId: z.string().min(1),
+    selectedBookIds: z.array(z.string().min(1)).min(2).max(4),
 });
 
 export async function PATCH(request: Request) {
@@ -166,7 +189,9 @@ export async function PATCH(request: Request) {
         );
     }
 
-    const parsed = setWinnerBodySchema.safeParse(await request.json());
+    const parsed = updateSelectedBooksBodySchema.safeParse(
+        await request.json(),
+    );
     if (!parsed.success) {
         return NextResponse.json(
             { error: 'Invalid request', details: parsed.error.flatten() },
@@ -177,8 +202,8 @@ export async function PATCH(request: Request) {
     try {
         const [round] = await db
             .select()
-            .from(monthlyBook)
-            .where(eq(monthlyBook.meetingDate, parsed.data.meetingDate))
+            .from(voteRounds)
+            .where(eq(voteRounds.meetingDate, parsed.data.meetingDate))
             .limit(1);
 
         if (!round) {
@@ -188,42 +213,19 @@ export async function PATCH(request: Request) {
             );
         }
 
-        const [selection] = await db
-            .select()
-            .from(monthlyBookSelections)
-            .where(
-                and(
-                    eq(monthlyBookSelections.monthlyBookId, round.id),
-                    eq(
-                        monthlyBookSelections.externalId,
-                        parsed.data.winnerExternalId,
-                    ),
-                ),
-            )
-            .limit(1);
-
-        if (!selection) {
-            return NextResponse.json(
-                {
-                    error: 'Book not found or does not belong to this round (use Google Books volume ID)',
-                },
-                { status: 400 },
-            );
-        }
-
         await db
-            .update(monthlyBook)
-            .set({ winnerExternalId: parsed.data.winnerExternalId })
-            .where(eq(monthlyBook.id, round.id));
+            .update(voteRounds)
+            .set({ selectedBookIds: parsed.data.selectedBookIds })
+            .where(eq(voteRounds.id, round.id));
 
         return NextResponse.json({
             meetingDate: round.meetingDate,
-            winnerExternalId: parsed.data.winnerExternalId,
+            selectedBookIds: parsed.data.selectedBookIds,
         });
     } catch (err) {
-        console.error('Set winner error:', err);
+        console.error('Update selected books error:', err);
         return NextResponse.json(
-            { error: 'Failed to set winner' },
+            { error: 'Failed to update selected books' },
             { status: 500 },
         );
     }

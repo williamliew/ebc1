@@ -12,7 +12,7 @@ const PRESET_BACKGROUNDS = [
 ];
 
 type NominationBook = {
-    id: number;
+    externalId: string;
     title: string;
     author: string;
     coverUrl: string | null;

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { desc } from 'drizzle-orm';
 import { db } from '@/db';
-import { monthlyBook } from '@/db/schema';
+import { voteRounds } from '@/db/schema';
 
 export async function GET() {
     if (!db) {
@@ -14,13 +14,13 @@ export async function GET() {
     try {
         const rounds = await db
             .select({
-                id: monthlyBook.id,
-                meetingDate: monthlyBook.meetingDate,
-                winnerExternalId: monthlyBook.winnerExternalId,
-                createdAt: monthlyBook.createdAt,
+                id: voteRounds.id,
+                meetingDate: voteRounds.meetingDate,
+                selectedBookIds: voteRounds.selectedBookIds,
+                createdAt: voteRounds.createdAt,
             })
-            .from(monthlyBook)
-            .orderBy(desc(monthlyBook.meetingDate));
+            .from(voteRounds)
+            .orderBy(desc(voteRounds.meetingDate));
 
         return NextResponse.json({ rounds });
     } catch (err) {

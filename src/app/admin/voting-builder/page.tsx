@@ -58,6 +58,7 @@ export default function VotingBuilderPage() {
         type: 'success' | 'error';
         text: string;
     } | null>(null);
+    const [showSuccessLightbox, setShowSuccessLightbox] = useState(false);
     const queryClient = useQueryClient();
 
     const searchMutation = useMutation({
@@ -110,12 +111,13 @@ export default function VotingBuilderPage() {
             }
             return res.json();
         },
-        onSuccess: (_, variables) => {
-            setCreateMessage({
-                type: 'success',
-                text: `Nomination round created for ${variables.meetingDate}.`,
-            });
+        onSuccess: () => {
+            setShowSuccessLightbox(true);
+            setCreateMessage(null);
             setSelected([]);
+            setQuery('');
+            setSearchResults([]);
+            setSearchError(null);
             queryClient.invalidateQueries({ queryKey: ['nomination'] });
         },
         onError: (err) => {
@@ -179,14 +181,26 @@ export default function VotingBuilderPage() {
                 {/* Search */}
                 <section>
                     <form onSubmit={handleSearch} className="flex gap-2">
-                        <input
-                            type="text"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search by title or author..."
-                            className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
-                            aria-label="Book search"
-                        />
+                        <div className="relative flex-1">
+                            <input
+                                type="text"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Search by title or author..."
+                                className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                aria-label="Book search"
+                            />
+                            {query.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setQuery('')}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                                    aria-label="Clear search"
+                                >
+                                    ×
+                                </button>
+                            )}
+                        </div>
                         <button
                             type="submit"
                             disabled={searchMutation.isPending}
@@ -269,19 +283,41 @@ export default function VotingBuilderPage() {
                     </section>
                 )}
 
-                {createMessage && (
+                {createMessage && createMessage.type === 'error' && (
                     <p
                         role="alert"
-                        className={
-                            createMessage.type === 'success'
-                                ? 'text-sm text-green-600 dark:text-green-400'
-                                : 'text-sm text-red-600 dark:text-red-400'
-                        }
+                        className="text-sm text-red-600 dark:text-red-400"
                     >
                         {createMessage.text}
                     </p>
                 )}
             </main>
+
+            {/* Success lightbox */}
+            {showSuccessLightbox && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="success-lightbox-title"
+                >
+                    <div className="rounded-xl bg-white dark:bg-zinc-900 shadow-xl p-6 max-w-sm w-full text-center">
+                        <p
+                            id="success-lightbox-title"
+                            className="text-lg font-semibold text-zinc-900 dark:text-zinc-100"
+                        >
+                            Vote created!
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setShowSuccessLightbox(false)}
+                            className="mt-4 rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Fixed bottom: only when at least 1 book selected */}
             {selected.length >= 1 && (
