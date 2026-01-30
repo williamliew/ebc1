@@ -27,6 +27,7 @@ type VoteRound = {
 };
 
 const SWIPE_THRESHOLD = 50;
+const SWIPE_TRANSITION_MS = 280;
 
 export default function VotePage() {
     const [round, setRound] = useState<VoteRound | null>(null);
@@ -34,7 +35,9 @@ export default function VotePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const touchStartXRef = useRef<number | null>(null);
+    const [dragOffset, setDragOffset] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const pointerStartXRef = useRef<number | null>(null);
     const [submitStatus, setSubmitStatus] = useState<
         'idle' | 'pending' | 'success' | 'error'
     >('idle');
@@ -74,22 +77,79 @@ export default function VotePage() {
         [books.length],
     );
 
-    const handleTouchStart = useCallback((e: React.TouchEvent) => {
-        touchStartXRef.current = e.targetTouches[0].clientX;
+    const handlePointerStart = useCallback(
+        (clientX: number) => {
+            if (books.length <= 1) return;
+            pointerStartXRef.current = clientX;
+            setIsDragging(true);
+            setDragOffset(0);
+        },
+        [books.length],
+    );
+
+    const handlePointerMove = useCallback((clientX: number) => {
+        const startX = pointerStartXRef.current;
+        if (startX === null) return;
+        setDragOffset(clientX - startX);
     }, []);
 
-    const handleTouchEnd = useCallback(
-        (e: React.TouchEvent) => {
-            const startX = touchStartXRef.current;
-            touchStartXRef.current = null;
-            if (startX === null || books.length <= 1) return;
-            const endX = e.changedTouches[0].clientX;
-            const delta = startX - endX;
+    const handlePointerEnd = useCallback(
+        (clientX: number) => {
+            const startX = pointerStartXRef.current;
+            pointerStartXRef.current = null;
+            setIsDragging(false);
+            if (startX === null || books.length <= 1) {
+                setDragOffset(0);
+                return;
+            }
+            const delta = startX - clientX;
             if (delta > SWIPE_THRESHOLD) goTo(currentIndex + 1);
             else if (delta < -SWIPE_THRESHOLD) goTo(currentIndex - 1);
+            setDragOffset(0);
         },
         [currentIndex, books.length, goTo],
     );
+
+    const handleTouchStart = useCallback(
+        (e: React.TouchEvent) => {
+            handlePointerStart(e.targetTouches[0].clientX);
+        },
+        [handlePointerStart],
+    );
+    const handleTouchMove = useCallback(
+        (e: React.TouchEvent) => {
+            handlePointerMove(e.targetTouches[0].clientX);
+        },
+        [handlePointerMove],
+    );
+    const handleTouchEnd = useCallback(
+        (e: React.TouchEvent) => {
+            handlePointerEnd(e.changedTouches[0].clientX);
+        },
+        [handlePointerEnd],
+    );
+
+    const handleMouseDown = useCallback(
+        (e: React.MouseEvent) => {
+            e.preventDefault();
+            handlePointerStart(e.clientX);
+        },
+        [handlePointerStart],
+    );
+
+    useEffect(() => {
+        if (!isDragging) return;
+        const onMouseMove = (e: MouseEvent) => handlePointerMove(e.clientX);
+        const onMouseUp = (e: MouseEvent) => {
+            handlePointerEnd(e.clientX);
+        };
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+    }, [isDragging, handlePointerMove, handlePointerEnd]);
 
     const handleSubmitVote = useCallback(async () => {
         if (!round?.isOpen || !books[currentIndex]) return;
@@ -196,7 +256,8 @@ export default function VotePage() {
         );
     }
 
-    const book = books[currentIndex];
+    const slidePercent = books.length > 0 ? 100 / books.length : 100;
+    const trackTranslateX = `calc(-${currentIndex * slidePercent}% + ${dragOffset}px)`;
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col">
@@ -216,46 +277,72 @@ export default function VotePage() {
             </header>
 
             <main className="flex-1 flex flex-col max-w-lg mx-auto w-full">
-                {/* Swipeable book card — one at a time */}
+                {/* Swipeable book cards with smooth drag and transition */}
                 <section
-                    className="flex-1 min-h-0 flex flex-col px-4 pt-4"
+                    className="flex-1 min-h-0 flex flex-col px-4 pt-4 select-none"
                     onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
+                    onMouseDown={handleMouseDown}
+                    style={{ touchAction: 'pan-y' }}
                 >
-                    <div className="flex-1 min-h-0 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col">
-                        {book.coverUrl ? (
-                            <div className="relative w-full aspect-[3/4] shrink-0 bg-zinc-200 dark:bg-zinc-800">
-                                <Image
-                                    src={book.coverUrl}
-                                    alt=""
-                                    fill
-                                    className="object-cover"
-                                    unoptimized
-                                    sizes="(max-width: 512px) 100vw, 512px"
-                                />
-                            </div>
-                        ) : (
-                            <div className="w-full aspect-[3/4] shrink-0 bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
-                                <span className="text-zinc-400 dark:text-zinc-500 text-sm">
-                                    No cover
-                                </span>
-                            </div>
-                        )}
-                        <div className="p-4 flex-1 min-h-0 overflow-y-auto">
-                            <h2 className="text-lg font-semibold">
-                                {book.title}
-                            </h2>
-                            <p className="text-sm text-zinc-500 mt-0.5">
-                                by {book.author}
-                            </p>
-                            {book.blurb && (
+                    <div className="flex-1 min-h-0 overflow-hidden rounded-xl">
+                        <div
+                            className="h-full flex will-change-transform"
+                            style={{
+                                width: `${books.length * 100}%`,
+                                transform: `translateX(${trackTranslateX})`,
+                                transition: isDragging
+                                    ? 'none'
+                                    : `transform ${SWIPE_TRANSITION_MS}ms ease-out`,
+                            }}
+                        >
+                            {books.map((book) => (
                                 <div
-                                    className="text-sm text-zinc-600 dark:text-zinc-400 mt-3 leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-zinc-700 dark:[&_a]:text-zinc-300"
-                                    dangerouslySetInnerHTML={{
-                                        __html: sanitiseBlurb(book.blurb),
-                                    }}
-                                />
-                            )}
+                                    key={book.externalId}
+                                    className="h-full flex flex-col flex-shrink-0 min-w-0 pr-4"
+                                    style={{ width: `${slidePercent}%` }}
+                                >
+                                    <div className="h-full flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+                                        {book.coverUrl ? (
+                                            <div className="relative w-full aspect-[3/4] shrink-0 bg-zinc-200 dark:bg-zinc-800">
+                                                <Image
+                                                    src={book.coverUrl}
+                                                    alt=""
+                                                    fill
+                                                    className="object-cover"
+                                                    unoptimized
+                                                    sizes="(max-width: 512px) 100vw, 512px"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="w-full aspect-[3/4] shrink-0 bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                                                <span className="text-zinc-400 dark:text-zinc-500 text-sm">
+                                                    No cover
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="p-4 flex-1 min-h-0 overflow-y-auto">
+                                            <h2 className="text-lg font-semibold">
+                                                {book.title}
+                                            </h2>
+                                            <p className="text-sm text-zinc-500 mt-0.5">
+                                                by {book.author}
+                                            </p>
+                                            {book.blurb && (
+                                                <div
+                                                    className="text-sm text-zinc-600 dark:text-zinc-400 mt-3 leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-zinc-700 dark:[&_a]:text-zinc-300"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitiseBlurb(
+                                                            book.blurb,
+                                                        ),
+                                                    }}
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
