@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/db';
-import { nominationRounds, nominationBooks } from '@/db/schema';
-import { desc, eq } from 'drizzle-orm';
+import { monthlyBook, monthlyBookSelections } from '@/db/schema';
+import { and, desc, eq } from 'drizzle-orm';
+import { getBooksDetails } from '@/lib/google-books';
 
 const meetingDateSchema = z
     .string()
@@ -11,16 +12,7 @@ const meetingDateSchema = z
 const createBodySchema = z.object({
     meetingDate: meetingDateSchema,
     books: z
-        .array(
-            z.object({
-                externalId: z.string(),
-                title: z.string(),
-                author: z.string(),
-                coverUrl: z.string().nullable(),
-                blurb: z.string().nullable(),
-                link: z.string().nullable(),
-            }),
-        )
+        .array(z.object({ externalId: z.string() }))
         .min(2)
         .max(4),
 });
@@ -43,11 +35,14 @@ export async function POST(request: Request) {
 
     try {
         const [round] = await db
-            .insert(nominationRounds)
+            .insert(monthlyBook)
             .values({
                 meetingDate: parsed.data.meetingDate,
             })
-            .returning({ id: nominationRounds.id, meetingDate: nominationRounds.meetingDate });
+            .returning({
+                id: monthlyBook.id,
+                meetingDate: monthlyBook.meetingDate,
+            });
 
         if (!round) {
             return NextResponse.json(
@@ -56,20 +51,16 @@ export async function POST(request: Request) {
             );
         }
 
-        await db.insert(nominationBooks).values(
+        await db.insert(monthlyBookSelections).values(
             parsed.data.books.map((b) => ({
-                roundId: round.id,
+                monthlyBookId: round.id,
+                meetingDate: round.meetingDate,
                 externalId: b.externalId,
-                title: b.title,
-                author: b.author,
-                coverUrl: b.coverUrl,
-                blurb: b.blurb,
-                link: b.link,
             })),
         );
 
         return NextResponse.json({
-            roundId: round.id,
+            monthlyBookId: round.id,
             meetingDate: round.meetingDate,
         });
     } catch (err: unknown) {
@@ -98,28 +89,29 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date');
+    const expand = searchParams.get('expand') !== '0';
 
     try {
         type RoundRow = {
             id: number;
             meetingDate: string;
             createdAt: Date;
-            winnerBookId: number | null;
+            winnerExternalId: string | null;
         };
         let round: RoundRow | undefined;
 
         if (dateParam) {
             const rows = await db
                 .select()
-                .from(nominationRounds)
-                .where(eq(nominationRounds.meetingDate, dateParam))
+                .from(monthlyBook)
+                .where(eq(monthlyBook.meetingDate, dateParam))
                 .limit(1);
             round = rows[0] as RoundRow | undefined;
         } else {
             const rows = await db
                 .select()
-                .from(nominationRounds)
-                .orderBy(desc(nominationRounds.meetingDate))
+                .from(monthlyBook)
+                .orderBy(desc(monthlyBook.meetingDate))
                 .limit(1);
             round = rows[0] as RoundRow | undefined;
         }
@@ -128,17 +120,21 @@ export async function GET(request: Request) {
             return NextResponse.json({ round: null, books: [] });
         }
 
-        const books = await db
+        const selections = await db
             .select()
-            .from(nominationBooks)
-            .where(eq(nominationBooks.roundId, round.id));
+            .from(monthlyBookSelections)
+            .where(eq(monthlyBookSelections.monthlyBookId, round.id));
+
+        const books = expand
+            ? await getBooksDetails(selections.map((s) => s.externalId))
+            : selections.map((s) => ({ externalId: s.externalId }));
 
         return NextResponse.json({
             round: {
                 id: round.id,
                 meetingDate: round.meetingDate,
                 createdAt: round.createdAt,
-                winnerBookId: round.winnerBookId ?? null,
+                winnerExternalId: round.winnerExternalId ?? null,
             },
             books,
         });
@@ -153,7 +149,7 @@ export async function GET(request: Request) {
 
 const setWinnerBodySchema = z.object({
     meetingDate: meetingDateSchema,
-    winnerBookId: z.number().int().positive(),
+    winnerExternalId: z.string().min(1),
 });
 
 export async function PATCH(request: Request) {
@@ -175,8 +171,8 @@ export async function PATCH(request: Request) {
     try {
         const [round] = await db
             .select()
-            .from(nominationRounds)
-            .where(eq(nominationRounds.meetingDate, parsed.data.meetingDate))
+            .from(monthlyBook)
+            .where(eq(monthlyBook.meetingDate, parsed.data.meetingDate))
             .limit(1);
 
         if (!round) {
@@ -186,27 +182,37 @@ export async function PATCH(request: Request) {
             );
         }
 
-        const [book] = await db
+        const [selection] = await db
             .select()
-            .from(nominationBooks)
-            .where(eq(nominationBooks.id, parsed.data.winnerBookId))
+            .from(monthlyBookSelections)
+            .where(
+                and(
+                    eq(monthlyBookSelections.monthlyBookId, round.id),
+                    eq(
+                        monthlyBookSelections.externalId,
+                        parsed.data.winnerExternalId,
+                    ),
+                ),
+            )
             .limit(1);
 
-        if (!book || book.roundId !== round.id) {
+        if (!selection) {
             return NextResponse.json(
-                { error: 'Book not found or does not belong to this round' },
+                {
+                    error: 'Book not found or does not belong to this round (use Google Books volume ID)',
+                },
                 { status: 400 },
             );
         }
 
         await db
-            .update(nominationRounds)
-            .set({ winnerBookId: parsed.data.winnerBookId })
-            .where(eq(nominationRounds.id, round.id));
+            .update(monthlyBook)
+            .set({ winnerExternalId: parsed.data.winnerExternalId })
+            .where(eq(monthlyBook.id, round.id));
 
         return NextResponse.json({
             meetingDate: round.meetingDate,
-            winnerBookId: parsed.data.winnerBookId,
+            winnerExternalId: parsed.data.winnerExternalId,
         });
     } catch (err) {
         console.error('Set winner error:', err);

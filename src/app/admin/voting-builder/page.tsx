@@ -77,14 +77,7 @@ export default function VotingBuilderPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     meetingDate: date,
-                    books: books.map((b) => ({
-                        externalId: b.externalId,
-                        title: b.title,
-                        author: b.author,
-                        coverUrl: b.coverUrl,
-                        blurb: b.blurb,
-                        link: b.link,
-                    })),
+                    books: books.map((b) => ({ externalId: b.externalId })),
                 }),
             });
             if (!res.ok) {

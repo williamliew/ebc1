@@ -1,42 +1,33 @@
-import { and, desc, eq, isNotNull } from 'drizzle-orm';
+import { desc, isNotNull } from 'drizzle-orm';
 import { db } from '@/db';
-import { nominationRounds, nominationBooks } from '@/db/schema';
+import { monthlyBook } from '@/db/schema';
+import { getBookDetails } from '@/lib/google-books';
 
 export async function getNextBook() {
     if (!db) return { winner: null, meetingDate: null };
 
     const [roundWithWinner] = await db
         .select()
-        .from(nominationRounds)
-        .where(isNotNull(nominationRounds.winnerBookId))
-        .orderBy(desc(nominationRounds.meetingDate))
+        .from(monthlyBook)
+        .where(isNotNull(monthlyBook.winnerExternalId))
+        .orderBy(desc(monthlyBook.meetingDate))
         .limit(1);
 
-    if (!roundWithWinner?.winnerBookId) {
+    if (!roundWithWinner?.winnerExternalId) {
         return { winner: null, meetingDate: null };
     }
 
-    const [winnerBook] = await db
-        .select()
-        .from(nominationBooks)
-        .where(
-            and(
-                eq(nominationBooks.id, roundWithWinner.winnerBookId),
-                eq(nominationBooks.roundId, roundWithWinner.id),
-            ),
-        )
-        .limit(1);
-
-    if (!winnerBook) return { winner: null, meetingDate: null };
+    const winner = await getBookDetails(roundWithWinner.winnerExternalId);
+    if (!winner) return { winner: null, meetingDate: null };
 
     return {
         winner: {
-            id: winnerBook.id,
-            title: winnerBook.title,
-            author: winnerBook.author,
-            coverUrl: winnerBook.coverUrl,
-            blurb: winnerBook.blurb,
-            link: winnerBook.link,
+            id: winner.externalId,
+            title: winner.title,
+            author: winner.author,
+            coverUrl: winner.coverUrl,
+            blurb: winner.blurb,
+            link: winner.link,
         },
         meetingDate: roundWithWinner.meetingDate,
     };

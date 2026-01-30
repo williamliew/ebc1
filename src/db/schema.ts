@@ -3,50 +3,34 @@ import {
     integer,
     pgTable,
     serial,
-    text,
     timestamp,
     varchar,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-export const nominationRounds = pgTable('nomination_rounds', {
+export const monthlyBook = pgTable('monthly_book', {
     id: serial('id').primaryKey(),
     meetingDate: date('meeting_date', { mode: 'string' }).notNull().unique(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    winnerBookId: integer('winner_book_id').references(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (): any => nominationBooks.id,
-        { onDelete: 'set null' },
-    ),
+    winnerExternalId: varchar('winner_external_id', { length: 256 }),
 });
 
-export const nominationBooks = pgTable('nomination_books', {
+export const monthlyBookSelections = pgTable('monthly_book_selections', {
     id: serial('id').primaryKey(),
-    roundId: integer('round_id')
+    monthlyBookId: integer('monthly_book_id')
         .notNull()
-        .references(() => nominationRounds.id, { onDelete: 'cascade' }),
+        .references(() => monthlyBook.id, { onDelete: 'cascade' }),
+    meetingDate: date('meeting_date', { mode: 'string' }).notNull(),
     externalId: varchar('external_id', { length: 256 }).notNull(),
-    title: text('title').notNull(),
-    author: text('author').notNull(),
-    coverUrl: text('cover_url'),
-    blurb: text('blurb'),
-    link: text('link'),
 });
 
-export const nominationRoundsRelations = relations(
-    nominationRounds,
-    ({ one, many }) => ({
-        books: many(nominationBooks),
-        winnerBook: one(nominationBooks, {
-            fields: [nominationRounds.winnerBookId],
-            references: [nominationBooks.id],
-        }),
-    }),
-);
+export const monthlyBookRelations = relations(monthlyBook, ({ many }) => ({
+    selections: many(monthlyBookSelections),
+}));
 
-export const nominationBooksRelations = relations(
-    nominationBooks,
+export const monthlyBookSelectionsRelations = relations(
+    monthlyBookSelections,
     ({ one }) => ({
-        round: one(nominationRounds),
+        monthlyBook: one(monthlyBook),
     }),
 );
