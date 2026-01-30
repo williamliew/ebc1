@@ -1,14 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
 const PRESET_BACKGROUNDS = [
-    { value: 'cream', label: 'Cream', class: 'bg-amber-50' },
-    { value: 'sage', label: 'Sage', class: 'bg-green-50' },
-    { value: 'slate', label: 'Slate', class: 'bg-slate-100' },
-    { value: 'lavender', label: 'Lavender', class: 'bg-violet-50' },
+    { value: 'cream', label: 'Cream', color: '#fffbeb' },
+    { value: 'sage', label: 'Sage', color: '#f0fdf4' },
+    { value: 'slate', label: 'Slate', color: '#f1f5f9' },
+    { value: 'lavender', label: 'Lavender', color: '#f5f3ff' },
 ];
 
 type NominationBook = {
@@ -22,17 +22,18 @@ export default function QuestionBuilderPage() {
     const printRef = useRef<HTMLDivElement>(null);
     const [questions, setQuestions] = useState<string[]>(['']);
     const [backgroundType, setBackgroundType] = useState<
-        'preset' | 'gradient' | 'upload'
+        'preset' | 'gradient' | 'upload' | 'url'
     >('preset');
     const [presetBackground, setPresetBackground] = useState('cream');
     const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(
         null,
     );
-    const [bookclubTitle, setBookclubTitle] = useState('Book Club');
+    const [backgroundImageUrlInput, setBackgroundImageUrlInput] = useState('');
+    const [bookclubTitle, setBookclubTitle] = useState('Elwood Book Club');
     const [bookTitle, setBookTitle] = useState('');
     const [bookAuthor, setBookAuthor] = useState('');
     const [additionalText, setAdditionalText] = useState('');
-    const [qrUrl, setQrUrl] = useState('');
+    const [qrUrl, setQrUrl] = useState('https://www.google.com/');
     const [textColor, setTextColor] = useState<'white' | 'black'>('black');
 
     const { data: nominationData } = useQuery({
@@ -70,28 +71,45 @@ export default function QuestionBuilderPage() {
         });
     };
 
-    const handlePrint = () => {
-        window.print();
-    };
+    const [isPreviewFullScreen, setIsPreviewFullScreen] = useState(false);
+    const [fullscreenControlsVisible, setFullscreenControlsVisible] =
+        useState(true);
+
+    useEffect(() => {
+        if (!isPreviewFullScreen) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setIsPreviewFullScreen(false);
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [isPreviewFullScreen]);
 
     const backgroundStyle =
         backgroundType === 'upload' && backgroundImageUrl
             ? {
                   backgroundImage: `url(${backgroundImageUrl})`,
-                  backgroundSize: 'cover' as const,
+                  backgroundSize: 'auto 100%' as const,
+                  backgroundPosition: 'center',
               }
-            : backgroundType === 'gradient'
+            : backgroundType === 'url' && backgroundImageUrlInput.trim()
               ? {
-                    background:
-                        'linear-gradient(135deg, #fef3c7 0%, #ddd6fe 100%)',
+                    backgroundImage: `url(${backgroundImageUrlInput.trim()})`,
+                    backgroundSize: 'auto 100%' as const,
+                    backgroundPosition: 'center',
                 }
-              : {};
-
-    const presetClass =
-        backgroundType === 'preset'
-            ? (PRESET_BACKGROUNDS.find((p) => p.value === presetBackground)
-                  ?.class ?? 'bg-amber-50')
-            : '';
+              : backgroundType === 'gradient'
+                ? {
+                      background:
+                          'linear-gradient(135deg, #fef3c7 0%, #ddd6fe 100%)',
+                  }
+                : backgroundType === 'preset'
+                  ? {
+                        backgroundColor:
+                            PRESET_BACKGROUNDS.find(
+                                (p) => p.value === presetBackground,
+                            )?.color ?? '#fffbeb',
+                    }
+                  : {};
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
@@ -110,14 +128,14 @@ export default function QuestionBuilderPage() {
                 <section className="flex-1 space-y-6 print:hidden">
                     <div>
                         <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 block mb-2">
-                            Bookclub title
+                            Main heading
                         </label>
                         <input
                             type="text"
                             value={bookclubTitle}
                             onChange={(e) => setBookclubTitle(e.target.value)}
                             className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
-                            placeholder="e.g. Book Club"
+                            placeholder="e.g. Elwood Book Club"
                         />
                     </div>
 
@@ -184,7 +202,7 @@ export default function QuestionBuilderPage() {
                             onClick={addQuestion}
                             className="rounded-lg border border-dashed border-zinc-400 dark:border-zinc-600 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         >
-                            Add question
+                            Add another question
                         </button>
                     </div>
 
@@ -218,27 +236,25 @@ export default function QuestionBuilderPage() {
                             Background
                         </span>
                         <div className="flex flex-wrap gap-3 mb-2">
-                            {(['preset', 'gradient', 'upload'] as const).map(
-                                (type) => (
-                                    <label
-                                        key={type}
-                                        className="flex items-center gap-2 cursor-pointer"
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="bg"
-                                            checked={backgroundType === type}
-                                            onChange={() =>
-                                                setBackgroundType(type)
-                                            }
-                                            className="rounded"
-                                        />
-                                        <span className="text-sm capitalize">
-                                            {type}
-                                        </span>
-                                    </label>
-                                ),
-                            )}
+                            {(
+                                ['preset', 'gradient', 'upload', 'url'] as const
+                            ).map((type) => (
+                                <label
+                                    key={type}
+                                    className="flex items-center gap-2 cursor-pointer"
+                                >
+                                    <input
+                                        type="radio"
+                                        name="bg"
+                                        checked={backgroundType === type}
+                                        onChange={() => setBackgroundType(type)}
+                                        className="rounded"
+                                    />
+                                    <span className="text-sm capitalize">
+                                        {type === 'url' ? 'Image URL' : type}
+                                    </span>
+                                </label>
+                            ))}
                         </div>
                         {backgroundType === 'preset' && (
                             <select
@@ -261,6 +277,17 @@ export default function QuestionBuilderPage() {
                                 accept="image/*"
                                 onChange={handleBackgroundUpload}
                                 className="block text-sm text-zinc-600 dark:text-zinc-400 file:mr-2 file:rounded file:border file:px-3 file:py-1.5 file:text-sm"
+                            />
+                        )}
+                        {backgroundType === 'url' && (
+                            <input
+                                type="url"
+                                value={backgroundImageUrlInput}
+                                onChange={(e) =>
+                                    setBackgroundImageUrlInput(e.target.value)
+                                }
+                                className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
+                                placeholder="https://..."
                             />
                         )}
                     </div>
@@ -295,10 +322,10 @@ export default function QuestionBuilderPage() {
 
                     <button
                         type="button"
-                        onClick={handlePrint}
+                        onClick={() => setIsPreviewFullScreen(true)}
                         className="rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300"
                     >
-                        Print
+                        Preview in full screen to screenshot
                     </button>
                 </section>
 
@@ -310,7 +337,7 @@ export default function QuestionBuilderPage() {
                     <div
                         ref={printRef}
                         data-print-area
-                        className={`print-area rounded-xl overflow-hidden shadow-lg print:shadow-none print:rounded-none print:min-h-[100vh] print:absolute print:inset-0 print:w-full print:max-w-none ${presetClass}`}
+                        className="print-area rounded-xl overflow-hidden shadow-lg print:shadow-none print:rounded-none print:min-h-[100vh] print:absolute print:inset-0 print:w-full print:max-w-none"
                         style={{
                             ...backgroundStyle,
                             minHeight: '420px',
@@ -337,7 +364,7 @@ export default function QuestionBuilderPage() {
                                 }}
                             >
                                 <h2 className="text-lg font-semibold mb-1">
-                                    {bookclubTitle || 'Book Club'}
+                                    {bookclubTitle || 'Elwood Book Club'}
                                 </h2>
                                 <p className="text-sm font-medium opacity-90">
                                     {bookTitle || 'Book title'} by{' '}
@@ -377,6 +404,122 @@ export default function QuestionBuilderPage() {
                     </div>
                 </section>
             </div>
+
+            {/* Full-screen preview for screenshot */}
+            {isPreviewFullScreen && (
+                <div
+                    className="fixed inset-0 z-50 flex flex-col bg-zinc-900"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Preview full screen"
+                    onClick={() => setFullscreenControlsVisible((v) => !v)}
+                >
+                    <div
+                        className={`absolute inset-0 z-10 flex flex-col justify-between transition-opacity duration-500 ${
+                            fullscreenControlsVisible
+                                ? 'opacity-100 pointer-events-none'
+                                : 'opacity-0 pointer-events-none'
+                        }`}
+                        aria-hidden={!fullscreenControlsVisible}
+                    >
+                        <div
+                            className={`flex justify-end p-4 ${
+                                fullscreenControlsVisible
+                                    ? 'pointer-events-auto'
+                                    : 'pointer-events-none'
+                            }`}
+                        >
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsPreviewFullScreen(false);
+                                }}
+                                className="rounded-lg bg-zinc-700/90 text-white px-3 py-1.5 text-sm font-medium hover:bg-zinc-600"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <p className="text-center pb-4 text-sm text-white/80 pointer-events-none">
+                            Click/tap screen to show or hide close button
+                        </p>
+                    </div>
+                    {/* When button is hidden, this overlay captures tap to show it again */}
+                    <div
+                        className={`absolute inset-0 z-[9] ${
+                            fullscreenControlsVisible
+                                ? 'pointer-events-none'
+                                : 'pointer-events-auto'
+                        }`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setFullscreenControlsVisible(true);
+                        }}
+                    />
+                    <div
+                        className="flex-1 w-full min-h-screen flex flex-col"
+                        style={{
+                            ...backgroundStyle,
+                        }}
+                    >
+                        <div
+                            className="flex-1 p-6 flex flex-col justify-between min-h-screen"
+                            style={{
+                                backgroundColor: 'rgba(255,255,255,0.5)',
+                            }}
+                        >
+                            <div
+                                className="flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full"
+                                style={{
+                                    backgroundColor:
+                                        textColor === 'white'
+                                            ? 'rgba(0,0,0,0.5)'
+                                            : 'rgba(255,255,255,0.5)',
+                                    color:
+                                        textColor === 'white' ? '#fff' : '#111',
+                                    padding: '1.5rem 2rem',
+                                    borderRadius: '0.5rem',
+                                }}
+                            >
+                                <h2 className="text-xl font-semibold mb-1">
+                                    {bookclubTitle || 'Elwood Book Club'}
+                                </h2>
+                                <p className="text-base font-medium opacity-90">
+                                    {bookTitle || 'Book title'} by{' '}
+                                    {bookAuthor || 'Author'}
+                                </p>
+                                {additionalText && (
+                                    <p className="text-base mt-2 opacity-90">
+                                        {additionalText}
+                                    </p>
+                                )}
+                                <ul className="mt-6 space-y-2 list-disc list-inside text-base opacity-90">
+                                    {questions.filter(Boolean).map((q, i) => (
+                                        <li key={i}>{q}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                            {qrUrl && (
+                                <div className="flex justify-end pb-6">
+                                    <div
+                                        className="p-2 rounded-lg"
+                                        style={{
+                                            backgroundColor:
+                                                'rgba(255,255,255,0.9)',
+                                        }}
+                                    >
+                                        <QRCodeSVG
+                                            value={qrUrl}
+                                            size={120}
+                                            level="M"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Print: show only the preview card */}
             <style
