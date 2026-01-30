@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type BookSearchResult = {
     externalId: string;
@@ -52,6 +53,8 @@ export default function VotingBuilderPage() {
     const [meetingDate, setMeetingDate] = useState(defaultMeeting);
     const [closeVoteDate, setCloseVoteDate] = useState(getTomorrowDate);
     const [searchResults, setSearchResults] = useState<BookSearchResult[]>([]);
+    const [searchPage, setSearchPage] = useState(1);
+    const [totalSearchItems, setTotalSearchItems] = useState(0);
     const [selected, setSelected] = useState<BookSearchResult[]>([]);
     const [searchError, setSearchError] = useState<string | null>(null);
     const [createMessage, setCreateMessage] = useState<{
@@ -61,21 +64,36 @@ export default function VotingBuilderPage() {
     const [showSuccessLightbox, setShowSuccessLightbox] = useState(false);
     const queryClient = useQueryClient();
 
+    const PAGE_SIZE = 10;
+
     const searchMutation = useMutation({
-        mutationFn: async (q: string) => {
+        mutationFn: async ({
+            query: q,
+            page = 1,
+        }: {
+            query: string;
+            page?: number;
+        }) => {
             const res = await fetch('/api/books/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: q }),
+                body: JSON.stringify({ query: q, page }),
             });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data.error ?? 'Search failed');
             }
-            return res.json() as Promise<{ results: BookSearchResult[] }>;
+            return res.json() as Promise<{
+                results: BookSearchResult[];
+                totalItems: number;
+                page: number;
+                pageSize: number;
+            }>;
         },
         onSuccess: (data) => {
             setSearchResults(data.results);
+            setSearchPage(data.page);
+            setTotalSearchItems(data.totalItems);
             setSearchError(null);
         },
         onError: (err) => {
@@ -135,8 +153,15 @@ export default function VotingBuilderPage() {
         e.preventDefault();
         const trimmed = query.trim();
         if (!trimmed) return;
-        searchMutation.mutate(trimmed);
+        searchMutation.mutate({ query: trimmed, page: 1 });
     };
+
+    const totalSearchPages = Math.max(
+        1,
+        Math.ceil(totalSearchItems / PAGE_SIZE),
+    );
+    const canPrev = searchResults.length > 0 && searchPage > 1;
+    const canNext = searchResults.length > 0 && searchPage < totalSearchPages;
 
     const addSelected = (book: BookSearchResult) => {
         if (selected.length >= MAX_SELECTED) return;
@@ -168,6 +193,12 @@ export default function VotingBuilderPage() {
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
             <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-4">
+                <Link
+                    href="/"
+                    className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 mb-2"
+                >
+                    ← Back to home
+                </Link>
                 <h1 className="text-xl font-semibold">Voting page builder</h1>
                 <p className="text-sm text-zinc-500 mt-1">
                     Search books, select up to {MAX_SELECTED}, then create the
@@ -280,6 +311,44 @@ export default function VotingBuilderPage() {
                                 );
                             })}
                         </ul>
+                        {totalSearchItems > 0 && (
+                            <div className="mt-3 flex items-center justify-between gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        searchMutation.mutate({
+                                            query: query.trim(),
+                                            page: searchPage - 1,
+                                        })
+                                    }
+                                    disabled={
+                                        !canPrev || searchMutation.isPending
+                                    }
+                                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Previous
+                                </button>
+                                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                                    Page {searchPage} of {totalSearchPages} (
+                                    {totalSearchItems} results)
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        searchMutation.mutate({
+                                            query: query.trim(),
+                                            page: searchPage + 1,
+                                        })
+                                    }
+                                    disabled={
+                                        !canNext || searchMutation.isPending
+                                    }
+                                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
                     </section>
                 )}
 
@@ -308,13 +377,22 @@ export default function VotingBuilderPage() {
                         >
                             Vote created!
                         </p>
-                        <button
-                            type="button"
-                            onClick={() => setShowSuccessLightbox(false)}
-                            className="mt-4 rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300"
-                        >
-                            Close
-                        </button>
+                        <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
+                            <button
+                                type="button"
+                                onClick={() => setShowSuccessLightbox(false)}
+                                className="rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300"
+                            >
+                                Close
+                            </button>
+                            <Link
+                                href="/"
+                                onClick={() => setShowSuccessLightbox(false)}
+                                className="rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-center"
+                            >
+                                Return to home
+                            </Link>
+                        </div>
                     </div>
                 </div>
             )}

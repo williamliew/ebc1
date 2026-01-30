@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { env } from '@/lib/env';
+import { cleanBlurb } from '@/lib/google-books';
+
+const PAGE_SIZE = 10;
 
 const bodySchema = z.object({
     query: z.string().min(1).max(200),
+    page: z.number().int().min(1).optional().default(1),
 });
 
 export type BookSearchResult = {
@@ -33,7 +37,9 @@ export async function POST(request: Request) {
     }
 
     const q = encodeURIComponent(parsed.data.query);
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&key=${apiKey}&maxResults=10`;
+    const page = parsed.data.page;
+    const startIndex = (page - 1) * PAGE_SIZE;
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&key=${apiKey}&maxResults=${PAGE_SIZE}&startIndex=${startIndex}`;
 
     try {
         const res = await fetch(url);
@@ -46,6 +52,7 @@ export async function POST(request: Request) {
             );
         }
         const data = (await res.json()) as {
+            totalItems?: number;
             items?: Array<{
                 id: string;
                 volumeInfo?: {
@@ -57,27 +64,46 @@ export async function POST(request: Request) {
                         smallThumbnail?: string;
                     };
                     infoLink?: string;
+                    industryIdentifiers?: Array<{
+                        type?: string;
+                        identifier?: string;
+                    }>;
                 };
             }>;
         };
 
-        const items = data.items ?? [];
-        const mapped: BookSearchResult[] = items.slice(0, 10).map((item) => {
-            const vi = item.volumeInfo ?? {};
-            const authors = vi.authors ?? [];
-            const cover =
-                vi.imageLinks?.thumbnail ??
-                vi.imageLinks?.smallThumbnail ??
-                null;
-            return {
-                externalId: item.id,
-                title: vi.title ?? 'Unknown title',
-                author: authors.join(', ') || 'Unknown author',
-                coverUrl: cover ?? null,
-                blurb: vi.description ?? null,
-                link: vi.infoLink ?? null,
-            };
+        const totalItems = data.totalItems ?? 0;
+        const rawItems = data.items ?? [];
+
+        const hasIsbn13 = (item: (typeof rawItems)[0]) =>
+            item.volumeInfo?.industryIdentifiers?.some(
+                (id) => id.type === 'ISBN_13',
+            ) ?? false;
+
+        const items = [...rawItems].sort((a, b) => {
+            const aHas = hasIsbn13(a) ? 1 : 0;
+            const bHas = hasIsbn13(b) ? 1 : 0;
+            return bHas - aHas;
         });
+
+        const mapped: BookSearchResult[] = items
+            .slice(0, PAGE_SIZE)
+            .map((item) => {
+                const vi = item.volumeInfo ?? {};
+                const authors = vi.authors ?? [];
+                const cover =
+                    vi.imageLinks?.thumbnail ??
+                    vi.imageLinks?.smallThumbnail ??
+                    null;
+                return {
+                    externalId: item.id,
+                    title: vi.title ?? 'Unknown title',
+                    author: authors.join(', ') || 'Unknown author',
+                    coverUrl: cover ?? null,
+                    blurb: cleanBlurb(vi.description),
+                    link: vi.infoLink ?? null,
+                };
+            });
 
         // Deduplicate by same title + author (normalised)
         const seen = new Set<string>();
@@ -89,7 +115,12 @@ export async function POST(request: Request) {
             results.push(book);
         }
 
-        return NextResponse.json({ results });
+        return NextResponse.json({
+            results,
+            totalItems,
+            page,
+            pageSize: PAGE_SIZE,
+        });
     } catch (err) {
         console.error('Book search error:', err);
         return NextResponse.json(

@@ -1,15 +1,24 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { getNextBook } from '@/lib/nextbook';
+import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 
 export default async function NextBookPage() {
     const { winner, meetingDate } = await getNextBook();
 
     if (!winner) {
         return (
-            <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col items-center justify-center p-6">
-                <main className="max-w-md text-center">
-                    <h1 className="text-2xl font-semibold mb-2">Next book</h1>
+            <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+                <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-4">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 mb-2"
+                    >
+                        ← Back to home
+                    </Link>
+                    <h1 className="text-xl font-semibold">Next book</h1>
+                </header>
+                <main className="max-w-md mx-auto text-center p-6">
                     <p className="text-zinc-600 dark:text-zinc-400">
                         No winner has been selected yet. Check back after the
                         next vote.
@@ -22,6 +31,12 @@ export default async function NextBookPage() {
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
             <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-4">
+                <Link
+                    href="/"
+                    className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 mb-2"
+                >
+                    ← Back to home
+                </Link>
                 <h1 className="text-xl font-semibold">Next book</h1>
                 {meetingDate && (
                     <p className="text-sm text-zinc-500 mt-1">
@@ -56,9 +71,12 @@ export default async function NextBookPage() {
                                 by {winner.author}
                             </p>
                             {winner.blurb && (
-                                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-3 line-clamp-4">
-                                    {winner.blurb}
-                                </p>
+                                <div
+                                    className="text-sm text-zinc-600 dark:text-zinc-400 mt-3 line-clamp-4 [&_p]:my-1 [&_a]:underline [&_a]:text-zinc-700 dark:[&_a]:text-zinc-300"
+                                    dangerouslySetInnerHTML={{
+                                        __html: sanitiseBlurb(winner.blurb),
+                                    }}
+                                />
                             )}
                             {winner.link && (
                                 <a

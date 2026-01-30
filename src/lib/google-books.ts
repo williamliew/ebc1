@@ -10,6 +10,45 @@ export type BookDetails = {
     link: string | null;
 };
 
+/** Max length for stored blurb; Google often appends review content after the main description. */
+const BLURB_MAX_LENGTH = 800;
+
+/**
+ * Keep only the main book description and drop review-style content.
+ * Google Books volumeInfo.description can include editorial/customer reviews;
+ * we truncate and cut at common review boundaries so stored blurbs stay description-only.
+ */
+export function cleanBlurb(raw: string | null | undefined): string | null {
+    if (raw == null || typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+
+    const reviewMarkers = [
+        /\n\s*review\s*[:\-]/i,
+        /\n\s*editorial review/i,
+        /\n\s*customer review/i,
+        /\n\s*from the publisher\s*[:\-]/i,
+        /\n\s*\*\*\*/,
+        /\n\s*—\s*review/i,
+    ];
+
+    let cut = trimmed;
+    for (const re of reviewMarkers) {
+        const idx = cut.search(re);
+        if (idx !== -1) {
+            cut = cut.slice(0, idx).trim();
+            break;
+        }
+    }
+
+    if (cut.length <= BLURB_MAX_LENGTH) return cut;
+    const truncated = cut.slice(0, BLURB_MAX_LENGTH);
+    const lastSpace = truncated.lastIndexOf(' ');
+    const end =
+        lastSpace > BLURB_MAX_LENGTH * 0.8 ? lastSpace : BLURB_MAX_LENGTH;
+    return truncated.slice(0, end).trim() + '…';
+}
+
 async function fetchBookFromGoogle(
     volumeId: string,
 ): Promise<BookDetails | null> {
@@ -41,7 +80,7 @@ async function fetchBookFromGoogle(
         title: vi.title ?? 'Unknown title',
         author: authors.join(', ') || 'Unknown author',
         coverUrl: cover ?? null,
-        blurb: vi.description ?? null,
+        blurb: cleanBlurb(vi.description),
         link: vi.infoLink ?? null,
     };
 }

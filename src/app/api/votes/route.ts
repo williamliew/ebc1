@@ -71,31 +71,31 @@ export async function GET(request: Request) {
             .from(voteRounds)
             .orderBy(desc(voteRounds.meetingDate));
 
-        const now = new Date();
-        const openRound = allRounds.find(
-            (r) => !r.closeVoteAt || new Date(r.closeVoteAt) > now,
-        );
-
-        if (!openRound) {
+        const latestRound = allRounds[0] ?? null;
+        if (!latestRound) {
             return NextResponse.json({
                 round: null,
                 books: [],
             });
         }
 
+        const now = new Date();
+        const isOpen =
+            !latestRound.closeVoteAt || new Date(latestRound.closeVoteAt) > now;
+
         const books = await db
             .select()
             .from(voteRoundBooks)
-            .where(eq(voteRoundBooks.voteRoundId, openRound.id));
+            .where(eq(voteRoundBooks.voteRoundId, latestRound.id));
 
         return NextResponse.json({
             round: {
-                id: openRound.id,
-                meetingDate: openRound.meetingDate,
-                closeVoteAt: openRound.closeVoteAt?.toISOString() ?? null,
-                selectedBookIds: openRound.selectedBookIds,
-                winnerExternalId: openRound.winnerExternalId ?? null,
-                isOpen: true,
+                id: latestRound.id,
+                meetingDate: latestRound.meetingDate,
+                closeVoteAt: latestRound.closeVoteAt?.toISOString() ?? null,
+                selectedBookIds: latestRound.selectedBookIds,
+                winnerExternalId: latestRound.winnerExternalId ?? null,
+                isOpen,
             },
             books,
         });
