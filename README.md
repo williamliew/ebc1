@@ -1,5 +1,16 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Elwood Book Club
+
+### Vote access password
+
+Nomination rounds can optionally be protected with a **vote access password** to limit access to the vote page and reduce bot spam.
+
+- **Admin:** When creating a round in the [Voting page builder](/admin/voting-builder), use the optional **Vote access password** field in the footer. Leave it blank for no password (anyone can view and vote); set a password to require it before viewing the round’s books and voting.
+- **Voters:** On [/vote](/vote), if the current round has a password, a form is shown to enter the access password. After entering the correct password, an HttpOnly cookie is set for that round and the books/vote UI are shown. The cookie is scoped per round.
+
+The password is stored in the database and checked server-side; the cookie is signed so it cannot be forged. No password is required for rounds created without one.
+
 ## Getting Started
 
 First, run the development server:

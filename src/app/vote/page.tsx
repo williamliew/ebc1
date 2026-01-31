@@ -30,6 +30,16 @@ type VoteRound = {
 const SWIPE_THRESHOLD = 50;
 const SWIPE_TRANSITION_MS = 280;
 
+function formatMeetingDate(isoDate: string): string {
+    const date = new Date(isoDate + 'T12:00:00');
+    return new Intl.DateTimeFormat('en-GB', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    }).format(date);
+}
+
 export default function VotePage() {
     const [round, setRound] = useState<VoteRound | null>(null);
     const [books, setBooks] = useState<VoteBook[]>([]);
@@ -264,7 +274,8 @@ export default function VotePage() {
                     <h1 className="text-xl font-semibold">Vote</h1>
                     {round.meetingDate && (
                         <p className="text-sm text-zinc-500 mt-1">
-                            Meeting: {round.meetingDate}
+                            Book club meet:{' '}
+                            {formatMeetingDate(round.meetingDate)}
                         </p>
                     )}
                 </header>
@@ -361,7 +372,8 @@ export default function VotePage() {
                     </p>
                     {round.meetingDate && (
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                            Book club meeting: {round.meetingDate}
+                            Book club meet:{' '}
+                            {formatMeetingDate(round.meetingDate)}
                         </p>
                     )}
                 </main>
@@ -384,7 +396,7 @@ export default function VotePage() {
                 <h1 className="text-xl font-semibold">Vote</h1>
                 {round.meetingDate && (
                     <p className="text-sm text-zinc-500 mt-1">
-                        Meeting: {round.meetingDate}
+                        Book club meet: {formatMeetingDate(round.meetingDate)}
                     </p>
                 )}
             </header>
