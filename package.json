@@ -12,6 +12,10 @@
     },
     "dependencies": {
         "@tanstack/react-query": "^5",
+        "@tiptap/extension-placeholder": "^3.18.0",
+        "@tiptap/pm": "^3.18.0",
+        "@tiptap/react": "^3.18.0",
+        "@tiptap/starter-kit": "^3.18.0",
         "drizzle-orm": "^0.36",
         "next": "16.1.6",
         "postgres": "^3",

@@ -24,3 +24,71 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Headless Tiptap editor: minimal ProseMirror styles */
+.headless-editor-content.ProseMirror {
+  min-height: inherit;
+}
+.headless-editor-content.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+@media (prefers-color-scheme: dark) {
+  .headless-editor-content.ProseMirror p.is-editor-empty:first-child::before {
+    color: #71717a;
+  }
+}
+
+/* List styling inside editor (site CSS / Tailwind preflight resets lists) */
+.headless-editor-content.ProseMirror ul,
+.headless-editor-content.ProseMirror ol {
+  list-style-position: outside;
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+.headless-editor-content.ProseMirror ul {
+  list-style-type: disc;
+}
+.headless-editor-content.ProseMirror ol {
+  list-style-type: decimal;
+}
+.headless-editor-content.ProseMirror li {
+  display: list-item;
+  margin: 0.25em 0;
+}
+.headless-editor-content.ProseMirror ul ul,
+.headless-editor-content.ProseMirror ol ul {
+  list-style-type: circle;
+}
+.headless-editor-content.ProseMirror ul ul ul,
+.headless-editor-content.ProseMirror ol ol ul,
+.headless-editor-content.ProseMirror ul ol ul,
+.headless-editor-content.ProseMirror ol ul ul {
+  list-style-type: square;
+}
+
+/* Additional text preview (question builder): list/paragraph styling without arbitrary variants */
+.additional-text-preview p {
+  margin-bottom: 0.25rem;
+}
+.additional-text-preview p:empty,
+.additional-text-preview p:has(br:only-child) {
+  min-height: 1em;
+  margin-bottom: 0.5em;
+}
+.additional-text-preview ul {
+  list-style-type: disc;
+  /* list-style-position: inside; */
+  margin: 0.25em 0 0.25em 1.5em;
+}
+.additional-text-preview ol {
+  list-style-type: decimal;
+  /* list-style-position: inside; */
+  margin: 0.25em 0 0.25em 1.5em;
+}
+.additional-text-preview li {
+  display: list-item;
+}

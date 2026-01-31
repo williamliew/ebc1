@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { HeadlessEditor } from '@/components/headless-editor';
+import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 
 const QRCodeSVG = dynamic(
     () => import('qrcode.react').then((mod) => ({ default: mod.QRCodeSVG })),
@@ -56,6 +58,9 @@ export default function QuestionBuilderPage() {
 
     const books = nominationData?.books ?? [];
     const latestBook = books[0];
+
+    const hasAdditionalText =
+        additionalText && additionalText.replace(/<[^>]+>/g, '').trim() !== '';
 
     const addQuestion = () => setQuestions((q) => [...q, '']);
     const removeQuestion = (index: number) =>
@@ -230,11 +235,12 @@ export default function QuestionBuilderPage() {
                         <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 block mb-2">
                             Additional text (optional)
                         </label>
-                        <textarea
-                            value={additionalText}
-                            onChange={(e) => setAdditionalText(e.target.value)}
-                            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm min-h-[80px]"
-                            placeholder="Extra text for the spread"
+                        <HeadlessEditor
+                            initialContent=""
+                            onUpdate={setAdditionalText}
+                            placeholder="Extra text for the spread (supports bold, italic, lists)"
+                            className="w-full"
+                            minHeight="80px"
                         />
                     </div>
 
@@ -390,10 +396,15 @@ export default function QuestionBuilderPage() {
                                     {bookTitle || 'Book title'} by{' '}
                                     {bookAuthor || 'Author'}
                                 </p>
-                                {additionalText && (
-                                    <p className="text-sm mt-2 opacity-90">
-                                        {additionalText}
-                                    </p>
+                                {hasAdditionalText && (
+                                    <div
+                                        className="additional-text-preview text-sm mt-2 opacity-90"
+                                        dangerouslySetInnerHTML={{
+                                            __html: sanitiseBlurb(
+                                                additionalText,
+                                            ),
+                                        }}
+                                    />
                                 )}
                                 <ul className="mt-4 space-y-2 list-disc list-inside text-sm opacity-90">
                                     {questions.filter(Boolean).map((q, i) => (
@@ -508,10 +519,15 @@ export default function QuestionBuilderPage() {
                                     {bookTitle || 'Book title'} by{' '}
                                     {bookAuthor || 'Author'}
                                 </p>
-                                {additionalText && (
-                                    <p className="text-base mt-2 opacity-90">
-                                        {additionalText}
-                                    </p>
+                                {hasAdditionalText && (
+                                    <div
+                                        className="additional-text-preview text-base mt-2 opacity-90"
+                                        dangerouslySetInnerHTML={{
+                                            __html: sanitiseBlurb(
+                                                additionalText,
+                                            ),
+                                        }}
+                                    />
                                 )}
                                 <ul className="mt-6 space-y-2 list-disc list-inside text-base opacity-90">
                                     {questions.filter(Boolean).map((q, i) => (
