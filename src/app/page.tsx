@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { isAdminAuthenticated } from '@/lib/admin-auth-server';
+import { EbcLogo } from '@/components/ebc-logo';
 
 export default async function Home() {
     const showAdmin = await isAdminAuthenticated();
@@ -7,7 +8,9 @@ export default async function Home() {
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6 text-zinc-900 dark:text-zinc-100">
             <main className="max-w-md w-full text-center space-y-6">
-                <h1 className="text-2xl font-semibold">Elwood Book Club</h1>
+                <div className="overflow-hidden w-[300px] h-[300px] inline-block text-inherit">
+                    <EbcLogo className="block w-full h-full origin-center fill-current scale-[1.5]" />
+                </div>
 
                 {showAdmin && (
                     <>
@@ -33,6 +36,10 @@ export default async function Home() {
                         </p>
                     </>
                 )}
+
+                <h1 className="text-2xl font-semibold">
+                    Welcome to Elwood Book Club!
+                </h1>
 
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
                     <Link

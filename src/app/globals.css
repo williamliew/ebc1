@@ -92,3 +92,78 @@ body {
 .additional-text-preview li {
   display: list-item;
 }
+
+/* Site logo */
+.ebc-logo {
+  width: 165px;
+  height: 165px;
+  border-radius: 100px;
+  margin-top: -100px;
+}
+
+.first-wave {
+  animation: first-wave 3.5s ease-in;
+  transition: .2s fill ease;
+}
+
+.second-wave, .forth-wave {
+  animation: move-right 2.5s ease-in;
+  transition: .2s fill ease;
+}
+
+.third-wave, .fifth-wave, .sixth-wave {
+  animation: move-left 2.5s ease-in;
+  transition: .2s fill ease;
+}
+
+@keyframes first-wave {
+  0% {
+    fill: none;
+    transform: translate3d(-100px, 60px, 0);
+ }
+  60% {
+    fill: transparent;
+    transform: translate3d(-15px, 10px, 0);
+  }
+  78% {
+    transform: translate3d(-10px, 5px, 0);
+  }
+ 100% {
+   stroke-dashoffset: 0;
+   transform: translate3d(0, 0, 0);
+ }
+}
+
+@keyframes move-right {
+   0% {
+     fill: none;
+     transform: translate3d(-20px, 0, 0);
+  }
+   60% {
+     transform: translate3d(-15px, 0, 0);
+   }
+   78% {
+     fill: transparent;
+     transform: translate3d(-10px, 0, 0);
+   }
+   100% {
+     transform: translate3d(0, 0, 0);
+   }
+}
+
+@keyframes move-left {
+   0% {
+     fill: none;
+     transform: translate3d(-25px, 0, 0);
+  }
+   60% {
+     transform: translate3d(-20px, 0, 0);
+     fill: transparent;
+   }
+   78% {
+     transform: translate3d(-10px, 0, 0);
+   }
+   100% {
+     transform: translate3d(0, 0, 0);
+   }
+}

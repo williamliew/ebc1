@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { voteRounds, voteRoundBooks } from '@/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { getBooksDetails } from '@/lib/google-books';
+import { getBookCoverUrl } from '@/lib/book-cover';
 import { requireAdmin } from '@/lib/admin-auth';
 
 const meetingDateSchema = z
@@ -65,14 +66,34 @@ export async function POST(request: Request) {
             );
         }
 
-        const bookRows = selectedBookIds.map((externalId) => {
+        const coverUrls = await Promise.all(
+            selectedBookIds.map(async (externalId) => {
+                const d = details.find((b) => b.externalId === externalId);
+                const title = d?.title ?? 'Unknown title';
+                const author = d?.author ?? 'Unknown author';
+                const longitood = await getBookCoverUrl(title, author);
+                const final = longitood ?? d?.coverUrl ?? null;
+                if (longitood) {
+                    console.log(
+                        `[nomination] Longitood cover used: ${title} / ${author}`,
+                    );
+                } else {
+                    console.log(
+                        `[nomination] Longitood no cover, using Google fallback: ${title} / ${author}`,
+                    );
+                }
+                return final;
+            }),
+        );
+
+        const bookRows = selectedBookIds.map((externalId, i) => {
             const d = details.find((b) => b.externalId === externalId);
             return {
                 voteRoundId: round.id,
                 externalId,
                 title: d?.title ?? 'Unknown title',
                 author: d?.author ?? 'Unknown author',
-                coverUrl: d?.coverUrl ?? null,
+                coverUrl: coverUrls[i] ?? null,
                 blurb: d?.blurb ?? null,
                 link: d?.link ?? null,
             };

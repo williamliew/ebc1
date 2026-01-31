@@ -324,13 +324,27 @@ export default function VotingBuilderPage() {
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() =>
-                                                alreadySelected
-                                                    ? removeSelected(
-                                                          book.externalId,
-                                                      )
-                                                    : addSelected(book)
-                                            }
+                                            onClick={() => {
+                                                if (alreadySelected) {
+                                                    removeSelected(
+                                                        book.externalId,
+                                                    );
+                                                    console.log(
+                                                        'Selected books (after remove):',
+                                                        selected.filter(
+                                                            (b) =>
+                                                                b.externalId !==
+                                                                book.externalId,
+                                                        ),
+                                                    );
+                                                } else {
+                                                    addSelected(book);
+                                                    console.log(
+                                                        'Selected books (after add):',
+                                                        [...selected, book],
+                                                    );
+                                                }
+                                            }}
                                             disabled={!alreadySelected && atMax}
                                             className="flex-shrink-0 rounded-md bg-zinc-700 dark:bg-zinc-300 text-white dark:text-zinc-900 px-3 py-1.5 text-xs font-medium hover:bg-zinc-600 dark:hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >

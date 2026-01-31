@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     const q = encodeURIComponent(parts.join(' '));
     const page = parsed.data.page;
     const startIndex = (page - 1) * PAGE_SIZE;
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&key=${apiKey}&maxResults=${PAGE_SIZE}&startIndex=${startIndex}&orderBy=relevance`;
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&key=${apiKey}&maxResults=${PAGE_SIZE}&startIndex=${startIndex}&orderBy=relevance&printType=books&langRestrict=en`;
 
     try {
         const res = await fetch(url);
