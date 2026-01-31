@@ -116,6 +116,16 @@ body {
   transition: .2s fill ease;
 }
 
+.elwood-text {
+  animation: fade 2.5s ease-in;
+  transition: .2s fill ease;
+}
+
+.bookclub-text {
+  animation: fade-delayed 2.5s ease-in;
+  transition: .2s fill ease;
+}
+
 @keyframes first-wave {
   0% {
     fill: none;
@@ -166,4 +176,31 @@ body {
    100% {
      transform: translate3d(0, 0, 0);
    }
+}
+
+@keyframes fade {
+  0% {
+    opacity: 0;
+ }
+  40% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-delayed {
+  0% {
+    opacity: 0;
+ }
+ 40% {
+    opacity: 0;
+  }
+  50% {
+    opacity: .5;
+  }
+  100% {
+    opacity: 1;
+  }
 }
