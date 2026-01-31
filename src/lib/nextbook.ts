@@ -1,7 +1,7 @@
 import { desc, eq, and } from 'drizzle-orm';
 import { db } from '@/db';
 import { voteRounds, voteRoundBooks } from '@/db/schema';
-import { getBooksDetails } from '@/lib/google-books';
+import { getOpenLibraryBooksDetails } from '@/lib/open-library';
 
 export async function getNextBook() {
     if (!db) return { winner: null, meetingDate: null };
@@ -24,7 +24,7 @@ export async function getNextBook() {
             return { winner: null, meetingDate };
         }
 
-        // Prefer cache (vote_round_books) to avoid Google Books API quota
+        // Prefer cache (vote_round_books) to avoid extra Open Library API calls
         const [cached] = await db
             .select()
             .from(voteRoundBooks)
@@ -49,7 +49,7 @@ export async function getNextBook() {
         }
 
         // Fallback if winner was set but not in cache (e.g. legacy data)
-        const details = await getBooksDetails([winnerId]);
+        const details = await getOpenLibraryBooksDetails([winnerId]);
         const winner = details[0] ?? null;
 
         return { winner, meetingDate };

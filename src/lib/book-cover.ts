@@ -3,7 +3,7 @@ const LONGITOOD_BASE = 'https://bookcover.longitood.com/bookcover';
 /**
  * Fetch a better-quality book cover from Longitood (Goodreads-style).
  * Returns the image URL on success, or null if not found or on error.
- * Use as fallback replacement for poor Google Books thumbnails.
+ * Use as fallback when Open Library has no cover image.
  */
 export async function getBookCoverUrl(
     title: string,

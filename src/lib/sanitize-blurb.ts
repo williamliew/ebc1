@@ -1,7 +1,7 @@
 import sanitizeHtml, { type IOptions } from 'sanitize-html';
 
 /**
- * Allowed tags and attributes for book blurbs (e.g. from Google Books).
+ * Allowed tags and attributes for book blurbs (e.g. from Open Library).
  * Keeps formatting (paragraphs, italics, links) and strips script/dangerous content.
  */
 const BLURB_OPTIONS: IOptions = {

@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { env } from '@/lib/env';
-import { cleanBlurb } from '@/lib/google-books';
 
 const PAGE_SIZE = 10;
 
@@ -20,6 +18,40 @@ export type BookSearchResult = {
     link: string | null;
 };
 
+const OPENLIBRARY_SEARCH = 'https://openlibrary.org/search.json';
+const OPENLIBRARY_BASE = 'https://openlibrary.org';
+const COVERS_BASE = 'https://covers.openlibrary.org/b/id';
+
+type SearchDoc = {
+    key: string;
+    title?: string;
+    author_name?: string[];
+    cover_i?: number;
+    cover_edition_key?: string;
+};
+
+type WorkJson = {
+    key: string;
+    title?: string;
+    description?: { type?: string; value?: string };
+    covers?: number[];
+};
+
+async function fetchWork(key: string): Promise<WorkJson | null> {
+    const url = `${OPENLIBRARY_BASE}${key}.json`;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return (await res.json()) as WorkJson;
+    } catch {
+        return null;
+    }
+}
+
+function coverUrlFromCoverId(coverId: number): string {
+    return `${COVERS_BASE}/${coverId}-L.jpg`;
+}
+
 export async function POST(request: Request) {
     const parsed = bodySchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -29,93 +61,83 @@ export async function POST(request: Request) {
         );
     }
 
-    const apiKey = env.GOOGLE_BOOKS_API_KEY;
-    if (!apiKey) {
-        return NextResponse.json(
-            { error: 'Google Books API key not configured' },
-            { status: 503 },
-        );
-    }
-
     const title = (parsed.data.title ?? '').trim();
     const author = (parsed.data.author ?? '').trim();
-    const parts: string[] = [];
-    if (title) parts.push(`intitle:${title}`);
-    if (author) parts.push(`inauthor:${author}`);
-    if (parts.length === 0) {
+    if (!title && !author) {
         return NextResponse.json(
             { error: 'Provide at least a title or author' },
             { status: 400 },
         );
     }
-    const q = encodeURIComponent(parts.join(' '));
+
+    const params = new URLSearchParams();
+    if (title) params.set('title', title);
+    if (author) params.set('author', author);
     const page = parsed.data.page;
-    const startIndex = (page - 1) * PAGE_SIZE;
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&key=${apiKey}&maxResults=${PAGE_SIZE}&startIndex=${startIndex}&orderBy=relevance&printType=books&langRestrict=en`;
+    const offset = (page - 1) * PAGE_SIZE;
+    params.set('limit', String(PAGE_SIZE));
+    params.set('offset', String(offset));
+
+    const url = `${OPENLIBRARY_SEARCH}?${params.toString()}`;
 
     try {
         const res = await fetch(url);
         if (!res.ok) {
             const text = await res.text();
-            console.error('Google Books API error:', res.status, text);
+            console.error('Open Library search error:', res.status, text);
             return NextResponse.json(
                 { error: 'Book search failed' },
                 { status: 502 },
             );
         }
+
         const data = (await res.json()) as {
-            totalItems?: number;
-            items?: Array<{
-                id: string;
-                volumeInfo?: {
-                    title?: string;
-                    authors?: string[];
-                    description?: string;
-                    imageLinks?: {
-                        thumbnail?: string;
-                        smallThumbnail?: string;
-                    };
-                    infoLink?: string;
-                    industryIdentifiers?: Array<{
-                        type?: string;
-                        identifier?: string;
-                    }>;
-                };
-            }>;
+            numFound?: number;
+            start?: number;
+            docs?: SearchDoc[];
         };
 
-        const totalItems = data.totalItems ?? 0;
-        const rawItems = data.items ?? [];
+        const totalItems = data.numFound ?? 0;
+        const docs = data.docs ?? [];
 
-        const hasIsbn13 = (item: (typeof rawItems)[0]) =>
-            item.volumeInfo?.industryIdentifiers?.some(
-                (id) => id.type === 'ISBN_13',
-            ) ?? false;
+        const results: BookSearchResult[] = await Promise.all(
+            docs.slice(0, PAGE_SIZE).map(async (doc) => {
+                const key = doc.key ?? '';
+                const titleText = doc.title ?? 'Unknown title';
+                const authorText =
+                    Array.isArray(doc.author_name) && doc.author_name.length > 0
+                        ? doc.author_name.join(', ')
+                        : 'Unknown author';
+                const link = key ? `${OPENLIBRARY_BASE}${key}` : null;
 
-        const items = [...rawItems].sort((a, b) => {
-            const aHas = hasIsbn13(a) ? 1 : 0;
-            const bHas = hasIsbn13(b) ? 1 : 0;
-            return bHas - aHas;
-        });
+                const work = await fetchWork(key);
+                let coverUrl: string | null = null;
+                let blurb: string | null = null;
 
-        const results: BookSearchResult[] = items
-            .slice(0, PAGE_SIZE)
-            .map((item) => {
-                const vi = item.volumeInfo ?? {};
-                const authors = vi.authors ?? [];
-                const cover =
-                    vi.imageLinks?.thumbnail ??
-                    vi.imageLinks?.smallThumbnail ??
-                    null;
+                if (work) {
+                    if (work.covers && work.covers.length > 0) {
+                        const lastCoverId = work.covers[work.covers.length - 1];
+                        coverUrl = coverUrlFromCoverId(lastCoverId);
+                    }
+                    if (typeof work.description?.value === 'string') {
+                        blurb = work.description.value.trim() || null;
+                    }
+                }
+
+                if (!coverUrl && doc.cover_i != null) {
+                    coverUrl = coverUrlFromCoverId(doc.cover_i);
+                }
+
                 return {
-                    externalId: item.id,
-                    title: vi.title ?? 'Unknown title',
-                    author: authors.join(', ') || 'Unknown author',
-                    coverUrl: cover ?? null,
-                    blurb: cleanBlurb(vi.description),
-                    link: vi.infoLink ?? null,
+                    externalId: key,
+                    title: titleText,
+                    author: authorText,
+                    coverUrl,
+                    blurb,
+                    link,
                 };
-            });
+            }),
+        );
 
         return NextResponse.json({
             results,

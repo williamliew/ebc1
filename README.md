@@ -11,6 +11,10 @@ Nomination rounds can optionally be protected with a **vote access password** to
 
 The password is stored in the database and checked server-side; the cookie is signed so it cannot be forged. No password is required for rounds created without one.
 
+### Book data (Open Library)
+
+Book search and details use the [Open Library API](https://openlibrary.org/developers/api). No API key is required. Search uses `https://openlibrary.org/search.json` (title/author params); work details and cover images come from `https://openlibrary.org/works/{key}.json` and `https://covers.openlibrary.org/b/id/{id}-L.jpg`. External book IDs stored in the app are Open Library work keys (e.g. `/works/OL19922194W`).
+
 ## Getting Started
 
 First, run the development server:

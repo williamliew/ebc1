@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { voteRounds, voteRoundBooks } from '@/db/schema';
 import { desc, eq } from 'drizzle-orm';
-import { getBooksDetails } from '@/lib/google-books';
+import { getOpenLibraryBooksDetails } from '@/lib/open-library';
 import { getBookCoverUrl } from '@/lib/book-cover';
 import { requireAdmin } from '@/lib/admin-auth';
 
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
     try {
         const selectedBookIds = parsed.data.books.map((b) => b.externalId);
-        const details = await getBooksDetails(selectedBookIds);
+        const details = await getOpenLibraryBooksDetails(selectedBookIds);
 
         const closeVoteAt = parsed.data.closeVoteDate
             ? new Date(parsed.data.closeVoteDate + 'T23:59:59Z')
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
                     );
                 } else {
                     console.log(
-                        `[nomination] Longitood no cover, using Google fallback: ${title} / ${author}`,
+                        `[nomination] Longitood no cover, using Open Library fallback: ${title} / ${author}`,
                     );
                 }
                 return final;
