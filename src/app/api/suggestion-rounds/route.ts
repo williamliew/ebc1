@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { suggestionRounds } from '@/db/schema';
 import { desc } from 'drizzle-orm';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const createBodySchema = z.object({
     label: z.string().max(64).optional(),
@@ -39,6 +40,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    const authError = await requireAdmin(request);
+    if (authError) return authError;
+
     if (!db) {
         return NextResponse.json(
             { error: 'Database not configured' },

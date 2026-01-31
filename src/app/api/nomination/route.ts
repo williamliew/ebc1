@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { voteRounds, voteRoundBooks } from '@/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { getBooksDetails } from '@/lib/google-books';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const meetingDateSchema = z
     .string()
@@ -19,6 +20,9 @@ const createBodySchema = z.object({
 });
 
 export async function POST(request: Request) {
+    const authError = await requireAdmin(request);
+    if (authError) return authError;
+
     if (!db) {
         return NextResponse.json(
             { error: 'Database not configured' },
