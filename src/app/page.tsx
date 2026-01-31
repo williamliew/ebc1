@@ -4,6 +4,7 @@ import { EbcLogo } from '@/components/ebc-logo';
 
 export default async function Home() {
     const showAdmin = await isAdminAuthenticated();
+    const isLocal = process.env.NODE_ENV === 'development';
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6 text-zinc-900 dark:text-zinc-100">
@@ -12,7 +13,7 @@ export default async function Home() {
                     <EbcLogo className="block w-full h-full origin-center fill-current scale-[1.5]" />
                 </div>
 
-                {showAdmin && (
+                {(showAdmin || isLocal) && (
                     <>
                         <p className="text-zinc-600 dark:text-zinc-400">
                             Admin pages
@@ -31,15 +32,18 @@ export default async function Home() {
                                 Question builder
                             </Link>
                         </div>
-                        <p className="text-zinc-600 dark:text-zinc-400">
-                            Member / Public pages
-                        </p>
                     </>
                 )}
 
                 <h1 className="text-2xl font-semibold">
                     Welcome to Elwood Book Club!
                 </h1>
+
+                {(showAdmin || isLocal) && (
+                    <p className="text-zinc-600 dark:text-zinc-400">
+                        Member / Public pages
+                    </p>
+                )}
 
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
                     <Link

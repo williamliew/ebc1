@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/db';
 import { voteRounds, votes, voteRoundBooks } from '@/db/schema';
-import { desc, eq, and } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
+import { verifyVoteAccessCookie } from '@/lib/vote-access';
 
 const keyHashSchema = z.string().min(1, 'Key hash required').max(256);
 
@@ -47,12 +48,23 @@ export async function GET(request: Request) {
                     { status: 404 },
                 );
             }
-            const books = await db
-                .select()
-                .from(voteRoundBooks)
-                .where(eq(voteRoundBooks.voteRoundId, round.id));
             const isOpen =
                 !round.closeVoteAt || new Date(round.closeVoteAt) > new Date();
+            const requiresPassword =
+                !!round.voteAccessPassword &&
+                round.voteAccessPassword.length > 0;
+            const cookie = request.headers.get('cookie');
+            const allowed =
+                !requiresPassword ||
+                (await verifyVoteAccessCookie(round.id, cookie));
+
+            const books = allowed
+                ? await db
+                      .select()
+                      .from(voteRoundBooks)
+                      .where(eq(voteRoundBooks.voteRoundId, round.id))
+                : [];
+
             return NextResponse.json({
                 round: {
                     id: round.id,
@@ -61,6 +73,7 @@ export async function GET(request: Request) {
                     selectedBookIds: round.selectedBookIds,
                     winnerExternalId: round.winnerExternalId ?? null,
                     isOpen,
+                    requiresPassword: requiresPassword && !allowed,
                 },
                 books,
             });
@@ -82,11 +95,20 @@ export async function GET(request: Request) {
         const now = new Date();
         const isOpen =
             !latestRound.closeVoteAt || new Date(latestRound.closeVoteAt) > now;
+        const requiresPassword =
+            !!latestRound.voteAccessPassword &&
+            latestRound.voteAccessPassword.length > 0;
+        const cookie = request.headers.get('cookie');
+        const allowed =
+            !requiresPassword ||
+            (await verifyVoteAccessCookie(latestRound.id, cookie));
 
-        const books = await db
-            .select()
-            .from(voteRoundBooks)
-            .where(eq(voteRoundBooks.voteRoundId, latestRound.id));
+        const books = allowed
+            ? await db
+                  .select()
+                  .from(voteRoundBooks)
+                  .where(eq(voteRoundBooks.voteRoundId, latestRound.id))
+            : [];
 
         return NextResponse.json({
             round: {
@@ -96,6 +118,7 @@ export async function GET(request: Request) {
                 selectedBookIds: latestRound.selectedBookIds,
                 winnerExternalId: latestRound.winnerExternalId ?? null,
                 isOpen,
+                requiresPassword: requiresPassword && !allowed,
             },
             books,
         });

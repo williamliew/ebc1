@@ -14,6 +14,7 @@ const meetingDateSchema = z
 const createBodySchema = z.object({
     meetingDate: meetingDateSchema,
     closeVoteDate: meetingDateSchema.optional(),
+    voteAccessPassword: z.string().max(256).optional(),
     books: z
         .array(z.object({ externalId: z.string() }))
         .min(2)
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
                 meetingDate: parsed.data.meetingDate,
                 closeVoteAt,
                 selectedBookIds,
+                voteAccessPassword:
+                    parsed.data.voteAccessPassword?.trim() || null,
             })
             .returning({
                 id: voteRounds.id,

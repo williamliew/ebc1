@@ -54,6 +54,7 @@ export default function VotingBuilderPage() {
     const defaultMeeting = getDefaultMeetingDate();
     const [meetingDate, setMeetingDate] = useState(defaultMeeting);
     const [closeVoteDate, setCloseVoteDate] = useState(getTomorrowDate);
+    const [voteAccessPassword, setVoteAccessPassword] = useState('');
     const [searchResults, setSearchResults] = useState<BookSearchResult[]>([]);
     const [searchPage, setSearchPage] = useState(1);
     const [totalSearchItems, setTotalSearchItems] = useState(0);
@@ -115,10 +116,12 @@ export default function VotingBuilderPage() {
         mutationFn: async ({
             meetingDate: date,
             closeVoteDate: closeDate,
+            voteAccessPassword: accessPassword,
             books,
         }: {
             meetingDate: string;
             closeVoteDate: string;
+            voteAccessPassword: string;
             books: BookSearchResult[];
         }) => {
             const res = await fetch('/api/nomination', {
@@ -127,6 +130,7 @@ export default function VotingBuilderPage() {
                 body: JSON.stringify({
                     meetingDate: date,
                     closeVoteDate: closeDate,
+                    voteAccessPassword: accessPassword.trim() || undefined,
                     books: books.map((b) => ({ externalId: b.externalId })),
                 }),
             });
@@ -142,6 +146,7 @@ export default function VotingBuilderPage() {
             setSelected([]);
             setTitleSearch('');
             setAuthorSearch('');
+            setVoteAccessPassword('');
             setSearchResults([]);
             setSearchError(null);
             queryClient.invalidateQueries({ queryKey: ['nomination'] });
@@ -202,9 +207,16 @@ export default function VotingBuilderPage() {
         createMutation.mutate({
             meetingDate,
             closeVoteDate,
+            voteAccessPassword,
             books: selected,
         });
-    }, [selected, meetingDate, closeVoteDate, createMutation]);
+    }, [
+        selected,
+        meetingDate,
+        closeVoteDate,
+        voteAccessPassword,
+        createMutation,
+    ]);
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
@@ -232,24 +244,50 @@ export default function VotingBuilderPage() {
                         className="flex flex-col sm:flex-row gap-2"
                     >
                         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <input
-                                type="text"
-                                value={titleSearch}
-                                onChange={(e) => setTitleSearch(e.target.value)}
-                                placeholder="Title"
-                                className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
-                                aria-label="Book title"
-                            />
-                            <input
-                                type="text"
-                                value={authorSearch}
-                                onChange={(e) =>
-                                    setAuthorSearch(e.target.value)
-                                }
-                                placeholder="Author"
-                                className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
-                                aria-label="Author"
-                            />
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={titleSearch}
+                                    onChange={(e) =>
+                                        setTitleSearch(e.target.value)
+                                    }
+                                    placeholder="Title"
+                                    className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                    aria-label="Book title"
+                                />
+                                {titleSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setTitleSearch('')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                                        aria-label="Clear title"
+                                    >
+                                        ×
+                                    </button>
+                                )}
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={authorSearch}
+                                    onChange={(e) =>
+                                        setAuthorSearch(e.target.value)
+                                    }
+                                    placeholder="Author"
+                                    className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                    aria-label="Author"
+                                />
+                                {authorSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setAuthorSearch('')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                                        aria-label="Clear author"
+                                    >
+                                        ×
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <button
                             type="submit"
@@ -541,6 +579,25 @@ export default function VotingBuilderPage() {
                                     }
                                     className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
                                     aria-label="Close vote date"
+                                />
+                            </div>
+                            <div className="flex-1 min-w-[140px]">
+                                <label
+                                    htmlFor="vote-access-password"
+                                    className="text-sm font-medium text-zinc-500 dark:text-zinc-400 block mb-1"
+                                >
+                                    Vote access password (optional)
+                                </label>
+                                <input
+                                    id="vote-access-password"
+                                    type="password"
+                                    value={voteAccessPassword}
+                                    onChange={(e) =>
+                                        setVoteAccessPassword(e.target.value)
+                                    }
+                                    placeholder="Leave blank for no password"
+                                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                    aria-label="Vote access password"
                                 />
                             </div>
                         </div>

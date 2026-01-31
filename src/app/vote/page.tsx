@@ -24,6 +24,7 @@ type VoteRound = {
     selectedBookIds: string[];
     winnerExternalId: string | null;
     isOpen: boolean;
+    requiresPassword?: boolean;
 };
 
 const SWIPE_THRESHOLD = 50;
@@ -42,6 +43,13 @@ export default function VotePage() {
         'idle' | 'pending' | 'success' | 'error'
     >('idle');
     const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+    const [accessPassword, setAccessPassword] = useState('');
+    const [verifyPasswordStatus, setVerifyPasswordStatus] = useState<
+        'idle' | 'pending' | 'error'
+    >('idle');
+    const [verifyPasswordError, setVerifyPasswordError] = useState<
+        string | null
+    >(null);
 
     const fetchRound = useCallback(async () => {
         setLoading(true);
@@ -68,6 +76,40 @@ export default function VotePage() {
     useEffect(() => {
         fetchRound();
     }, [fetchRound]);
+
+    const handleVerifyPassword = useCallback(
+        async (e: React.FormEvent) => {
+            e.preventDefault();
+            if (!round || !accessPassword.trim()) return;
+            setVerifyPasswordStatus('pending');
+            setVerifyPasswordError(null);
+            try {
+                const res = await fetch('/api/votes/verify-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        roundId: round.id,
+                        password: accessPassword.trim(),
+                    }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(data.error ?? 'Verification failed');
+                }
+                setAccessPassword('');
+                setVerifyPasswordError(null);
+                await fetchRound();
+            } catch (e) {
+                setVerifyPasswordStatus('error');
+                setVerifyPasswordError(
+                    e instanceof Error ? e.message : 'Incorrect password',
+                );
+            } finally {
+                setVerifyPasswordStatus('idle');
+            }
+        },
+        [round, accessPassword, fetchRound],
+    );
 
     const goTo = useCallback(
         (index: number) => {
@@ -204,6 +246,77 @@ export default function VotePage() {
                     <p className="text-red-600 dark:text-red-400" role="alert">
                         {error}
                     </p>
+                </main>
+            </div>
+        );
+    }
+
+    if (round && round.requiresPassword && books.length === 0) {
+        return (
+            <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+                <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-4">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 mb-2"
+                    >
+                        ← Back to home
+                    </Link>
+                    <h1 className="text-xl font-semibold">Vote</h1>
+                    {round.meetingDate && (
+                        <p className="text-sm text-zinc-500 mt-1">
+                            Meeting: {round.meetingDate}
+                        </p>
+                    )}
+                </header>
+                <main className="max-w-md mx-auto p-6">
+                    <p className="text-zinc-600 dark:text-zinc-400 text-center mb-4">
+                        This vote round is protected. Enter the access password
+                        to view and vote.
+                    </p>
+                    <form onSubmit={handleVerifyPassword} className="space-y-3">
+                        <label
+                            htmlFor="vote-access-password"
+                            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                        >
+                            Access password
+                        </label>
+                        <input
+                            id="vote-access-password"
+                            type="password"
+                            value={accessPassword}
+                            onChange={(e) => setAccessPassword(e.target.value)}
+                            placeholder="Password"
+                            autoComplete="current-password"
+                            disabled={verifyPasswordStatus === 'pending'}
+                            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600 disabled:opacity-50"
+                            aria-describedby={
+                                verifyPasswordError
+                                    ? 'vote-password-error'
+                                    : undefined
+                            }
+                        />
+                        {verifyPasswordError && (
+                            <p
+                                id="vote-password-error"
+                                className="text-sm text-red-600 dark:text-red-400"
+                                role="alert"
+                            >
+                                {verifyPasswordError}
+                            </p>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={
+                                verifyPasswordStatus === 'pending' ||
+                                !accessPassword.trim()
+                            }
+                            className="w-full rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 py-3 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50"
+                        >
+                            {verifyPasswordStatus === 'pending'
+                                ? 'Verifying…'
+                                : 'Continue'}
+                        </button>
+                    </form>
                 </main>
             </div>
         );

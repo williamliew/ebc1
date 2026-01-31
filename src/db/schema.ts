@@ -45,6 +45,8 @@ export const voteRounds = pgTable('vote_rounds', {
     closeVoteAt: timestamp('close_vote_at', { withTimezone: true }),
     selectedBookIds: text('selected_book_ids').array().notNull(),
     winnerExternalId: varchar('winner_external_id', { length: 256 }),
+    /** Optional password to view/vote this round (anti-spam). Null = no gate. */
+    voteAccessPassword: varchar('vote_access_password', { length: 256 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
