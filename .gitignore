@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# Lighthouse
+.lighthouse-report.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*

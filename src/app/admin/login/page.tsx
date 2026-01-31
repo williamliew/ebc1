@@ -1,10 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function AdminLoginPage() {
+function LoginFallback() {
+    return (
+        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6 text-zinc-900 dark:text-zinc-100">
+            <main className="max-w-sm w-full text-center">
+                <p className="text-zinc-500 dark:text-zinc-400">Loading…</p>
+            </main>
+        </div>
+    );
+}
+
+function AdminLoginForm() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -82,5 +92,13 @@ export default function AdminLoginPage() {
                 </p>
             </main>
         </div>
+    );
+}
+
+export default function AdminLoginPage() {
+    return (
+        <Suspense fallback={<LoginFallback />}>
+            <AdminLoginForm />
+        </Suspense>
     );
 }

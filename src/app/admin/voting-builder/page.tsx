@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
@@ -157,13 +157,16 @@ export default function VotingBuilderPage() {
         },
     });
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        const title = titleSearch.trim();
-        const author = authorSearch.trim();
-        if (!title && !author) return;
-        searchMutation.mutate({ title, author, page: 1 });
-    };
+    const handleSearch = useCallback(
+        (e: React.FormEvent) => {
+            e.preventDefault();
+            const title = titleSearch.trim();
+            const author = authorSearch.trim();
+            if (!title && !author) return;
+            searchMutation.mutate({ title, author, page: 1 });
+        },
+        [titleSearch, authorSearch, searchMutation],
+    );
 
     const MAX_PAGES = 10;
     const effectiveTotal = Math.min(totalSearchItems, MAX_PAGES * PAGE_SIZE);
@@ -172,29 +175,36 @@ export default function VotingBuilderPage() {
     const canPrev = showPagination && searchPage > 1;
     const canNext = showPagination && searchPage < totalSearchPages;
 
-    const addSelected = (book: BookSearchResult) => {
-        if (selected.length >= MAX_SELECTED) return;
-        if (selected.some((b) => b.externalId === book.externalId)) return;
-        setSelected((prev) => [...prev, book]);
-    };
+    const selectedIds = useMemo(
+        () => new Set(selected.map((b) => b.externalId)),
+        [selected],
+    );
 
-    const removeSelected = (externalId: string) => {
+    const addSelected = useCallback((book: BookSearchResult) => {
+        setSelected((prev) => {
+            if (prev.length >= MAX_SELECTED) return prev;
+            if (prev.some((b) => b.externalId === book.externalId)) return prev;
+            return [...prev, book];
+        });
+    }, []);
+
+    const removeSelected = useCallback((externalId: string) => {
         setSelected((prev) => prev.filter((b) => b.externalId !== externalId));
-    };
+    }, []);
 
-    const reset = () => {
+    const reset = useCallback(() => {
         setSelected([]);
         setCreateMessage(null);
-    };
+    }, []);
 
-    const create = () => {
+    const create = useCallback(() => {
         if (selected.length < MIN_TO_CREATE) return;
         createMutation.mutate({
             meetingDate,
             closeVoteDate,
             books: selected,
         });
-    };
+    }, [selected, meetingDate, closeVoteDate, createMutation]);
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
@@ -270,8 +280,8 @@ export default function VotingBuilderPage() {
                         </h2>
                         <ul className="space-y-3">
                             {searchResults.map((book) => {
-                                const alreadySelected = selected.some(
-                                    (b) => b.externalId === book.externalId,
+                                const alreadySelected = selectedIds.has(
+                                    book.externalId,
                                 );
                                 const atMax = selected.length >= MAX_SELECTED;
                                 return (

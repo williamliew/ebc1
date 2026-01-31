@@ -1,9 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useRef, useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { QRCodeSVG } from 'qrcode.react';
+
+const QRCodeSVG = dynamic(
+    () => import('qrcode.react').then((mod) => ({ default: mod.QRCodeSVG })),
+    { ssr: false },
+);
 
 const PRESET_BACKGROUNDS = [
     { value: 'cream', label: 'Cream', color: '#fffbeb' },
@@ -85,32 +90,40 @@ export default function QuestionBuilderPage() {
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [isPreviewFullScreen]);
 
-    const backgroundStyle =
-        backgroundType === 'upload' && backgroundImageUrl
-            ? {
-                  backgroundImage: `url(${backgroundImageUrl})`,
-                  backgroundSize: 'auto 100%' as const,
-                  backgroundPosition: 'center',
-              }
-            : backgroundType === 'url' && backgroundImageUrlInput.trim()
-              ? {
-                    backgroundImage: `url(${backgroundImageUrlInput.trim()})`,
-                    backgroundSize: 'auto 100%' as const,
-                    backgroundPosition: 'center',
-                }
-              : backgroundType === 'gradient'
+    const backgroundStyle = useMemo(
+        () =>
+            backgroundType === 'upload' && backgroundImageUrl
                 ? {
-                      background:
-                          'linear-gradient(135deg, #fef3c7 0%, #ddd6fe 100%)',
+                      backgroundImage: `url(${backgroundImageUrl})`,
+                      backgroundSize: 'auto 100%' as const,
+                      backgroundPosition: 'center',
                   }
-                : backgroundType === 'preset'
+                : backgroundType === 'url' && backgroundImageUrlInput.trim()
                   ? {
-                        backgroundColor:
-                            PRESET_BACKGROUNDS.find(
-                                (p) => p.value === presetBackground,
-                            )?.color ?? '#fffbeb',
+                        backgroundImage: `url(${backgroundImageUrlInput.trim()})`,
+                        backgroundSize: 'auto 100%' as const,
+                        backgroundPosition: 'center',
                     }
-                  : {};
+                  : backgroundType === 'gradient'
+                    ? {
+                          background:
+                              'linear-gradient(135deg, #fef3c7 0%, #ddd6fe 100%)',
+                      }
+                    : backgroundType === 'preset'
+                      ? {
+                            backgroundColor:
+                                PRESET_BACKGROUNDS.find(
+                                    (p) => p.value === presetBackground,
+                                )?.color ?? '#fffbeb',
+                        }
+                      : {},
+        [
+            backgroundType,
+            backgroundImageUrl,
+            backgroundImageUrlInput,
+            presetBackground,
+        ],
+    );
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
