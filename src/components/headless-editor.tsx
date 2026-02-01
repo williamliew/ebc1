@@ -63,9 +63,7 @@ export function HeadlessEditor({
                 className={`rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm ${className}`}
                 style={{ minHeight }}
             >
-                <div className="text-zinc-400 dark:text-zinc-500">
-                    {placeholder}
-                </div>
+                <div className="text-muted">{placeholder}</div>
             </div>
         );
     }
@@ -73,7 +71,7 @@ export function HeadlessEditor({
     return (
         <div
             ref={setMinHeight}
-            className={`rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden ${className}`}
+            className={`rounded-lg border border-border bg-surface overflow-hidden ${className}`}
         >
             <EditorToolbar editor={editor} />
             <div className="px-3 py-2 text-sm">
@@ -123,7 +121,7 @@ function EditorToolbar({ editor }: ToolbarProps) {
             >
                 <ItalicIcon />
             </button>
-            <span className="w-px h-5 bg-zinc-300 dark:bg-zinc-600 mx-0.5" />
+            <span className="w-px h-5 bg-border mx-0.5" />
             <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBulletList().run()}

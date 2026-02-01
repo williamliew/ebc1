@@ -1,22 +1,56 @@
 @import "tailwindcss";
 
-:root {
+/* Theme variables: default (Elwood brand), high-contrast, alternative (warm). */
+:root,
+[data-theme="default"] {
+  --background: #f0faf7;
+  --foreground: #1a1a1a;
+  --primary: #1a6b52;
+  --primary-hover: #156b52;
+  --primary-foreground: #ffffff;
+  --surface: #ffffff;
+  --surface-hover: #e8f5f0;
+  --border: #c5e6d9;
+  --muted: #525252;
+  --focus-ring: 2px solid #1a6b52;
+}
+
+[data-theme="high-contrast"] {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
+  --primary: #000000;
+  --primary-hover: #1a1a1a;
+  --primary-foreground: #ffffff;
+  --surface: #f5f5f5;
+  --surface-hover: #e5e5e5;
+  --border: #000000;
+  --muted: #333333;
+  --focus-ring: 3px solid #000000;
+}
+
+[data-theme="alternative"] {
+  --background: #faf8f5;
+  --foreground: #1c1917;
+  --primary: #b45309;
+  --primary-hover: #92400e;
+  --primary-foreground: #ffffff;
+  --surface: #ffffff;
+  --surface-hover: #fef3c7;
+  --border: #fcd34d;
+  --muted: #57534e;
+  --focus-ring: 2px solid #b45309;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
@@ -32,14 +66,9 @@ body {
 .headless-editor-content.ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #9ca3af;
+  color: var(--muted);
   pointer-events: none;
   height: 0;
-}
-@media (prefers-color-scheme: dark) {
-  .headless-editor-content.ProseMirror p.is-editor-empty:first-child::before {
-    color: #71717a;
-  }
 }
 
 /* List styling inside editor (site CSS / Tailwind preflight resets lists) */

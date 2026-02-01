@@ -6,9 +6,9 @@ import Link from 'next/link';
 
 function LoginFallback() {
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6 text-zinc-900 dark:text-zinc-100">
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground">
             <main className="max-w-sm w-full text-center">
-                <p className="text-zinc-500 dark:text-zinc-400">Loading…</p>
+                <p className="text-muted">Loading…</p>
             </main>
         </div>
     );
@@ -47,14 +47,14 @@ function AdminLoginForm() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6 text-zinc-900 dark:text-zinc-100">
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground">
             <main className="max-w-sm w-full">
                 <h1 className="text-2xl font-semibold text-center mb-6">
                     Admin login
                 </h1>
                 <form
                     onSubmit={handleSubmit}
-                    className="space-y-4 p-6 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
+                    className="space-y-4 p-6 rounded-xl bg-surface border border-border"
                 >
                     <label
                         htmlFor="password"
@@ -67,7 +67,7 @@ function AdminLoginForm() {
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                         placeholder="Admin password"
                         autoComplete="current-password"
                         required
@@ -80,12 +80,12 @@ function AdminLoginForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2.5 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50"
+                        className="w-full rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
                     >
                         {loading ? 'Signing in…' : 'Sign in'}
                     </button>
                 </form>
-                <p className="text-center mt-4 text-sm text-zinc-500">
+                <p className="text-center mt-4 text-sm text-muted">
                     <Link href="/" className="underline hover:no-underline">
                         ← Back to home
                     </Link>

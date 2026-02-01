@@ -219,16 +219,16 @@ export default function VotingBuilderPage() {
     ]);
 
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-            <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-4">
+        <div className="min-h-screen bg-background text-foreground">
+            <header className="border-b border-border bg-surface px-4 py-4">
                 <Link
                     href="/"
-                    className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 mb-2"
+                    className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                 >
                     ← Back to home
                 </Link>
                 <h1 className="text-xl font-semibold">Voting page builder</h1>
-                <p className="text-sm text-zinc-500 mt-1">
+                <p className="text-sm text-muted mt-1">
                     Search books, select up to {MAX_SELECTED}, then create the
                     nomination round (min {MIN_TO_CREATE} books).
                 </p>
@@ -252,14 +252,14 @@ export default function VotingBuilderPage() {
                                         setTitleSearch(e.target.value)
                                     }
                                     placeholder="Title"
-                                    className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                    className="rounded-lg border border-border bg-surface pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                                     aria-label="Book title"
                                 />
                                 {titleSearch && (
                                     <button
                                         type="button"
                                         onClick={() => setTitleSearch('')}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                                         aria-label="Clear title"
                                     >
                                         ×
@@ -274,14 +274,14 @@ export default function VotingBuilderPage() {
                                         setAuthorSearch(e.target.value)
                                     }
                                     placeholder="Author"
-                                    className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                    className="rounded-lg border border-border bg-surface pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                                     aria-label="Author"
                                 />
                                 {authorSearch && (
                                     <button
                                         type="button"
                                         onClick={() => setAuthorSearch('')}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                                         aria-label="Clear author"
                                     >
                                         ×
@@ -295,7 +295,7 @@ export default function VotingBuilderPage() {
                                 searchMutation.isPending ||
                                 (!titleSearch.trim() && !authorSearch.trim())
                             }
-                            className="rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50 shrink-0"
+                            className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 shrink-0"
                         >
                             {searchMutation.isPending ? 'Searching…' : 'Search'}
                         </button>
@@ -313,7 +313,7 @@ export default function VotingBuilderPage() {
                 {/* Search results */}
                 {searchResults.length > 0 && (
                     <section>
-                        <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+                        <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
                             Results
                         </h2>
                         <ul className="space-y-3">
@@ -325,9 +325,9 @@ export default function VotingBuilderPage() {
                                 return (
                                     <li
                                         key={book.externalId}
-                                        className="flex gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3"
+                                        className="flex gap-3 rounded-lg border border-border bg-surface p-3"
                                     >
-                                        <div className="flex-shrink-0 w-12 h-18 relative bg-zinc-200 dark:bg-zinc-700 rounded overflow-hidden">
+                                        <div className="flex-shrink-0 w-12 h-18 relative bg-[var(--border)] rounded overflow-hidden">
                                             {book.coverUrl ? (
                                                 <Image
                                                     src={book.coverUrl}
@@ -338,7 +338,7 @@ export default function VotingBuilderPage() {
                                                     sizes="48px"
                                                 />
                                             ) : (
-                                                <span className="text-xs text-zinc-400 flex items-center justify-center h-full">
+                                                <span className="text-xs text-muted flex items-center justify-center h-full">
                                                     No cover
                                                 </span>
                                             )}
@@ -347,7 +347,7 @@ export default function VotingBuilderPage() {
                                             <p className="font-medium text-sm truncate">
                                                 {book.title}
                                             </p>
-                                            <p className="text-xs text-zinc-500 truncate">
+                                            <p className="text-xs text-muted truncate">
                                                 {book.author}
                                             </p>
                                             <button
@@ -355,7 +355,7 @@ export default function VotingBuilderPage() {
                                                 onClick={() =>
                                                     setPreviewBook(book)
                                                 }
-                                                className="mt-1 text-xs text-zinc-600 dark:text-zinc-400 hover:underline"
+                                                className="mt-1 text-xs text-muted hover:underline"
                                             >
                                                 Read more
                                             </button>
@@ -384,7 +384,7 @@ export default function VotingBuilderPage() {
                                                 }
                                             }}
                                             disabled={!alreadySelected && atMax}
-                                            className="flex-shrink-0 rounded-md bg-zinc-700 dark:bg-zinc-300 text-white dark:text-zinc-900 px-3 py-1.5 text-xs font-medium hover:bg-zinc-600 dark:hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="flex-shrink-0 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {alreadySelected
                                                 ? 'Remove'
@@ -408,11 +408,11 @@ export default function VotingBuilderPage() {
                                     disabled={
                                         !canPrev || searchMutation.isPending
                                     }
-                                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Previous
                                 </button>
-                                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                                <span className="text-sm text-muted dark:text-muted">
                                     Page {searchPage} of {totalSearchPages}
                                 </span>
                                 <button
@@ -427,7 +427,7 @@ export default function VotingBuilderPage() {
                                     disabled={
                                         !canNext || searchMutation.isPending
                                     }
-                                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Next
                                 </button>
@@ -446,25 +446,25 @@ export default function VotingBuilderPage() {
                         onClick={() => setPreviewBook(null)}
                     >
                         <div
-                            className="rounded-xl bg-white dark:bg-zinc-900 shadow-xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col"
+                            className="rounded-xl bg-surface shadow-xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="p-4 pb-2 flex items-start justify-between gap-2">
                                 <div className="min-w-0 flex-1">
                                     <h3
                                         id="preview-title"
-                                        className="text-lg font-semibold text-zinc-900 dark:text-zinc-100"
+                                        className="text-lg font-semibold text-foreground"
                                     >
                                         {previewBook.title}
                                     </h3>
-                                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                                    <p className="text-sm text-muted dark:text-muted mt-0.5">
                                         by {previewBook.author}
                                     </p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setPreviewBook(null)}
-                                    className="flex-shrink-0 rounded p-1.5 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                                    className="flex-shrink-0 rounded p-1.5 text-muted hover:bg-[var(--surface-hover)] hover:text-foreground"
                                     aria-label="Close"
                                 >
                                     ×
@@ -473,7 +473,7 @@ export default function VotingBuilderPage() {
                             <div className="px-4 pb-4 overflow-y-auto flex-1 min-h-0">
                                 {previewBook.blurb ? (
                                     <div
-                                        className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-zinc-700 dark:[&_a]:text-zinc-300"
+                                        className="text-sm text-muted leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-foreground"
                                         dangerouslySetInnerHTML={{
                                             __html: sanitiseBlurb(
                                                 previewBook.blurb,
@@ -481,7 +481,7 @@ export default function VotingBuilderPage() {
                                         }}
                                     />
                                 ) : (
-                                    <p className="text-sm text-zinc-500 dark:text-zinc-400 italic">
+                                    <p className="text-sm text-muted dark:text-muted italic">
                                         No description available.
                                     </p>
                                 )}
@@ -508,10 +508,10 @@ export default function VotingBuilderPage() {
                     aria-modal="true"
                     aria-labelledby="success-lightbox-title"
                 >
-                    <div className="rounded-xl bg-white dark:bg-zinc-900 shadow-xl p-6 max-w-sm w-full text-center">
+                    <div className="rounded-xl bg-surface shadow-xl p-6 max-w-sm w-full text-center">
                         <p
                             id="success-lightbox-title"
-                            className="text-lg font-semibold text-zinc-900 dark:text-zinc-100"
+                            className="text-lg font-semibold text-foreground"
                         >
                             Vote created!
                         </p>
@@ -519,14 +519,14 @@ export default function VotingBuilderPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowSuccessLightbox(false)}
-                                className="rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300"
+                                className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)]"
                             >
                                 Close
                             </button>
                             <Link
                                 href="/"
                                 onClick={() => setShowSuccessLightbox(false)}
-                                className="rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-center"
+                                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] text-center"
                             >
                                 Return to home
                             </Link>
@@ -537,13 +537,13 @@ export default function VotingBuilderPage() {
 
             {/* Fixed bottom: only when at least 1 book selected */}
             {selected.length >= 1 && (
-                <footer className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
+                <footer className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
                     <div className="max-w-2xl mx-auto px-4 py-4">
                         <div className="mb-3 flex gap-4 flex-wrap">
                             <div className="flex-1 min-w-[140px]">
                                 <label
                                     htmlFor="meeting-date"
-                                    className="text-sm font-medium text-zinc-500 dark:text-zinc-400 block mb-1"
+                                    className="text-sm font-medium text-muted dark:text-muted block mb-1"
                                 >
                                     Meeting date (book club)
                                 </label>
@@ -559,14 +559,14 @@ export default function VotingBuilderPage() {
                                             ),
                                         );
                                     }}
-                                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                    className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                                     aria-label="Meeting date"
                                 />
                             </div>
                             <div className="flex-1 min-w-[140px]">
                                 <label
                                     htmlFor="close-vote-date"
-                                    className="text-sm font-medium text-zinc-500 dark:text-zinc-400 block mb-1"
+                                    className="text-sm font-medium text-muted dark:text-muted block mb-1"
                                 >
                                     Close vote
                                 </label>
@@ -577,14 +577,14 @@ export default function VotingBuilderPage() {
                                     onChange={(e) =>
                                         setCloseVoteDate(e.target.value)
                                     }
-                                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                    className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                                     aria-label="Close vote date"
                                 />
                             </div>
                             <div className="flex-1 min-w-[140px]">
                                 <label
                                     htmlFor="vote-access-password"
-                                    className="text-sm font-medium text-zinc-500 dark:text-zinc-400 block mb-1"
+                                    className="text-sm font-medium text-muted dark:text-muted block mb-1"
                                 >
                                     Vote access password (optional)
                                 </label>
@@ -596,24 +596,24 @@ export default function VotingBuilderPage() {
                                         setVoteAccessPassword(e.target.value)
                                     }
                                     placeholder="Leave blank for no password"
-                                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                                    className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                                     aria-label="Vote access password"
                                 />
                             </div>
                         </div>
-                        <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+                        <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
                             Selected ({selected.length}/{MAX_SELECTED})
                         </h2>
                         <ul className="space-y-2">
                             {selected.map((book) => (
                                 <li
                                     key={book.externalId}
-                                    className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2"
+                                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-[var(--surface-hover)] px-3 py-2"
                                 >
                                     <span className="text-sm font-medium truncate min-w-0 flex-1">
                                         {book.title}
                                     </span>
-                                    <span className="text-xs text-zinc-500 truncate max-w-[140px] flex-shrink-0">
+                                    <span className="text-xs text-muted truncate max-w-[140px] flex-shrink-0">
                                         by {book.author}
                                     </span>
                                     <button
@@ -635,7 +635,7 @@ export default function VotingBuilderPage() {
                                     type="button"
                                     onClick={reset}
                                     disabled={createMutation.isPending}
-                                    className="rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                    className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-[var(--surface-hover)]"
                                 >
                                     Reset
                                 </button>

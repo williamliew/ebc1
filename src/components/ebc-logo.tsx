@@ -1,6 +1,6 @@
 /**
  * Inline EBC logo SVG. Use fill="currentColor" so it follows text colour
- * (e.g. dark on light bg, white in dark mode via parent text-zinc-100).
+ * (e.g. dark on light bg via parent text-foreground).
  */
 export function EbcLogo({
     className,

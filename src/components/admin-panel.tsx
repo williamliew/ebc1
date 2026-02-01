@@ -42,7 +42,7 @@ export function AdminPanel({
             <button
                 type="button"
                 onClick={toggle}
-                className="fixed left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 shadow-md hover:bg-zinc-700 dark:hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-950 transition-colors"
+                className="fixed left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)] transition-colors"
                 aria-label="Open admin panel"
                 aria-expanded={open}
             >
@@ -61,7 +61,7 @@ export function AdminPanel({
 
             {/* Sliding panel */}
             <aside
-                className="fixed left-0 top-0 z-40 h-full w-[280px] max-w-[85vw] border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl transition-transform duration-300 ease-out"
+                className="fixed left-0 top-0 z-40 h-full w-[280px] max-w-[85vw] border-r border-border bg-surface shadow-xl transition-transform duration-300 ease-out"
                 style={{
                     transform: open ? 'translateX(0)' : 'translateX(-100%)',
                 }}
@@ -69,13 +69,13 @@ export function AdminPanel({
             >
                 <div className="flex h-full flex-col p-4 pt-14">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                        <h2 className="text-lg font-semibold text-foreground">
                             Admin actions
                         </h2>
                         <button
                             type="button"
                             onClick={close}
-                            className="rounded p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                            className="rounded p-1.5 text-muted hover:bg-[var(--surface-hover)] hover:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                             aria-label="Close panel"
                         >
                             <svg
@@ -96,14 +96,14 @@ export function AdminPanel({
                         <Link
                             href="/admin/voting-builder"
                             onClick={close}
-                            className="inline-flex items-center justify-center rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2.5 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors"
+                            className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)] transition-colors"
                         >
                             Voting page builder
                         </Link>
                         <Link
                             href="/admin/question-builder"
                             onClick={close}
-                            className="inline-flex items-center justify-center rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2.5 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors"
+                            className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)] transition-colors"
                         >
                             Question builder
                         </Link>
