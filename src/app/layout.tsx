@@ -14,8 +14,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: 'Book of the Month | ebc1',
-    description: 'Community book club voting',
+    title: 'Elwood Book Club',
+    icons: {
+        icon: '/favicon.jpg',
+    },
+    description:
+        'Monthly book club in Elwood and St Kilda, Melbourne. Social meet-ups at local bars – members choose the book each month. Relaxed, low-key and welcoming. Find your local book club in Melbourne.',
+    keywords: [
+        'book club Melbourne',
+        'book club Elwood',
+        'book club St Kilda',
+        'monthly book club',
+        'social book club Melbourne',
+        'local book club',
+        'Elwood book club',
+        'St Kilda book club',
+    ],
+    openGraph: {
+        title: 'Elwood Book Club – Melbourne',
+        description:
+            "Monthly social book club in Elwood and St Kilda, Melbourne. Meet at local bars, vote for the book, keep it relaxed. No pressure if you haven't finished – come along anyway.",
+        locale: 'en_AU',
+    },
 };
 
 export default function RootLayout({

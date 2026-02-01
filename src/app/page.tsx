@@ -21,21 +21,6 @@ export default async function Home() {
                 </h1>
 
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
-                    <Link
-                        href="/vote"
-                        className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-                    >
-                        Vote
-                    </Link>
-                    <Link
-                        href="/nextbook"
-                        className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-                    >
-                        Next book
-                    </Link>
-                </div>
-
-                <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
                     <p>Elwood Book Club is a social monthly book club.</p>
 
                     <p>
@@ -65,6 +50,21 @@ export default async function Home() {
                         Most people come alone, so if you need a sign to get out
                         there and meet some beautiful new people, this is it!
                     </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
+                    <Link
+                        href="/vote"
+                        className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+                    >
+                        Vote
+                    </Link>
+                    <Link
+                        href="/nextbook"
+                        className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+                    >
+                        Next book
+                    </Link>
                 </div>
             </main>
         </div>
