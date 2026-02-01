@@ -130,6 +130,16 @@ body {
   margin-top: -100px;
 }
 
+/* Wave paths use theme primary so they follow the accessibility theme switcher */
+.first-wave,
+.second-wave,
+.third-wave,
+.forth-wave,
+.fifth-wave,
+.sixth-wave {
+  fill: var(--primary);
+}
+
 .first-wave {
   animation: first-wave 3.5s ease-in;
   transition: .2s fill ease;

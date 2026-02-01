@@ -97,12 +97,11 @@ function EditorToolbar({ editor }: ToolbarProps) {
     if (!active) return null;
 
     const btn =
-        'p-1.5 rounded text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-50';
-    const activeBtn =
-        'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100';
+        'p-1.5 rounded text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-50';
+    const activeBtn = 'bg-zinc-200 text-zinc-900';
 
     return (
-        <div className="flex flex-wrap items-center gap-0.5 border-b border-zinc-200 dark:border-zinc-700 px-2 py-1 bg-zinc-50 dark:bg-zinc-800/50">
+        <div className="flex flex-wrap items-center gap-0.5 border-b border-zinc-200 px-2 py-1 bg-white">
             <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}

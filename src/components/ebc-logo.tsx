@@ -1,6 +1,8 @@
 /**
- * Inline EBC logo SVG. Use fill="currentColor" so it follows text colour
- * (e.g. dark on light bg via parent text-foreground).
+ * Inline EBC logo SVG. Wave paths (first-wave … sixth-wave) use the theme
+ * primary colour via CSS (var(--primary)) so they follow the accessibility
+ * theme switcher. Text paths (elwood-text, bookclub-text) inherit fill from
+ * the parent (e.g. text-foreground).
  */
 export function EbcLogo({
     className,

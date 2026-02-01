@@ -19,6 +19,24 @@ const PRESET_BACKGROUNDS = [
     { value: 'lavender', label: 'Lavender', color: '#f5f3ff' },
 ];
 
+const PREVIEW_FONTS = [
+    {
+        value: 'Playwrite NZ',
+        label: 'Playwrite New Zealand Basic',
+        fontFamily: '"Playwrite NZ", cursive',
+    },
+    {
+        value: 'Great Vibes',
+        label: 'Great Vibes',
+        fontFamily: '"Great Vibes", cursive',
+    },
+    {
+        value: 'Courgette',
+        label: 'Courgette',
+        fontFamily: 'Courgette, cursive',
+    },
+];
+
 type NominationBook = {
     externalId: string;
     title: string;
@@ -43,6 +61,8 @@ export default function QuestionBuilderPage() {
     const [additionalText, setAdditionalText] = useState('');
     const [qrUrl, setQrUrl] = useState('https://www.google.com/');
     const [textColor, setTextColor] = useState<'white' | 'black'>('black');
+    const [previewFont, setPreviewFont] = useState(PREVIEW_FONTS[0].fontFamily);
+    const [previewFontSize, setPreviewFontSize] = useState(100); // scale 75–150%
 
     const { data: nominationData } = useQuery({
         queryKey: ['nomination'],
@@ -94,6 +114,14 @@ export default function QuestionBuilderPage() {
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [isPreviewFullScreen]);
+
+    const previewTextStyle = useMemo(
+        () => ({
+            fontFamily: previewFont,
+            fontSize: `${(previewFontSize / 100) * 16}px`,
+        }),
+        [previewFont, previewFontSize],
+    );
 
     const backgroundStyle = useMemo(
         () =>
@@ -346,6 +374,48 @@ export default function QuestionBuilderPage() {
                         </div>
                     </div>
 
+                    <div>
+                        <label
+                            htmlFor="preview-font"
+                            className="text-sm font-medium text-foreground block mb-2"
+                        >
+                            Preview font
+                        </label>
+                        <select
+                            id="preview-font"
+                            value={previewFont}
+                            onChange={(e) => setPreviewFont(e.target.value)}
+                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                            style={{ fontFamily: previewFont }}
+                        >
+                            {PREVIEW_FONTS.map((f) => (
+                                <option key={f.value} value={f.fontFamily}>
+                                    {f.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label
+                            htmlFor="preview-font-size"
+                            className="text-sm font-medium text-foreground block mb-2"
+                        >
+                            Font size ({previewFontSize}%)
+                        </label>
+                        <input
+                            id="preview-font-size"
+                            type="range"
+                            min={75}
+                            max={150}
+                            value={previewFontSize}
+                            onChange={(e) =>
+                                setPreviewFontSize(Number(e.target.value))
+                            }
+                            className="w-full h-2 rounded-lg appearance-none bg-border accent-primary"
+                        />
+                    </div>
+
                     <button
                         type="button"
                         onClick={() => setIsPreviewFullScreen(true)}
@@ -379,6 +449,7 @@ export default function QuestionBuilderPage() {
                             <div
                                 className="flex-1"
                                 style={{
+                                    ...previewTextStyle,
                                     backgroundColor:
                                         textColor === 'white'
                                             ? 'rgba(0,0,0,0.5)'
@@ -389,16 +460,23 @@ export default function QuestionBuilderPage() {
                                     borderRadius: '0.5rem',
                                 }}
                             >
-                                <h2 className="text-lg font-semibold mb-1">
+                                <h2
+                                    className="font-semibold mb-1"
+                                    style={{ fontSize: '1.125em' }}
+                                >
                                     {bookclubTitle || 'Elwood Book Club'}
                                 </h2>
-                                <p className="text-sm font-medium opacity-90">
+                                <p
+                                    className="font-medium opacity-90"
+                                    style={{ fontSize: '0.875em' }}
+                                >
                                     {bookTitle || 'Book title'} by{' '}
                                     {bookAuthor || 'Author'}
                                 </p>
                                 {hasAdditionalText && (
                                     <div
-                                        className="additional-text-preview text-sm mt-2 opacity-90"
+                                        className="additional-text-preview mt-2 opacity-90"
+                                        style={{ fontSize: '0.875em' }}
                                         dangerouslySetInnerHTML={{
                                             __html: sanitiseBlurb(
                                                 additionalText,
@@ -406,7 +484,10 @@ export default function QuestionBuilderPage() {
                                         }}
                                     />
                                 )}
-                                <ul className="mt-4 space-y-2 list-disc list-inside text-sm opacity-90">
+                                <ul
+                                    className="mt-4 space-y-2 list-disc list-inside opacity-90"
+                                    style={{ fontSize: '0.875em' }}
+                                >
                                     {questions.filter(Boolean).map((q, i) => (
                                         <li key={i}>{q}</li>
                                     ))}
@@ -471,9 +552,11 @@ export default function QuestionBuilderPage() {
                                 Close
                             </button>
                         </div>
-                        <p className="text-center pb-4 text-sm text-white/80 pointer-events-none">
-                            Click/tap screen to show or hide close button
-                        </p>
+                        <div className="flex justify-center pb-4">
+                            <p className="text-sm text-white/90 pointer-events-none bg-black/70 px-4 py-2 rounded-lg">
+                                Click/tap screen to show or hide close button
+                            </p>
+                        </div>
                     </div>
                     {/* When button is hidden, this overlay captures tap to show it again */}
                     <div
@@ -502,6 +585,7 @@ export default function QuestionBuilderPage() {
                             <div
                                 className="flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full"
                                 style={{
+                                    ...previewTextStyle,
                                     backgroundColor:
                                         textColor === 'white'
                                             ? 'rgba(0,0,0,0.5)'
@@ -512,16 +596,23 @@ export default function QuestionBuilderPage() {
                                     borderRadius: '0.5rem',
                                 }}
                             >
-                                <h2 className="text-xl font-semibold mb-1">
+                                <h2
+                                    className="font-semibold mb-1"
+                                    style={{ fontSize: '1.25em' }}
+                                >
                                     {bookclubTitle || 'Elwood Book Club'}
                                 </h2>
-                                <p className="text-base font-medium opacity-90">
+                                <p
+                                    className="font-medium opacity-90"
+                                    style={{ fontSize: '1em' }}
+                                >
                                     {bookTitle || 'Book title'} by{' '}
                                     {bookAuthor || 'Author'}
                                 </p>
                                 {hasAdditionalText && (
                                     <div
-                                        className="additional-text-preview text-base mt-2 opacity-90"
+                                        className="additional-text-preview mt-2 opacity-90"
+                                        style={{ fontSize: '1em' }}
                                         dangerouslySetInnerHTML={{
                                             __html: sanitiseBlurb(
                                                 additionalText,
@@ -529,7 +620,10 @@ export default function QuestionBuilderPage() {
                                         }}
                                     />
                                 )}
-                                <ul className="mt-6 space-y-2 list-disc list-inside text-base opacity-90">
+                                <ul
+                                    className="mt-6 space-y-2 list-disc list-inside opacity-90"
+                                    style={{ fontSize: '1em' }}
+                                >
                                     {questions.filter(Boolean).map((q, i) => (
                                         <li key={i}>{q}</li>
                                     ))}

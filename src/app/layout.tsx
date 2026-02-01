@@ -26,6 +26,16 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <head>
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link
+                    rel="preconnect"
+                    href="https://fonts.gstatic.com"
+                    crossOrigin="anonymous"
+                />
+                <link
+                    href="https://fonts.googleapis.com/css2?family=Courgette&family=Great+Vibes&family=Playwrite+NZ:wght@100..400&display=swap"
+                    rel="stylesheet"
+                />
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `(function(){try{var t=localStorage.getItem('ebc-theme');if(t==='high-contrast'||t==='alternative')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
