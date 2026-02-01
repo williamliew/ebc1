@@ -60,12 +60,21 @@ export default function VotePage() {
     const [verifyPasswordError, setVerifyPasswordError] = useState<
         string | null
     >(null);
+    const [alreadyVoted, setAlreadyVoted] = useState(false);
+    const [chosenBookExternalId, setChosenBookExternalId] = useState<
+        string | null
+    >(null);
 
     const fetchRound = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch('/api/votes');
+            const voterKeyHash = await getOrCreateVisitorKeyHash();
+            const headers: Record<string, string> = {};
+            if (voterKeyHash) {
+                headers['X-Voter-Key-Hash'] = voterKeyHash;
+            }
+            const res = await fetch('/api/votes', { headers });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data.error ?? 'Failed to load vote');
@@ -73,11 +82,15 @@ export default function VotePage() {
             const data = await res.json();
             setRound(data.round);
             setBooks(data.books ?? []);
+            setAlreadyVoted(data.alreadyVoted ?? false);
+            setChosenBookExternalId(data.chosenBookExternalId ?? null);
             setCurrentIndex(0);
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Something went wrong');
             setRound(null);
             setBooks([]);
+            setAlreadyVoted(false);
+            setChosenBookExternalId(null);
         } finally {
             setLoading(false);
         }
@@ -224,6 +237,8 @@ export default function VotePage() {
             }
             setSubmitStatus('success');
             setSubmitMessage('Your vote has been recorded. Thank you!');
+            setAlreadyVoted(true);
+            setChosenBookExternalId(books[currentIndex].externalId);
         } catch (e) {
             setSubmitStatus('error');
             setSubmitMessage(
@@ -497,17 +512,31 @@ export default function VotePage() {
 
                 {/* Vote for this book */}
                 <section className="p-4 pt-0 pb-8">
-                    {submitStatus === 'success' ? (
-                        <p
-                            className="text-center text-green-600 dark:text-green-400 font-medium"
-                            role="status"
-                        >
-                            {submitMessage}
-                        </p>
+                    {alreadyVoted || submitStatus === 'success' ? (
+                        <div className="text-center">
+                            <p
+                                className="text-green-600 dark:text-green-400 font-medium"
+                                role="status"
+                            >
+                                {submitStatus === 'success'
+                                    ? submitMessage
+                                    : "You've already voted in this round."}
+                            </p>
+                            {chosenBookExternalId && (
+                                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                                    You voted for{' '}
+                                    {books.find(
+                                        (b) =>
+                                            b.externalId ===
+                                            chosenBookExternalId,
+                                    )?.title ?? 'this round'}
+                                </p>
+                            )}
+                        </div>
                     ) : (
                         <>
                             <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 mb-2">
-                                Only 1 vote
+                                Only 1 vote per round
                             </p>
                             <button
                                 type="button"

@@ -34,6 +34,38 @@ export default async function Home() {
                         Next book
                     </Link>
                 </div>
+
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
+                    <p>Elwood Book Club is a social monthly book club.</p>
+
+                    <p>
+                        For each meet-up we try out a new bar near Elwood. This
+                        month we are meeting at Republica in St Kilda.
+                    </p>
+
+                    <p>
+                        We are a pretty chilled bunch - our meet-ups are relaxed
+                        catch ups where we chat about the book and also each
+                        other.
+                    </p>
+
+                    <p>
+                        Our members choose our book each month. This month we
+                        are reading &apos;Heart the Lover&apos;.
+                    </p>
+
+                    <p>
+                        We&apos;re pretty keen on keeping it low-key, so if
+                        you&apos;ve had a hectic week at work and not finished
+                        the book..rock up anyway. No judgement or pressure here.
+                        We&apos;ve all been there - some of us repeatedly!
+                    </p>
+
+                    <p>
+                        Most people come alone, so if you need a sign to get out
+                        there and meet some beautiful new people, this is it!
+                    </p>
+                </div>
             </main>
         </div>
     );

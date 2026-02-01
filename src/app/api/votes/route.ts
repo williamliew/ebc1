@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/db';
 import { voteRounds, votes, voteRoundBooks } from '@/db/schema';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, and } from 'drizzle-orm';
 import { verifyVoteAccessCookie } from '@/lib/vote-access';
 
 const keyHashSchema = z.string().min(1, 'Key hash required').max(256);
+
+/** Optional header so GET can return whether the current visitor has already voted. */
+const VOTER_KEY_HASH_HEADER = 'x-voter-key-hash';
 
 const postBodySchema = z.object({
     voteRoundId: z.number().int().positive().optional(),
@@ -14,8 +17,42 @@ const postBodySchema = z.object({
 });
 
 /**
+ * If voterKeyHash header is present and valid, check whether this visitor
+ * has already voted in the given round. Returns { alreadyVoted, chosenBookExternalId }.
+ */
+async function getAlreadyVoted(
+    roundId: number,
+    voterKeyHash: string | null,
+): Promise<{ alreadyVoted: boolean; chosenBookExternalId: string | null }> {
+    const hash = keyHashSchema.safeParse(voterKeyHash?.trim() ?? '');
+    if (!hash.success) {
+        return { alreadyVoted: false, chosenBookExternalId: null };
+    }
+    if (!db) return { alreadyVoted: false, chosenBookExternalId: null };
+
+    const [existing] = await db
+        .select({ chosenBookExternalId: votes.chosenBookExternalId })
+        .from(votes)
+        .where(
+            and(
+                eq(votes.voteRoundId, roundId),
+                eq(votes.voterKeyHash, hash.data),
+            ),
+        )
+        .limit(1);
+
+    return existing
+        ? {
+              alreadyVoted: true,
+              chosenBookExternalId: existing.chosenBookExternalId,
+          }
+        : { alreadyVoted: false, chosenBookExternalId: null };
+}
+
+/**
  * GET: current open vote round (latest with closeVoteAt in the future or null).
  * Optional ?roundId= to fetch a specific round.
+ * Optional header X-Voter-Key-Hash: if present, response includes alreadyVoted and chosenBookExternalId for this round.
  */
 export async function GET(request: Request) {
     if (!db) {
@@ -27,6 +64,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const roundIdParam = searchParams.get('roundId');
+    const voterKeyHash = request.headers.get(VOTER_KEY_HASH_HEADER);
 
     try {
         if (roundIdParam) {
@@ -65,6 +103,9 @@ export async function GET(request: Request) {
                       .where(eq(voteRoundBooks.voteRoundId, round.id))
                 : [];
 
+            const { alreadyVoted, chosenBookExternalId } =
+                await getAlreadyVoted(round.id, voterKeyHash);
+
             return NextResponse.json({
                 round: {
                     id: round.id,
@@ -76,6 +117,8 @@ export async function GET(request: Request) {
                     requiresPassword: requiresPassword && !allowed,
                 },
                 books,
+                alreadyVoted,
+                chosenBookExternalId,
             });
         }
 
@@ -89,6 +132,8 @@ export async function GET(request: Request) {
             return NextResponse.json({
                 round: null,
                 books: [],
+                alreadyVoted: false,
+                chosenBookExternalId: null,
             });
         }
 
@@ -110,6 +155,11 @@ export async function GET(request: Request) {
                   .where(eq(voteRoundBooks.voteRoundId, latestRound.id))
             : [];
 
+        const { alreadyVoted, chosenBookExternalId } = await getAlreadyVoted(
+            latestRound.id,
+            voterKeyHash,
+        );
+
         return NextResponse.json({
             round: {
                 id: latestRound.id,
@@ -121,6 +171,8 @@ export async function GET(request: Request) {
                 requiresPassword: requiresPassword && !allowed,
             },
             books,
+            alreadyVoted,
+            chosenBookExternalId,
         });
     } catch (err) {
         console.error('Fetch vote round error:', err);
