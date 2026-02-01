@@ -135,12 +135,28 @@ export async function GET(request: Request) {
     const dateParam = searchParams.get('date');
     const expand = searchParams.get('expand') !== '0';
 
+    let validatedDate: string | null = null;
+    if (
+        dateParam !== null &&
+        dateParam !== undefined &&
+        dateParam.trim() !== ''
+    ) {
+        const parsedDate = meetingDateSchema.safeParse(dateParam.trim());
+        if (!parsedDate.success) {
+            return NextResponse.json(
+                { error: 'date must be YYYY-MM-DD' },
+                { status: 400 },
+            );
+        }
+        validatedDate = parsedDate.data;
+    }
+
     try {
         let round:
             | { id: number; meetingDate: string; closeVoteAt: Date | null }
             | undefined;
 
-        if (dateParam) {
+        if (validatedDate) {
             const rows = await db
                 .select({
                     id: voteRounds.id,
@@ -148,7 +164,7 @@ export async function GET(request: Request) {
                     closeVoteAt: voteRounds.closeVoteAt,
                 })
                 .from(voteRounds)
-                .where(eq(voteRounds.meetingDate, dateParam))
+                .where(eq(voteRounds.meetingDate, validatedDate))
                 .limit(1);
             round = rows[0];
         } else {

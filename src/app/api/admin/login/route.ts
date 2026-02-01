@@ -2,12 +2,22 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { env } from '@/lib/env';
 import { createAdminToken, COOKIE_NAME } from '@/lib/admin-auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const bodySchema = z.object({
     password: z.string(),
 });
 
+const LOGIN_RATE_LIMIT_PER_MINUTE = 10;
+
 export async function POST(request: Request) {
+    const rateLimitRes = checkRateLimit(
+        request,
+        'admin-login',
+        LOGIN_RATE_LIMIT_PER_MINUTE,
+    );
+    if (rateLimitRes) return rateLimitRes;
+
     const parsed = bodySchema.safeParse(await request.json());
     if (!parsed.success) {
         return NextResponse.json({ error: 'Invalid request' }, { status: 400 });

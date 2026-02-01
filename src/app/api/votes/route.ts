@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { voteRounds, votes, voteRoundBooks } from '@/db/schema';
 import { desc, eq, and } from 'drizzle-orm';
 import { verifyVoteAccessCookie } from '@/lib/vote-access';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const keyHashSchema = z.string().min(1, 'Key hash required').max(256);
 
@@ -183,11 +184,20 @@ export async function GET(request: Request) {
     }
 }
 
+const VOTES_POST_RATE_LIMIT_PER_MINUTE = 30;
+
 /**
  * POST: cast a vote. Uses voteRoundId if provided, otherwise current open round.
  * One vote per voterKeyHash per round (enforced by DB unique).
  */
 export async function POST(request: Request) {
+    const rateLimitRes = checkRateLimit(
+        request,
+        'votes-post',
+        VOTES_POST_RATE_LIMIT_PER_MINUTE,
+    );
+    if (rateLimitRes) return rateLimitRes;
+
     if (!db) {
         return NextResponse.json(
             { error: 'Database not configured' },

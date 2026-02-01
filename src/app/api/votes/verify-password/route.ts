@@ -4,16 +4,26 @@ import { db } from '@/db';
 import { voteRounds } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { createVoteAccessCookie } from '@/lib/vote-access';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const bodySchema = z.object({
     roundId: z.number().int().positive(),
     password: z.string().min(1),
 });
 
+const VERIFY_PASSWORD_RATE_LIMIT_PER_MINUTE = 10;
+
 /**
  * POST: verify vote access password for a round. On success sets HttpOnly cookie and returns ok.
  */
 export async function POST(request: Request) {
+    const rateLimitRes = checkRateLimit(
+        request,
+        'vote-verify-password',
+        VERIFY_PASSWORD_RATE_LIMIT_PER_MINUTE,
+    );
+    if (rateLimitRes) return rateLimitRes;
+
     if (!db) {
         return NextResponse.json(
             { error: 'Database not configured' },

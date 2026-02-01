@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getOpenLibraryBooksDetails } from '@/lib/open-library';
 
+/** Open Library work key: /works/OL + digits + W (e.g. /works/OL19922194W). */
+const OPEN_LIBRARY_WORK_KEY = /^\/works\/OL\d+W$/;
+
+function isValidWorkKey(id: string): boolean {
+    return OPEN_LIBRARY_WORK_KEY.test(id.trim());
+}
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const idsParam = searchParams.get('ids');
@@ -12,14 +19,23 @@ export async function GET(request: Request) {
             { status: 400 },
         );
     }
-    const ids = idsParam
+    const rawIds = idsParam
         .split(',')
         .map((id) => id.trim())
         .filter(Boolean);
-    if (ids.length === 0 || ids.length > 10) {
+    if (rawIds.length === 0 || rawIds.length > 10) {
         return NextResponse.json(
             {
                 error: 'ids must be 1–10 comma-separated Open Library work keys',
+            },
+            { status: 400 },
+        );
+    }
+    const ids = rawIds.filter(isValidWorkKey);
+    if (ids.length !== rawIds.length) {
+        return NextResponse.json(
+            {
+                error: 'Each id must be an Open Library work key (e.g. /works/OL19922194W)',
             },
             { status: 400 },
         );

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const PAGE_SIZE = 10;
+const SEARCH_RATE_LIMIT_PER_MINUTE = 60;
 
 const bodySchema = z.object({
     title: z.string().max(200).optional(),
@@ -53,6 +55,13 @@ function coverUrlFromCoverId(coverId: number): string {
 }
 
 export async function POST(request: Request) {
+    const rateLimitRes = checkRateLimit(
+        request,
+        'books-search',
+        SEARCH_RATE_LIMIT_PER_MINUTE,
+    );
+    if (rateLimitRes) return rateLimitRes;
+
     const parsed = bodySchema.safeParse(await request.json());
     if (!parsed.success) {
         return NextResponse.json(
