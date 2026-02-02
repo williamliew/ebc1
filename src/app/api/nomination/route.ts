@@ -16,7 +16,16 @@ const createBodySchema = z.object({
     closeVoteDate: meetingDateSchema.optional(),
     voteAccessPassword: z.string().max(256).optional(),
     books: z
-        .array(z.object({ externalId: z.string() }))
+        .array(
+            z.object({
+                externalId: z.string(),
+                title: z.string().max(500).optional(),
+                author: z.string().max(500).optional(),
+                coverUrl: z
+                    .union([z.string().url(), z.literal(''), z.null()])
+                    .optional(),
+            }),
+        )
         .min(2)
         .max(4),
 });
@@ -41,7 +50,8 @@ export async function POST(request: Request) {
     }
 
     try {
-        const selectedBookIds = parsed.data.books.map((b) => b.externalId);
+        const booksInput = parsed.data.books;
+        const selectedBookIds = booksInput.map((b) => b.externalId);
         const details = await getOpenLibraryBooksDetails(selectedBookIds);
 
         const closeVoteAt = parsed.data.closeVoteDate
@@ -70,10 +80,15 @@ export async function POST(request: Request) {
         }
 
         const coverUrls = await Promise.all(
-            selectedBookIds.map(async (externalId) => {
+            selectedBookIds.map(async (externalId, i) => {
+                const override = booksInput[i];
+                if (override?.coverUrl != null && override.coverUrl !== '') {
+                    return override.coverUrl;
+                }
                 const d = details.find((b) => b.externalId === externalId);
-                const title = d?.title ?? 'Unknown title';
-                const author = d?.author ?? 'Unknown author';
+                const title = override?.title ?? d?.title ?? 'Unknown title';
+                const author =
+                    override?.author ?? d?.author ?? 'Unknown author';
                 const longitood = await getBookCoverUrl(title, author);
                 const final = longitood ?? d?.coverUrl ?? null;
                 if (longitood) {
@@ -91,11 +106,18 @@ export async function POST(request: Request) {
 
         const bookRows = selectedBookIds.map((externalId, i) => {
             const d = details.find((b) => b.externalId === externalId);
+            const override = booksInput[i];
             return {
                 voteRoundId: round.id,
                 externalId,
-                title: d?.title ?? 'Unknown title',
-                author: d?.author ?? 'Unknown author',
+                title:
+                    (override?.title?.trim() ? override.title : undefined) ??
+                    d?.title ??
+                    'Unknown title',
+                author:
+                    (override?.author?.trim() ? override.author : undefined) ??
+                    d?.author ??
+                    'Unknown author',
                 coverUrl: coverUrls[i] ?? null,
                 blurb: d?.blurb ?? null,
                 link: d?.link ?? null,

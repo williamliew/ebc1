@@ -1,51 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Elwood Book Club – Web App
 
-## Elwood Book Club
+Base documentation for how this app functions. For club background and process, see repo root `Description.md` and `Instructions.md`.
 
-### Vote access password
+---
 
-Nomination rounds can optionally be protected with a **vote access password** to limit access to the vote page and reduce bot spam.
+## What the app does
 
-- **Admin:** When creating a round in the [Voting page builder](/admin/voting-builder), use the optional **Vote access password** field in the footer. Leave it blank for no password (anyone can view and vote); set a password to require it before viewing the round’s books and voting.
-- **Voters:** On [/vote](/vote), if the current round has a password, a form is shown to enter the access password. After entering the correct password, an HttpOnly cookie is set for that round and the books/vote UI are shown. The cookie is scoped per round.
+Two-sided web app for a monthly “book of the month” vote:
 
-The password is stored in the database and checked server-side; the cookie is signed so it cannot be forged. No password is required for rounds created without one.
+- **Admins** build vote rounds (shortlist of 2–4 books from Open Library search), optionally protect voting with a password, and use a question builder to create printable spreads (e.g. icebreaker questions + QR code).
+- **Members** view the current shortlist on the vote page, optionally enter a password, and submit one vote per round (one per device/person, stored via hashed identifier only).
 
-### Book data (Open Library)
+The app also shows the **next book** (winner + meeting date) after the admin sets the winner.
 
-Book search and details use the [Open Library API](https://openlibrary.org/developers/api). No API key is required. Search uses `https://openlibrary.org/search.json` (title/author params); work details and cover images come from `https://openlibrary.org/works/{key}.json` and `https://covers.openlibrary.org/b/id/{id}-L.jpg`. External book IDs stored in the app are Open Library work keys (e.g. `/works/OL19922194W`).
+---
 
-## Getting Started
+## Main routes
 
-First, run the development server:
+| Route                     | Who      | Purpose                                                                                                                                                    |
+| ------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                       | Everyone | Home: links to Vote, Next book; admin panel link when logged in                                                                                            |
+| `/vote`                   | Members  | Current vote round: shortlist in a swipeable gallery, one vote per round; password form if round is protected                                              |
+| `/nextbook`               | Everyone | Winning book and meeting date for the latest round                                                                                                         |
+| `/admin`                  | Admin    | Admin hub (links to voting builder, question builder)                                                                                                      |
+| `/admin/login`            | Admin    | Login to access admin routes                                                                                                                               |
+| `/admin/voting-builder`   | Admin    | Search books, select 2–4, **review** (edit cover/title/author), then create the nomination round with meeting/close dates and optional vote password       |
+| `/admin/question-builder` | Admin    | Build a printable spread: questions, book club title, book title/author, extra text, background, font/size, QR code; in-page and fullscreen preview, print |
+
+---
+
+## How the voting builder works
+
+1. **Search** – Title and/or author; results from Open Library (no API key). Pagination, “Read more” for blurbs.
+2. **Select** – Up to 4 books; “Selected” list in a fixed footer with meeting date, close-vote date, optional vote access password.
+3. **Review** – Button label is **Review** (not “Create vote”). Clicking it **slides the view right** to a review step:
+    - Same shortlist in a **swipeable gallery** (like the vote page), with **dots** to jump to a book.
+    - Each card: **cover image**, then inputs for **Cover URL**, **Title**, **Author** (pre-filled; edits fix bad/missing search data).
+    - Fixed bottom: **Back** (slide left to builder), **Create** (creates the round using the reviewed data).
+4. **Create** – Sends the reviewed books (including any overrides for cover/title/author) to `POST /api/nomination`. Round and cached book rows are stored; vote page and nextbook use this data.
+
+The builder panel and review panel are each full viewport width (100vw); the slide is a horizontal transform between the two.
+
+---
+
+## How the vote page works
+
+- **GET /api/votes** – Returns current open round, books (cached), and optionally `alreadyVoted` / `chosenBookExternalId` when `X-Voter-Key-Hash` is sent.
+- If the round has a **vote access password**, the page shows a password form first; after success, an HttpOnly cookie is set and the books/vote UI are shown.
+- Shortlist is shown in a **swipeable gallery** (touch or mouse); **dots** indicate and select the current book.
+- **Vote for this** – Submits the currently visible book; one vote per voter key hash per round; “You’ve already voted” if applicable.
+
+---
+
+## How the question builder works
+
+- **Form** – Book club title, book title/author (from latest nomination or manual), additional rich text, one or more questions, background (preset / gradient / upload / URL), text colour, **preview font** (Playwrite NZ, Great Vibes, Courgette), **font size** slider, QR URL.
+- **Preview** – In-page and “Preview in full screen to screenshot”; font and size apply to both.
+- **Print** – Print action shows only the preview card (CSS print visibility).
+
+---
+
+## Book data (Open Library)
+
+- **Search**: `POST /api/books/search` (title, author, page) → calls Open Library search API.
+- **Details**: Work keys (e.g. `/works/OL19922194W`); covers from `covers.openlibrary.org`. No API key. See `Instructions.md` for API details.
+- **Nomination create** accepts optional **title**, **author**, **coverUrl** per book so the review step corrections are persisted.
+
+---
+
+## Vote access password
+
+- **Admin**: Optional “Vote access password” in the voting builder footer. If set, the round is protected.
+- **Voters**: On `/vote`, a form is shown until the correct password is entered; then an HttpOnly, signed cookie is set for that round and the books/vote UI are shown. Stored and checked server-side.
+
+---
+
+## Theming and accessibility
+
+- **Theme switcher** (top-right): Default (Elwood brand), high-contrast, alternative (warm). Stored in `localStorage`; CSS variables in `app/globals.css`. New UI should use theme variables (see `docs/THEMING.md` and `.cursorrules`).
+- **Logo** – `EbcLogo` uses theme primary; docs in `docs/LOGO-ACCESSIBILITY.md`.
+
+---
+
+## Tech stack
+
+- **Next.js 15** (App Router), TypeScript, Tailwind CSS
+- **TanStack Query** for admin search and client data
+- **Drizzle** + SQLite (or other DB via env) for rounds, books, votes
+- **Zod** for validation (API bodies, env)
+- **Open Library** for book search and details (no API key)
+- **Rate limiting** (in-memory per IP) on login, vote verify, book search, vote submit
+- **Security**: See `SECURITY.md`; headers in `next.config.ts`
+
+---
+
+## Getting started
 
 ```bash
+cd ebc1
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Env: see `.env.example` (DB, admin credentials). Deployment: see repo root `Deployment.md`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Other docs
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Description.md** (repo root) – Club overview, monthly process, platforms
+- **Instructions.md** (repo root) – Build goals, API list, data model, flows
+- **Deployment.md** (repo root) – Hosting and env
+- **ebc1/SECURITY.md** – Security mitigations and residual risks
+- **ebc1/docs/THEMING.md** – Theme variables and usage
+- **ebc1/docs/LOGO-ACCESSIBILITY.md** – Logo contrast and usage
