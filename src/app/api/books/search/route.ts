@@ -16,6 +16,8 @@ export type BookSearchResult = {
     title: string;
     author: string;
     coverUrl: string | null;
+    /** All cover image URLs for this work (for thumbnail selection in review). */
+    coverOptions: string[];
     blurb: string | null;
     link: string | null;
 };
@@ -120,28 +122,42 @@ export async function POST(request: Request) {
                 const link = key ? `${OPENLIBRARY_BASE}${key}` : null;
 
                 const work = await fetchWork(key);
+                const coverOptions: number[] = [];
                 let coverUrl: string | null = null;
                 let blurb: string | null = null;
 
                 if (work) {
                     if (work.covers && work.covers.length > 0) {
-                        const lastCoverId = work.covers[work.covers.length - 1];
-                        coverUrl = coverUrlFromCoverId(lastCoverId);
+                        for (const id of work.covers) {
+                            coverOptions.push(id);
+                        }
+                        coverUrl = coverUrlFromCoverId(
+                            work.covers[work.covers.length - 1],
+                        );
                     }
                     if (typeof work.description?.value === 'string') {
                         blurb = work.description.value.trim() || null;
                     }
                 }
 
-                if (!coverUrl && doc.cover_i != null) {
-                    coverUrl = coverUrlFromCoverId(doc.cover_i);
+                if (doc.cover_i != null) {
+                    const docCoverId = doc.cover_i;
+                    if (!coverOptions.includes(docCoverId)) {
+                        coverOptions.unshift(docCoverId);
+                    }
+                    if (!coverUrl) {
+                        coverUrl = coverUrlFromCoverId(docCoverId);
+                    }
                 }
+
+                const coverOptionUrls = coverOptions.map(coverUrlFromCoverId);
 
                 return {
                     externalId: key,
                     title: titleText,
                     author: authorText,
                     coverUrl,
+                    coverOptions: coverOptionUrls,
                     blurb,
                     link,
                 };

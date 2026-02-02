@@ -14,9 +14,31 @@ type BookSearchResult = {
     title: string;
     author: string;
     coverUrl: string | null;
+    coverOptions?: string[];
     blurb: string | null;
     link: string | null;
 };
+
+/** Book in review step: adds thumbnail selection state. */
+type ReviewBook = BookSearchResult & {
+    coverOptions: string[];
+    selectedCoverIndex: number;
+    manualOverride: string | null;
+};
+
+function getEffectiveCoverUrl(book: ReviewBook): string | null {
+    if (book.manualOverride != null && book.manualOverride.trim() !== '') {
+        return book.manualOverride.trim();
+    }
+    if (
+        book.coverOptions.length > 0 &&
+        book.selectedCoverIndex >= 0 &&
+        book.selectedCoverIndex < book.coverOptions.length
+    ) {
+        return book.coverOptions[book.selectedCoverIndex] ?? null;
+    }
+    return book.coverUrl;
+}
 
 const MAX_SELECTED = 4;
 const MIN_TO_CREATE = 2;
@@ -72,7 +94,7 @@ export default function VotingBuilderPage() {
         null,
     );
     const [step, setStep] = useState<'builder' | 'review'>('builder');
-    const [reviewBooks, setReviewBooks] = useState<BookSearchResult[]>([]);
+    const [reviewBooks, setReviewBooks] = useState<ReviewBook[]>([]);
     const [reviewIndex, setReviewIndex] = useState(0);
     const [reviewDragOffset, setReviewDragOffset] = useState(0);
     const [reviewIsDragging, setReviewIsDragging] = useState(false);
@@ -144,7 +166,7 @@ export default function VotingBuilderPage() {
                         externalId: b.externalId,
                         title: b.title,
                         author: b.author,
-                        coverUrl: b.coverUrl ?? null,
+                        coverUrl: getEffectiveCoverUrl(b as ReviewBook) ?? null,
                     })),
                 }),
             });
@@ -220,7 +242,23 @@ export default function VotingBuilderPage() {
 
     const goToReview = useCallback(() => {
         if (selected.length < MIN_TO_CREATE) return;
-        setReviewBooks(selected.map((b) => ({ ...b })));
+        setReviewBooks(
+            selected.map((b) => {
+                const opts = b.coverOptions ?? [];
+                const matchIndex =
+                    opts.length > 0 && b.coverUrl
+                        ? opts.indexOf(b.coverUrl)
+                        : -1;
+                const selectedCoverIndex =
+                    matchIndex >= 0 ? matchIndex : Math.max(0, opts.length - 1);
+                return {
+                    ...b,
+                    coverOptions: opts,
+                    selectedCoverIndex,
+                    manualOverride: null,
+                };
+            }),
+        );
         setReviewIndex(0);
         setStep('review');
     }, [selected]);
@@ -248,8 +286,8 @@ export default function VotingBuilderPage() {
     const updateReviewBook = useCallback(
         (
             index: number,
-            field: keyof BookSearchResult,
-            value: string | null,
+            field: keyof ReviewBook,
+            value: string | null | number,
         ) => {
             setReviewBooks((prev) => {
                 const next = [...prev];
@@ -716,22 +754,38 @@ export default function VotingBuilderPage() {
                                             }}
                                         >
                                             <div className="flex flex-col rounded-xl border border-border bg-surface">
-                                                {book.coverUrl ? (
+                                                {getEffectiveCoverUrl(book) ? (
                                                     <div className="relative w-full aspect-[3/4] shrink-0 bg-[var(--border)]">
                                                         <Image
-                                                            src={book.coverUrl}
+                                                            src={
+                                                                getEffectiveCoverUrl(
+                                                                    book,
+                                                                )!
+                                                            }
                                                             alt=""
                                                             fill
                                                             className="object-cover"
                                                             unoptimized
                                                             sizes="(max-width: 512px) 100vw, 512px"
-                                                            onError={() =>
-                                                                updateReviewBook(
-                                                                    i,
-                                                                    'coverUrl',
-                                                                    null,
-                                                                )
-                                                            }
+                                                            onError={() => {
+                                                                const effective =
+                                                                    getEffectiveCoverUrl(
+                                                                        book,
+                                                                    );
+                                                                const isOverride =
+                                                                    book.manualOverride !=
+                                                                        null &&
+                                                                    book.manualOverride.trim() !==
+                                                                        '' &&
+                                                                    effective ===
+                                                                        book.manualOverride.trim();
+                                                                if (isOverride)
+                                                                    updateReviewBook(
+                                                                        i,
+                                                                        'manualOverride',
+                                                                        null,
+                                                                    );
+                                                            }}
                                                         />
                                                     </div>
                                                 ) : (
@@ -742,14 +796,61 @@ export default function VotingBuilderPage() {
                                                     </div>
                                                 )}
                                                 <div className="p-4 space-y-3">
+                                                    {book.coverOptions.length >
+                                                        1 && (
+                                                        <div>
+                                                            <label className="text-xs font-medium text-muted block mb-1">
+                                                                Thumbnail
+                                                                options
+                                                            </label>
+                                                            <select
+                                                                value={
+                                                                    book.selectedCoverIndex
+                                                                }
+                                                                onChange={(e) =>
+                                                                    updateReviewBook(
+                                                                        i,
+                                                                        'selectedCoverIndex',
+                                                                        Number(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                                            >
+                                                                {book.coverOptions.map(
+                                                                    (
+                                                                        _,
+                                                                        optIdx,
+                                                                    ) => (
+                                                                        <option
+                                                                            key={
+                                                                                optIdx
+                                                                            }
+                                                                            value={
+                                                                                optIdx
+                                                                            }
+                                                                        >
+                                                                            Option{' '}
+                                                                            {optIdx +
+                                                                                1}
+                                                                        </option>
+                                                                    ),
+                                                                )}
+                                                            </select>
+                                                        </div>
+                                                    )}
                                                     <div>
                                                         <label className="text-xs font-medium text-muted block mb-1">
-                                                            Cover URL
+                                                            Manual thumbnail URL
+                                                            override
                                                         </label>
                                                         <input
                                                             type="url"
                                                             value={
-                                                                book.coverUrl ??
+                                                                book.manualOverride ??
                                                                 ''
                                                             }
                                                             onChange={(e) => {
@@ -758,11 +859,11 @@ export default function VotingBuilderPage() {
                                                                     null;
                                                                 updateReviewBook(
                                                                     i,
-                                                                    'coverUrl',
+                                                                    'manualOverride',
                                                                     v,
                                                                 );
                                                             }}
-                                                            placeholder="https://…"
+                                                            placeholder="https://… (overrides thumbnail option)"
                                                             className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                                                         />
                                                     </div>
