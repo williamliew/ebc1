@@ -305,6 +305,15 @@ export default function VotingBuilderPage() {
 
     const reviewHandleTouchStart = useCallback(
         (e: React.TouchEvent) => {
+            const target = e.target;
+            if (
+                target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement ||
+                target instanceof HTMLSelectElement ||
+                target instanceof HTMLLabelElement
+            ) {
+                return;
+            }
             reviewHandlePointerStart(e.targetTouches[0].clientX);
         },
         [reviewHandlePointerStart],
@@ -323,6 +332,15 @@ export default function VotingBuilderPage() {
     );
     const reviewHandleMouseDown = useCallback(
         (e: React.MouseEvent) => {
+            const target = e.target;
+            if (
+                target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement ||
+                target instanceof HTMLSelectElement ||
+                target instanceof HTMLLabelElement
+            ) {
+                return;
+            }
             e.preventDefault();
             reviewHandlePointerStart(e.clientX);
         },
@@ -344,675 +362,627 @@ export default function VotingBuilderPage() {
         };
     }, [reviewIsDragging, reviewHandlePointerMove, reviewHandlePointerEnd]);
 
-    const slideTransform =
-        step === 'review' ? 'translateX(-50%)' : 'translateX(0)';
-
     return (
-        <div className="min-h-screen bg-background text-foreground overflow-hidden">
-            <div
-                className="flex min-h-screen transition-transform duration-300 ease-out"
-                style={{
-                    width: '200vw',
-                    transform: slideTransform,
-                }}
-            >
-                {/* Builder panel - full viewport width so search/layout aren't narrow */}
-                <div
-                    className="flex flex-col shrink-0"
-                    style={{ width: '100vw', minWidth: '100vw' }}
+        <div className="min-h-screen bg-background text-foreground">
+            <header className="border-b border-border bg-surface px-4 py-4">
+                <Link
+                    href="/"
+                    className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                 >
-                    <header className="border-b border-border bg-surface px-4 py-4 shrink-0">
-                        <Link
-                            href="/"
-                            className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
-                        >
-                            ← Back to home
-                        </Link>
-                        <h1 className="text-xl font-semibold">
-                            Voting page builder
-                        </h1>
-                        <p className="text-sm text-muted mt-1">
-                            Search books, select up to {MAX_SELECTED}, then
-                            create the nomination round (min {MIN_TO_CREATE}{' '}
-                            books).
-                        </p>
-                    </header>
+                    ← Back to home
+                </Link>
+                <h1 className="text-xl font-semibold">Voting page builder</h1>
+                <p className="text-sm text-muted mt-1">
+                    Search books, select up to {MAX_SELECTED}, then create the
+                    nomination round (min {MIN_TO_CREATE} books).
+                </p>
+            </header>
 
-                    <main
-                        className={`w-full max-w-2xl mx-auto p-4 space-y-6 ${selected.length >= 1 ? 'pb-80' : ''}`}
+            <main
+                className={`w-full max-w-2xl mx-auto p-4 space-y-6 ${selected.length >= 1 ? 'pb-80' : ''}`}
+            >
+                {/* Search */}
+                <section className="w-full">
+                    <form
+                        onSubmit={handleSearch}
+                        className="w-full flex flex-col sm:flex-row gap-2"
                     >
-                        {/* Search */}
-                        <section className="w-full">
-                            <form
-                                onSubmit={handleSearch}
-                                className="w-full flex flex-col sm:flex-row gap-2"
-                            >
-                                <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={titleSearch}
-                                            onChange={(e) =>
-                                                setTitleSearch(e.target.value)
-                                            }
-                                            placeholder="Title"
-                                            className="rounded-lg border border-border bg-surface pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                            aria-label="Book title"
-                                        />
-                                        {titleSearch && (
+                        <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={titleSearch}
+                                    onChange={(e) =>
+                                        setTitleSearch(e.target.value)
+                                    }
+                                    placeholder="Title"
+                                    className="rounded-lg border border-border bg-surface pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    aria-label="Book title"
+                                />
+                                {titleSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setTitleSearch('')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                        aria-label="Clear title"
+                                    >
+                                        ×
+                                    </button>
+                                )}
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={authorSearch}
+                                    onChange={(e) =>
+                                        setAuthorSearch(e.target.value)
+                                    }
+                                    placeholder="Author"
+                                    className="rounded-lg border border-border bg-surface pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    aria-label="Author"
+                                />
+                                {authorSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setAuthorSearch('')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                        aria-label="Clear author"
+                                    >
+                                        ×
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={
+                                searchMutation.isPending ||
+                                (!titleSearch.trim() && !authorSearch.trim())
+                            }
+                            className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 shrink-0"
+                        >
+                            {searchMutation.isPending ? 'Searching…' : 'Search'}
+                        </button>
+                    </form>
+                    {searchError && (
+                        <p
+                            className="mt-2 text-sm text-red-600 dark:text-red-400"
+                            role="alert"
+                        >
+                            {searchError}
+                        </p>
+                    )}
+                </section>
+
+                {/* Search results */}
+                {searchResults.length > 0 && (
+                    <section>
+                        <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
+                            Results
+                        </h2>
+                        <ul className="space-y-3">
+                            {searchResults.map((book) => {
+                                const alreadySelected = selectedIds.has(
+                                    book.externalId,
+                                );
+                                const atMax = selected.length >= MAX_SELECTED;
+                                return (
+                                    <li
+                                        key={book.externalId}
+                                        className="flex gap-3 rounded-lg border border-border bg-surface p-3"
+                                    >
+                                        <div className="flex-shrink-0 w-12 h-18 relative bg-[var(--border)] rounded overflow-hidden">
+                                            {book.coverUrl ? (
+                                                <Image
+                                                    src={book.coverUrl}
+                                                    alt=""
+                                                    fill
+                                                    className="object-cover"
+                                                    unoptimized
+                                                    sizes="48px"
+                                                />
+                                            ) : (
+                                                <span className="text-xs text-muted flex items-center justify-center h-full">
+                                                    No cover
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-medium text-sm truncate">
+                                                {book.title}
+                                            </p>
+                                            <p className="text-xs text-muted truncate">
+                                                {book.author}
+                                            </p>
                                             <button
                                                 type="button"
                                                 onClick={() =>
-                                                    setTitleSearch('')
+                                                    setPreviewBook(book)
                                                 }
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                                aria-label="Clear title"
+                                                className="mt-1 text-xs text-muted hover:underline"
                                             >
-                                                ×
+                                                Read more
                                             </button>
-                                        )}
-                                    </div>
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={authorSearch}
-                                            onChange={(e) =>
-                                                setAuthorSearch(e.target.value)
-                                            }
-                                            placeholder="Author"
-                                            className="rounded-lg border border-border bg-surface pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                            aria-label="Author"
-                                        />
-                                        {authorSearch && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setAuthorSearch('')
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (alreadySelected) {
+                                                    removeSelected(
+                                                        book.externalId,
+                                                    );
+                                                } else {
+                                                    addSelected(book);
                                                 }
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                                aria-label="Clear author"
-                                            >
-                                                ×
-                                            </button>
-                                        )}
-                                    </div>
+                                            }}
+                                            disabled={!alreadySelected && atMax}
+                                            className="flex-shrink-0 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {alreadySelected
+                                                ? 'Remove'
+                                                : 'Select'}
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                        {showPagination && (
+                            <div className="mt-3 flex items-center justify-between gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        searchMutation.mutate({
+                                            title: titleSearch.trim(),
+                                            author: authorSearch.trim(),
+                                            page: searchPage - 1,
+                                        })
+                                    }
+                                    disabled={
+                                        !canPrev || searchMutation.isPending
+                                    }
+                                    className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Previous
+                                </button>
+                                <span className="text-sm text-muted dark:text-muted">
+                                    Page {searchPage} of {totalSearchPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        searchMutation.mutate({
+                                            title: titleSearch.trim(),
+                                            author: authorSearch.trim(),
+                                            page: searchPage + 1,
+                                        })
+                                    }
+                                    disabled={
+                                        !canNext || searchMutation.isPending
+                                    }
+                                    className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {/* Read more popup */}
+                {previewBook && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="preview-title"
+                        onClick={() => setPreviewBook(null)}
+                    >
+                        <div
+                            className="rounded-xl bg-surface shadow-xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="p-4 pb-2 flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <h3
+                                        id="preview-title"
+                                        className="text-lg font-semibold text-foreground"
+                                    >
+                                        {previewBook.title}
+                                    </h3>
+                                    <p className="text-sm text-muted dark:text-muted mt-0.5">
+                                        by {previewBook.author}
+                                    </p>
                                 </div>
                                 <button
-                                    type="submit"
-                                    disabled={
-                                        searchMutation.isPending ||
-                                        (!titleSearch.trim() &&
-                                            !authorSearch.trim())
-                                    }
-                                    className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 shrink-0"
+                                    type="button"
+                                    onClick={() => setPreviewBook(null)}
+                                    className="flex-shrink-0 rounded p-1.5 text-muted hover:bg-[var(--surface-hover)] hover:text-foreground"
+                                    aria-label="Close"
                                 >
-                                    {searchMutation.isPending
-                                        ? 'Searching…'
-                                        : 'Search'}
+                                    ×
                                 </button>
-                            </form>
-                            {searchError && (
-                                <p
-                                    className="mt-2 text-sm text-red-600 dark:text-red-400"
-                                    role="alert"
-                                >
-                                    {searchError}
-                                </p>
-                            )}
-                        </section>
+                            </div>
+                            <div className="px-4 pb-4 overflow-y-auto flex-1 min-h-0">
+                                {previewBook.blurb ? (
+                                    <div
+                                        className="text-sm text-muted leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-foreground"
+                                        dangerouslySetInnerHTML={{
+                                            __html: sanitiseBlurb(
+                                                previewBook.blurb,
+                                            ),
+                                        }}
+                                    />
+                                ) : (
+                                    <p className="text-sm text-muted dark:text-muted italic">
+                                        No description available.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
-                        {/* Search results */}
-                        {searchResults.length > 0 && (
-                            <section>
-                                <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
-                                    Results
-                                </h2>
-                                <ul className="space-y-3">
-                                    {searchResults.map((book) => {
-                                        const alreadySelected = selectedIds.has(
-                                            book.externalId,
-                                        );
-                                        const atMax =
-                                            selected.length >= MAX_SELECTED;
-                                        return (
-                                            <li
-                                                key={book.externalId}
-                                                className="flex gap-3 rounded-lg border border-border bg-surface p-3"
-                                            >
-                                                <div className="flex-shrink-0 w-12 h-18 relative bg-[var(--border)] rounded overflow-hidden">
-                                                    {book.coverUrl ? (
+                {createMessage && createMessage.type === 'error' && (
+                    <p
+                        role="alert"
+                        className="text-sm text-red-600 dark:text-red-400"
+                    >
+                        {createMessage.text}
+                    </p>
+                )}
+            </main>
+
+            {/* Success lightbox */}
+            {showSuccessLightbox && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="success-lightbox-title"
+                >
+                    <div className="rounded-xl bg-surface shadow-xl p-6 max-w-sm w-full text-center">
+                        <p
+                            id="success-lightbox-title"
+                            className="text-lg font-semibold text-foreground"
+                        >
+                            Vote created!
+                        </p>
+                        <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
+                            <button
+                                type="button"
+                                onClick={() => setShowSuccessLightbox(false)}
+                                className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                            >
+                                Close
+                            </button>
+                            <Link
+                                href="/"
+                                onClick={() => setShowSuccessLightbox(false)}
+                                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] text-center"
+                            >
+                                Return to home
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Review modal popup */}
+            {step === 'review' && reviewBooks.length > 0 && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="review-modal-title"
+                >
+                    <div className="bg-surface rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="p-4 border-b border-border shrink-0">
+                            <h2
+                                id="review-modal-title"
+                                className="text-xl font-semibold"
+                            >
+                                Review selections
+                            </h2>
+                            <p className="text-sm text-muted mt-1">
+                                Check cover, title and author. Swipe between
+                                books.
+                            </p>
+                        </div>
+                        <section
+                            className="flex-1 min-h-0 flex flex-col px-4 pt-4 overflow-y-auto select-none"
+                            onTouchStart={reviewHandleTouchStart}
+                            onTouchMove={reviewHandleTouchMove}
+                            onTouchEnd={reviewHandleTouchEnd}
+                            onMouseDown={reviewHandleMouseDown}
+                            style={{ touchAction: 'pan-y' }}
+                        >
+                            <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-visible rounded-xl">
+                                <div
+                                    className="flex will-change-transform"
+                                    style={{
+                                        width: `${reviewBooks.length * 100}%`,
+                                        transform: `translateX(calc(-${reviewIndex * (100 / reviewBooks.length)}% + ${reviewDragOffset}px))`,
+                                        transition: reviewIsDragging
+                                            ? 'none'
+                                            : `transform ${SWIPE_TRANSITION_MS}ms ease-out`,
+                                    }}
+                                >
+                                    {reviewBooks.map((book, i) => (
+                                        <div
+                                            key={book.externalId}
+                                            className="flex flex-col flex-shrink-0 min-w-0 pr-4 max-h-[65vh] overflow-y-auto overscroll-contain"
+                                            style={{
+                                                width: `${100 / reviewBooks.length}%`,
+                                            }}
+                                        >
+                                            <div className="flex flex-col rounded-xl border border-border bg-surface">
+                                                {book.coverUrl ? (
+                                                    <div className="relative w-full aspect-[3/4] shrink-0 bg-[var(--border)]">
                                                         <Image
                                                             src={book.coverUrl}
                                                             alt=""
                                                             fill
                                                             className="object-cover"
                                                             unoptimized
-                                                            sizes="48px"
+                                                            sizes="(max-width: 512px) 100vw, 512px"
+                                                            onError={() =>
+                                                                updateReviewBook(
+                                                                    i,
+                                                                    'coverUrl',
+                                                                    null,
+                                                                )
+                                                            }
                                                         />
-                                                    ) : (
-                                                        <span className="text-xs text-muted flex items-center justify-center h-full">
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-full aspect-[3/4] shrink-0 bg-[var(--border)] flex items-center justify-center">
+                                                        <span className="text-muted text-sm">
                                                             No cover
                                                         </span>
-                                                    )}
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="font-medium text-sm truncate">
-                                                        {book.title}
-                                                    </p>
-                                                    <p className="text-xs text-muted truncate">
-                                                        {book.author}
-                                                    </p>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setPreviewBook(book)
-                                                        }
-                                                        className="mt-1 text-xs text-muted hover:underline"
-                                                    >
-                                                        Read more
-                                                    </button>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (alreadySelected) {
-                                                            removeSelected(
-                                                                book.externalId,
-                                                            );
-                                                        } else {
-                                                            addSelected(book);
-                                                        }
-                                                    }}
-                                                    disabled={
-                                                        !alreadySelected &&
-                                                        atMax
-                                                    }
-                                                    className="flex-shrink-0 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    {alreadySelected
-                                                        ? 'Remove'
-                                                        : 'Select'}
-                                                </button>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                                {showPagination && (
-                                    <div className="mt-3 flex items-center justify-between gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                searchMutation.mutate({
-                                                    title: titleSearch.trim(),
-                                                    author: authorSearch.trim(),
-                                                    page: searchPage - 1,
-                                                })
-                                            }
-                                            disabled={
-                                                !canPrev ||
-                                                searchMutation.isPending
-                                            }
-                                            className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Previous
-                                        </button>
-                                        <span className="text-sm text-muted dark:text-muted">
-                                            Page {searchPage} of{' '}
-                                            {totalSearchPages}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                searchMutation.mutate({
-                                                    title: titleSearch.trim(),
-                                                    author: authorSearch.trim(),
-                                                    page: searchPage + 1,
-                                                })
-                                            }
-                                            disabled={
-                                                !canNext ||
-                                                searchMutation.isPending
-                                            }
-                                            className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Next
-                                        </button>
-                                    </div>
-                                )}
-                            </section>
-                        )}
-
-                        {/* Read more popup */}
-                        {previewBook && (
-                            <div
-                                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                                role="dialog"
-                                aria-modal="true"
-                                aria-labelledby="preview-title"
-                                onClick={() => setPreviewBook(null)}
-                            >
-                                <div
-                                    className="rounded-xl bg-surface shadow-xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <div className="p-4 pb-2 flex items-start justify-between gap-2">
-                                        <div className="min-w-0 flex-1">
-                                            <h3
-                                                id="preview-title"
-                                                className="text-lg font-semibold text-foreground"
-                                            >
-                                                {previewBook.title}
-                                            </h3>
-                                            <p className="text-sm text-muted dark:text-muted mt-0.5">
-                                                by {previewBook.author}
-                                            </p>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setPreviewBook(null)}
-                                            className="flex-shrink-0 rounded p-1.5 text-muted hover:bg-[var(--surface-hover)] hover:text-foreground"
-                                            aria-label="Close"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                    <div className="px-4 pb-4 overflow-y-auto flex-1 min-h-0">
-                                        {previewBook.blurb ? (
-                                            <div
-                                                className="text-sm text-muted leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-foreground"
-                                                dangerouslySetInnerHTML={{
-                                                    __html: sanitiseBlurb(
-                                                        previewBook.blurb,
-                                                    ),
-                                                }}
-                                            />
-                                        ) : (
-                                            <p className="text-sm text-muted dark:text-muted italic">
-                                                No description available.
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {createMessage && createMessage.type === 'error' && (
-                            <p
-                                role="alert"
-                                className="text-sm text-red-600 dark:text-red-400"
-                            >
-                                {createMessage.text}
-                            </p>
-                        )}
-                    </main>
-
-                    {/* Success lightbox */}
-                    {showSuccessLightbox && (
-                        <div
-                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                            role="dialog"
-                            aria-modal="true"
-                            aria-labelledby="success-lightbox-title"
-                        >
-                            <div className="rounded-xl bg-surface shadow-xl p-6 max-w-sm w-full text-center">
-                                <p
-                                    id="success-lightbox-title"
-                                    className="text-lg font-semibold text-foreground"
-                                >
-                                    Vote created!
-                                </p>
-                                <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setShowSuccessLightbox(false)
-                                        }
-                                        className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)]"
-                                    >
-                                        Close
-                                    </button>
-                                    <Link
-                                        href="/"
-                                        onClick={() =>
-                                            setShowSuccessLightbox(false)
-                                        }
-                                        className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] text-center"
-                                    >
-                                        Return to home
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Fixed bottom: only when at least 1 book selected */}
-                    {selected.length >= 1 && (
-                        <footer className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
-                            <div className="max-w-2xl mx-auto px-4 py-4">
-                                <div className="mb-3 flex gap-4 flex-wrap">
-                                    <div className="flex-1 min-w-[140px]">
-                                        <label
-                                            htmlFor="meeting-date"
-                                            className="text-sm font-medium text-muted dark:text-muted block mb-1"
-                                        >
-                                            Meeting date (book club)
-                                        </label>
-                                        <input
-                                            id="meeting-date"
-                                            type="date"
-                                            value={meetingDate}
-                                            onChange={(e) => {
-                                                setMeetingDate(e.target.value);
-                                                setCloseVoteDate(
-                                                    getDefaultCloseVoteDate(
-                                                        e.target.value,
-                                                    ),
-                                                );
-                                            }}
-                                            className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                            aria-label="Meeting date"
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-[140px]">
-                                        <label
-                                            htmlFor="close-vote-date"
-                                            className="text-sm font-medium text-muted dark:text-muted block mb-1"
-                                        >
-                                            Close vote
-                                        </label>
-                                        <input
-                                            id="close-vote-date"
-                                            type="date"
-                                            value={closeVoteDate}
-                                            onChange={(e) =>
-                                                setCloseVoteDate(e.target.value)
-                                            }
-                                            className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                            aria-label="Close vote date"
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-[140px]">
-                                        <label
-                                            htmlFor="vote-access-password"
-                                            className="text-sm font-medium text-muted dark:text-muted block mb-1"
-                                        >
-                                            Vote access password (optional)
-                                        </label>
-                                        <input
-                                            id="vote-access-password"
-                                            type="password"
-                                            value={voteAccessPassword}
-                                            onChange={(e) =>
-                                                setVoteAccessPassword(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            placeholder="Leave blank for no password"
-                                            className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                            aria-label="Vote access password"
-                                        />
-                                    </div>
-                                </div>
-                                <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
-                                    Selected ({selected.length}/{MAX_SELECTED})
-                                </h2>
-                                <ul className="space-y-2">
-                                    {selected.map((book) => (
-                                        <li
-                                            key={book.externalId}
-                                            className="flex items-center justify-between gap-2 rounded-lg border border-border bg-[var(--surface-hover)] px-3 py-2"
-                                        >
-                                            <span className="text-sm font-medium truncate min-w-0 flex-1">
-                                                {book.title}
-                                            </span>
-                                            <span className="text-xs text-muted truncate max-w-[140px] flex-shrink-0">
-                                                by {book.author}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    removeSelected(
-                                                        book.externalId,
-                                                    )
-                                                }
-                                                className="text-xs text-red-600 dark:text-red-400 hover:underline flex-shrink-0"
-                                                aria-label={`Remove ${book.title}`}
-                                            >
-                                                Remove
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                                {selected.length >= 1 && (
-                                    <div className="mt-6 flex gap-2 justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={reset}
-                                            disabled={createMutation.isPending}
-                                            className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-[var(--surface-hover)]"
-                                        >
-                                            Reset
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={goToReview}
-                                            disabled={
-                                                createMutation.isPending ||
-                                                selected.length < MIN_TO_CREATE
-                                            }
-                                            className="rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-                                        >
-                                            {selected.length >= MIN_TO_CREATE
-                                                ? 'Review'
-                                                : 'Required: at least 2 selections'}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </footer>
-                    )}
-                </div>
-
-                {/* Review panel */}
-                <div
-                    className="flex flex-col shrink-0 min-h-screen"
-                    style={{ width: '100vw', minWidth: '100vw' }}
-                >
-                    <header className="border-b border-border bg-surface px-4 py-4 shrink-0">
-                        <h1 className="text-xl font-semibold">
-                            Review selections
-                        </h1>
-                        <p className="text-sm text-muted mt-1">
-                            Check cover, title and author. Swipe between books.
-                        </p>
-                    </header>
-                    {reviewBooks.length > 0 && (
-                        <>
-                            <section
-                                className="flex-1 min-h-0 flex flex-col px-4 pt-4 pb-24 select-none"
-                                onTouchStart={reviewHandleTouchStart}
-                                onTouchMove={reviewHandleTouchMove}
-                                onTouchEnd={reviewHandleTouchEnd}
-                                onMouseDown={reviewHandleMouseDown}
-                                style={{ touchAction: 'pan-y' }}
-                            >
-                                <div className="flex-1 min-h-0 overflow-hidden rounded-xl">
-                                    <div
-                                        className="h-full flex will-change-transform"
-                                        style={{
-                                            width: `${reviewBooks.length * 100}%`,
-                                            transform: `translateX(calc(-${reviewIndex * (100 / reviewBooks.length)}% + ${reviewDragOffset}px))`,
-                                            transition: reviewIsDragging
-                                                ? 'none'
-                                                : `transform ${SWIPE_TRANSITION_MS}ms ease-out`,
-                                        }}
-                                    >
-                                        {reviewBooks.map((book, i) => (
-                                            <div
-                                                key={book.externalId}
-                                                className="h-full flex flex-col flex-shrink-0 min-w-0 pr-4"
-                                                style={{
-                                                    width: `${100 / reviewBooks.length}%`,
-                                                }}
-                                            >
-                                                <div className="h-full flex flex-col rounded-xl border border-border bg-surface overflow-hidden">
-                                                    {book.coverUrl ? (
-                                                        <div className="relative w-full aspect-[3/4] shrink-0 bg-[var(--border)]">
-                                                            <Image
-                                                                src={
-                                                                    book.coverUrl
-                                                                }
-                                                                alt=""
-                                                                fill
-                                                                className="object-cover"
-                                                                unoptimized
-                                                                sizes="(max-width: 512px) 100vw, 512px"
-                                                                onError={() =>
-                                                                    updateReviewBook(
-                                                                        i,
-                                                                        'coverUrl',
-                                                                        null,
-                                                                    )
-                                                                }
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="w-full aspect-[3/4] shrink-0 bg-[var(--border)] flex items-center justify-center">
-                                                            <span className="text-muted text-sm">
-                                                                No cover
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    <div className="p-4 flex-1 min-h-0 overflow-y-auto space-y-3">
-                                                        <div>
-                                                            <label className="text-xs font-medium text-muted block mb-1">
-                                                                Cover URL
-                                                            </label>
-                                                            <input
-                                                                type="url"
-                                                                value={
-                                                                    book.coverUrl ??
-                                                                    ''
-                                                                }
-                                                                onChange={(
-                                                                    e,
-                                                                ) => {
-                                                                    const v =
-                                                                        e.target.value.trim() ||
-                                                                        null;
-                                                                    updateReviewBook(
-                                                                        i,
-                                                                        'coverUrl',
-                                                                        v,
-                                                                    );
-                                                                }}
-                                                                placeholder="https://…"
-                                                                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-xs font-medium text-muted block mb-1">
-                                                                Title
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={
-                                                                    book.title
-                                                                }
-                                                                onChange={(e) =>
-                                                                    updateReviewBook(
-                                                                        i,
-                                                                        'title',
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-xs font-medium text-muted block mb-1">
-                                                                Author
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={
-                                                                    book.author
-                                                                }
-                                                                onChange={(e) =>
-                                                                    updateReviewBook(
-                                                                        i,
-                                                                        'author',
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                                            />
-                                                        </div>
+                                                    </div>
+                                                )}
+                                                <div className="p-4 space-y-3">
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted block mb-1">
+                                                            Cover URL
+                                                        </label>
+                                                        <input
+                                                            type="url"
+                                                            value={
+                                                                book.coverUrl ??
+                                                                ''
+                                                            }
+                                                            onChange={(e) => {
+                                                                const v =
+                                                                    e.target.value.trim() ||
+                                                                    null;
+                                                                updateReviewBook(
+                                                                    i,
+                                                                    'coverUrl',
+                                                                    v,
+                                                                );
+                                                            }}
+                                                            placeholder="https://…"
+                                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted block mb-1">
+                                                            Title
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={book.title}
+                                                            onChange={(e) =>
+                                                                updateReviewBook(
+                                                                    i,
+                                                                    'title',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted block mb-1">
+                                                            Author
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={book.author}
+                                                            onChange={(e) =>
+                                                                updateReviewBook(
+                                                                    i,
+                                                                    'author',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div
-                                    className="flex justify-center gap-2 py-4"
-                                    role="tablist"
-                                    aria-label="Book options"
-                                >
-                                    {reviewBooks.map((_, i) => (
-                                        <button
-                                            key={i}
-                                            type="button"
-                                            onClick={() => reviewGoTo(i)}
-                                            role="tab"
-                                            aria-selected={i === reviewIndex}
-                                            aria-label={`Book ${i + 1} of ${reviewBooks.length}`}
-                                            className={`h-2 rounded-full transition-colors ${
-                                                i === reviewIndex
-                                                    ? 'w-6 bg-primary'
-                                                    : 'w-2 bg-[var(--border)] hover:bg-[var(--surface-hover)]'
-                                            }`}
-                                        />
+                                        </div>
                                     ))}
                                 </div>
-                            </section>
-                            <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
-                                <div className="max-w-2xl mx-auto px-4 py-4">
-                                    {createMessage?.type === 'error' && (
-                                        <p
-                                            role="alert"
-                                            className="text-sm text-red-600 dark:text-red-400 mb-3"
-                                        >
-                                            {createMessage.text}
-                                        </p>
-                                    )}
-                                    <div className="flex gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={goBackFromReview}
-                                            className="flex-1 rounded-lg border border-border px-4 py-3 text-sm font-medium hover:bg-[var(--surface-hover)]"
-                                        >
-                                            Back
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={createFromReview}
-                                            disabled={createMutation.isPending}
-                                            className="flex-1 rounded-lg bg-primary text-primary-foreground px-4 py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50"
-                                        >
-                                            {createMutation.isPending
-                                                ? 'Creating…'
-                                                : 'Create'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </footer>
-                        </>
-                    )}
+                            </div>
+                            <div
+                                className="flex justify-center gap-2 py-4 shrink-0"
+                                role="tablist"
+                                aria-label="Book options"
+                            >
+                                {reviewBooks.map((_, i) => (
+                                    <button
+                                        key={i}
+                                        type="button"
+                                        onClick={() => reviewGoTo(i)}
+                                        role="tab"
+                                        aria-selected={i === reviewIndex}
+                                        aria-label={`Book ${i + 1} of ${reviewBooks.length}`}
+                                        className={`h-2 rounded-full transition-colors ${
+                                            i === reviewIndex
+                                                ? 'w-6 bg-primary'
+                                                : 'w-2 bg-[var(--border)] hover:bg-[var(--surface-hover)]'
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                        <div className="p-4 border-t border-border shrink-0 bg-surface">
+                            {createMessage?.type === 'error' && (
+                                <p
+                                    role="alert"
+                                    className="text-sm text-red-600 dark:text-red-400 mb-3"
+                                >
+                                    {createMessage.text}
+                                </p>
+                            )}
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={goBackFromReview}
+                                    className="flex-1 rounded-lg border border-border px-4 py-3 text-sm font-medium hover:bg-[var(--surface-hover)]"
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={createFromReview}
+                                    disabled={createMutation.isPending}
+                                    className="flex-1 rounded-lg bg-primary text-primary-foreground px-4 py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50"
+                                >
+                                    {createMutation.isPending
+                                        ? 'Creating…'
+                                        : 'Create'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {/* Builder footer */}
+            {selected.length >= 1 && (
+                <footer className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
+                    <div className="max-w-2xl mx-auto px-4 py-4">
+                        <div className="mb-3 flex gap-4 flex-wrap">
+                            <div className="flex-1 min-w-[140px]">
+                                <label
+                                    htmlFor="meeting-date"
+                                    className="text-sm font-medium text-muted dark:text-muted block mb-1"
+                                >
+                                    Meeting date (book club)
+                                </label>
+                                <input
+                                    id="meeting-date"
+                                    type="date"
+                                    value={meetingDate}
+                                    onChange={(e) => {
+                                        setMeetingDate(e.target.value);
+                                        setCloseVoteDate(
+                                            getDefaultCloseVoteDate(
+                                                e.target.value,
+                                            ),
+                                        );
+                                    }}
+                                    className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    aria-label="Meeting date"
+                                />
+                            </div>
+                            <div className="flex-1 min-w-[140px]">
+                                <label
+                                    htmlFor="close-vote-date"
+                                    className="text-sm font-medium text-muted dark:text-muted block mb-1"
+                                >
+                                    Close vote
+                                </label>
+                                <input
+                                    id="close-vote-date"
+                                    type="date"
+                                    value={closeVoteDate}
+                                    onChange={(e) =>
+                                        setCloseVoteDate(e.target.value)
+                                    }
+                                    className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    aria-label="Close vote date"
+                                />
+                            </div>
+                            <div className="flex-1 min-w-[140px]">
+                                <label
+                                    htmlFor="vote-access-password"
+                                    className="text-sm font-medium text-muted dark:text-muted block mb-1"
+                                >
+                                    Vote access password (optional)
+                                </label>
+                                <input
+                                    id="vote-access-password"
+                                    type="password"
+                                    value={voteAccessPassword}
+                                    onChange={(e) =>
+                                        setVoteAccessPassword(e.target.value)
+                                    }
+                                    placeholder="Leave blank for no password"
+                                    className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    aria-label="Vote access password"
+                                />
+                            </div>
+                        </div>
+                        <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
+                            Selected ({selected.length}/{MAX_SELECTED})
+                        </h2>
+                        <ul className="space-y-2">
+                            {selected.map((book) => (
+                                <li
+                                    key={book.externalId}
+                                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-[var(--surface-hover)] px-3 py-2"
+                                >
+                                    <span className="text-sm font-medium truncate min-w-0 flex-1">
+                                        {book.title}
+                                    </span>
+                                    <span className="text-xs text-muted truncate max-w-[140px] flex-shrink-0">
+                                        by {book.author}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            removeSelected(book.externalId)
+                                        }
+                                        className="text-xs text-red-600 dark:text-red-400 hover:underline flex-shrink-0"
+                                        aria-label={`Remove ${book.title}`}
+                                    >
+                                        Remove
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                        <div className="mt-6 flex gap-2 justify-end">
+                            <button
+                                type="button"
+                                onClick={reset}
+                                disabled={createMutation.isPending}
+                                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-[var(--surface-hover)]"
+                            >
+                                Reset
+                            </button>
+                            <button
+                                type="button"
+                                onClick={goToReview}
+                                disabled={
+                                    createMutation.isPending ||
+                                    selected.length < MIN_TO_CREATE
+                                }
+                                className="rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                            >
+                                {selected.length >= MIN_TO_CREATE
+                                    ? 'Review'
+                                    : 'Required: at least 2 selections'}
+                            </button>
+                        </div>
+                    </div>
+                </footer>
+            )}
         </div>
     );
 }
