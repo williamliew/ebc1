@@ -12,13 +12,6 @@ const QRCodeSVG = dynamic(
     { ssr: false },
 );
 
-const PRESET_BACKGROUNDS = [
-    { value: 'cream', label: 'Cream', color: '#fffbeb' },
-    { value: 'sage', label: 'Sage', color: '#f0fdf4' },
-    { value: 'slate', label: 'Slate', color: '#f1f5f9' },
-    { value: 'lavender', label: 'Lavender', color: '#f5f3ff' },
-];
-
 const PREVIEW_FONTS = [
     {
         value: 'Playwrite NZ',
@@ -46,11 +39,10 @@ type NominationBook = {
 
 export default function QuestionBuilderPage() {
     const printRef = useRef<HTMLDivElement>(null);
-    const [questions, setQuestions] = useState<string[]>(['']);
     const [backgroundType, setBackgroundType] = useState<
-        'preset' | 'gradient' | 'upload' | 'url'
-    >('preset');
-    const [presetBackground, setPresetBackground] = useState('cream');
+        'colour' | 'upload' | 'url'
+    >('colour');
+    const [backgroundColour, setBackgroundColour] = useState('#fffbeb');
     const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(
         null,
     );
@@ -61,6 +53,9 @@ export default function QuestionBuilderPage() {
     const [additionalText, setAdditionalText] = useState('');
     const [qrUrl, setQrUrl] = useState('https://www.google.com/');
     const [textColor, setTextColor] = useState<'white' | 'black'>('black');
+    const [textOverlay, setTextOverlay] = useState<'none' | 'dark' | 'light'>(
+        'none',
+    );
     const [previewFont, setPreviewFont] = useState(PREVIEW_FONTS[0].fontFamily);
     const [previewFontSize, setPreviewFontSize] = useState(100); // scale 75–150%
 
@@ -82,15 +77,12 @@ export default function QuestionBuilderPage() {
     const hasAdditionalText =
         additionalText && additionalText.replace(/<[^>]+>/g, '').trim() !== '';
 
-    const addQuestion = () => setQuestions((q) => [...q, '']);
-    const removeQuestion = (index: number) =>
-        setQuestions((q) => q.filter((_, i) => i !== index));
-    const setQuestion = (index: number, value: string) =>
-        setQuestions((q) => {
-            const next = [...q];
-            next[index] = value;
-            return next;
-        });
+    const textOverlayBackground =
+        textOverlay === 'none'
+            ? 'transparent'
+            : textOverlay === 'dark'
+              ? 'rgba(0,0,0,0.5)'
+              : 'rgba(255,255,255,0.5)';
 
     const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -137,24 +129,14 @@ export default function QuestionBuilderPage() {
                         backgroundSize: 'auto 100%' as const,
                         backgroundPosition: 'center',
                     }
-                  : backgroundType === 'gradient'
-                    ? {
-                          background:
-                              'linear-gradient(135deg, #fef3c7 0%, #ddd6fe 100%)',
-                      }
-                    : backgroundType === 'preset'
-                      ? {
-                            backgroundColor:
-                                PRESET_BACKGROUNDS.find(
-                                    (p) => p.value === presetBackground,
-                                )?.color ?? '#fffbeb',
-                        }
-                      : {},
+                  : backgroundType === 'colour'
+                    ? { backgroundColor: backgroundColour }
+                    : {},
         [
             backgroundType,
             backgroundImageUrl,
             backgroundImageUrlInput,
-            presetBackground,
+            backgroundColour,
         ],
     );
 
@@ -171,8 +153,7 @@ export default function QuestionBuilderPage() {
                     Question building page
                 </h1>
                 <p className="text-sm text-muted mt-1">
-                    Build an icebreaker spread with questions and a QR code for
-                    the WhatsApp group.
+                    Build a spread with a QR code for the WhatsApp group.
                 </p>
             </header>
 
@@ -226,42 +207,7 @@ export default function QuestionBuilderPage() {
 
                     <div>
                         <label className="text-sm font-medium text-foreground block mb-2">
-                            Questions
-                        </label>
-                        {questions.map((q, i) => (
-                            <div key={i} className="flex gap-2 mb-2">
-                                <input
-                                    type="text"
-                                    value={q}
-                                    onChange={(e) =>
-                                        setQuestion(i, e.target.value)
-                                    }
-                                    className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-                                    placeholder={`Question ${i + 1}`}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => removeQuestion(i)}
-                                    disabled={questions.length <= 1}
-                                    className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-[var(--surface-hover)] disabled:opacity-50"
-                                    aria-label="Remove question"
-                                >
-                                    Remove
-                                </button>
-                            </div>
-                        ))}
-                        <button
-                            type="button"
-                            onClick={addQuestion}
-                            className="rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:bg-[var(--surface-hover)]"
-                        >
-                            Add another question
-                        </button>
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium text-foreground block mb-2">
-                            Additional text (optional)
+                            Body text
                         </label>
                         <HeadlessEditor
                             initialContent=""
@@ -290,40 +236,51 @@ export default function QuestionBuilderPage() {
                             Background
                         </span>
                         <div className="flex flex-wrap gap-3 mb-2">
-                            {(
-                                ['preset', 'gradient', 'upload', 'url'] as const
-                            ).map((type) => (
-                                <label
-                                    key={type}
-                                    className="flex items-center gap-2 cursor-pointer"
-                                >
-                                    <input
-                                        type="radio"
-                                        name="bg"
-                                        checked={backgroundType === type}
-                                        onChange={() => setBackgroundType(type)}
-                                        className="rounded"
-                                    />
-                                    <span className="text-sm capitalize">
-                                        {type === 'url' ? 'Image URL' : type}
-                                    </span>
-                                </label>
-                            ))}
+                            {(['colour', 'upload', 'url'] as const).map(
+                                (type) => (
+                                    <label
+                                        key={type}
+                                        className="flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="bg"
+                                            checked={backgroundType === type}
+                                            onChange={() =>
+                                                setBackgroundType(type)
+                                            }
+                                            className="rounded"
+                                        />
+                                        <span className="text-sm capitalize">
+                                            {type === 'url'
+                                                ? 'Image URL'
+                                                : type}
+                                        </span>
+                                    </label>
+                                ),
+                            )}
                         </div>
-                        {backgroundType === 'preset' && (
-                            <select
-                                value={presetBackground}
-                                onChange={(e) =>
-                                    setPresetBackground(e.target.value)
-                                }
-                                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-                            >
-                                {PRESET_BACKGROUNDS.map((p) => (
-                                    <option key={p.value} value={p.value}>
-                                        {p.label}
-                                    </option>
-                                ))}
-                            </select>
+                        {backgroundType === 'colour' && (
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="color"
+                                    value={backgroundColour}
+                                    onChange={(e) =>
+                                        setBackgroundColour(e.target.value)
+                                    }
+                                    className="h-10 w-14 cursor-pointer rounded border border-border bg-surface p-0.5"
+                                    aria-label="Background colour"
+                                />
+                                <input
+                                    type="text"
+                                    value={backgroundColour}
+                                    onChange={(e) =>
+                                        setBackgroundColour(e.target.value)
+                                    }
+                                    className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-mono w-24 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    aria-label="Background colour (hex)"
+                                />
+                            </div>
                         )}
                         {backgroundType === 'upload' && (
                             <input
@@ -375,11 +332,49 @@ export default function QuestionBuilderPage() {
                     </div>
 
                     <div>
+                        <span className="text-sm font-medium text-foreground block mb-2">
+                            Transparent background (for text readability)
+                        </span>
+                        <div className="flex gap-3">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="textOverlay"
+                                    checked={textOverlay === 'none'}
+                                    onChange={() => setTextOverlay('none')}
+                                    className="rounded"
+                                />
+                                <span className="text-sm">None</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="textOverlay"
+                                    checked={textOverlay === 'dark'}
+                                    onChange={() => setTextOverlay('dark')}
+                                    className="rounded"
+                                />
+                                <span className="text-sm">Dark</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="textOverlay"
+                                    checked={textOverlay === 'light'}
+                                    onChange={() => setTextOverlay('light')}
+                                    className="rounded"
+                                />
+                                <span className="text-sm">Light</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
                         <label
                             htmlFor="preview-font"
                             className="text-sm font-medium text-foreground block mb-2"
                         >
-                            Preview font
+                            Font
                         </label>
                         <select
                             id="preview-font"
@@ -450,10 +445,7 @@ export default function QuestionBuilderPage() {
                                 className="flex-1"
                                 style={{
                                     ...previewTextStyle,
-                                    backgroundColor:
-                                        textColor === 'white'
-                                            ? 'rgba(0,0,0,0.5)'
-                                            : 'rgba(255,255,255,0.5)',
+                                    backgroundColor: textOverlayBackground,
                                     color:
                                         textColor === 'white' ? '#fff' : '#111',
                                     padding: '1rem 1.25rem',
@@ -484,14 +476,6 @@ export default function QuestionBuilderPage() {
                                         }}
                                     />
                                 )}
-                                <ul
-                                    className="mt-4 space-y-2 list-disc list-inside opacity-90"
-                                    style={{ fontSize: '0.875em' }}
-                                >
-                                    {questions.filter(Boolean).map((q, i) => (
-                                        <li key={i}>{q}</li>
-                                    ))}
-                                </ul>
                             </div>
                             {qrUrl && (
                                 <div className="mt-4 flex justify-end">
@@ -499,9 +483,7 @@ export default function QuestionBuilderPage() {
                                         className="p-2 rounded-lg"
                                         style={{
                                             backgroundColor:
-                                                textColor === 'white'
-                                                    ? 'rgba(255,255,255,0.9)'
-                                                    : 'rgba(255,255,255,0.9)',
+                                                'rgba(255,255,255,0.9)',
                                         }}
                                     >
                                         <QRCodeSVG
@@ -586,10 +568,7 @@ export default function QuestionBuilderPage() {
                                 className="flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full"
                                 style={{
                                     ...previewTextStyle,
-                                    backgroundColor:
-                                        textColor === 'white'
-                                            ? 'rgba(0,0,0,0.5)'
-                                            : 'rgba(255,255,255,0.5)',
+                                    backgroundColor: textOverlayBackground,
                                     color:
                                         textColor === 'white' ? '#fff' : '#111',
                                     padding: '1.5rem 2rem',
@@ -620,14 +599,6 @@ export default function QuestionBuilderPage() {
                                         }}
                                     />
                                 )}
-                                <ul
-                                    className="mt-6 space-y-2 list-disc list-inside opacity-90"
-                                    style={{ fontSize: '1em' }}
-                                >
-                                    {questions.filter(Boolean).map((q, i) => (
-                                        <li key={i}>{q}</li>
-                                    ))}
-                                </ul>
                             </div>
                             {qrUrl && (
                                 <div className="flex justify-end pb-6">
