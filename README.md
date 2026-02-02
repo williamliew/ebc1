@@ -104,6 +104,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Env: see `.env.example` (DB, admin credentials). Deployment: see repo root `Deployment.md`.
 
+### Local development: clear the DB and re-push schema
+
+When using the Docker database locally, you can wipe tables and reapply the schema:
+
+1. Clear the tables in the Docker DB (e.g. run the SQL to drop tables, or use your DB client).
+2. From the `ebc1` directory, run:
+
+    ```bash
+    bun run db:push
+    ```
+
+    This reapplies the Drizzle schema so you start with a clean DB. Handy after schema changes or when you want to reset local data without digging through terminal history.
+
 ---
 
 ## Other docs
