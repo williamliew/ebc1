@@ -379,15 +379,15 @@ export default function VotingBuilderPage() {
                     </header>
 
                     <main
-                        className={`max-w-2xl mx-auto p-4 space-y-6 ${selected.length >= 1 ? 'pb-80' : ''}`}
+                        className={`w-full max-w-2xl mx-auto p-4 space-y-6 ${selected.length >= 1 ? 'pb-80' : ''}`}
                     >
                         {/* Search */}
-                        <section>
+                        <section className="w-full">
                             <form
                                 onSubmit={handleSearch}
-                                className="flex flex-col sm:flex-row gap-2"
+                                className="w-full flex flex-col sm:flex-row gap-2"
                             >
-                                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div className="relative">
                                         <input
                                             type="text"
