@@ -80,30 +80,31 @@ export default function VoteResultsPage() {
                     {error instanceof Error ? error.message : 'Failed to load'}
                 </p>
                 <Link
-                    href="/admin"
+                    href="/"
                     className="mt-4 text-sm text-muted underline hover:no-underline"
                 >
-                    ← Back to admin
+                    ← Back to home
                 </Link>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col">
-            <header className="border-b border-border bg-surface px-4 py-4 shrink-0">
-                <div className="max-w-2xl mx-auto flex flex-wrap items-center gap-3">
-                    <Link
-                        href="/admin"
-                        className="text-sm text-muted hover:text-foreground"
-                    >
-                        ← Admin
-                    </Link>
-                    <h1 className="text-xl font-semibold">Vote results</h1>
-                </div>
+        <div className="min-h-screen bg-background text-foreground">
+            <header className="border-b border-border bg-surface px-4 py-4">
+                <Link
+                    href="/"
+                    className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
+                >
+                    ← Back to home
+                </Link>
+                <h1 className="text-xl font-semibold">Vote results</h1>
+                <p className="text-sm text-muted mt-1">
+                    View vote counts and results for each round.
+                </p>
             </header>
 
-            <main className="flex-1 p-4 max-w-2xl mx-auto w-full">
+            <main className="max-w-2xl mx-auto p-4 w-full">
                 {rounds.length === 0 ? (
                     <p className="text-muted py-8">
                         No vote rounds yet. Create one from the voting builder.
