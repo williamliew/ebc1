@@ -70,7 +70,7 @@ export function AdminPanel({
                 <div className="flex h-full flex-col p-4 pt-14">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-foreground">
-                            Admin actions
+                            Admin panel
                         </h2>
                         <button
                             type="button"
@@ -106,6 +106,13 @@ export function AdminPanel({
                             className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)] transition-colors"
                         >
                             Question builder
+                        </Link>
+                        <Link
+                            href="/admin/vote-results"
+                            onClick={close}
+                            className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)] transition-colors"
+                        >
+                            Vote results
                         </Link>
                     </nav>
                 </div>
