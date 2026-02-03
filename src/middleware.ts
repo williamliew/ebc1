@@ -53,6 +53,8 @@ export const config = {
         '/admin/:path*',
         '/vote',
         '/vote/:path*',
+        '/suggestnextbook',
+        '/suggestnextbook/:path*',
         '/nextbook',
         '/nextbook/:path*',
     ],

@@ -10,7 +10,13 @@ export default function robots(): MetadataRoute.Robots {
         rules: {
             userAgent: '*',
             allow: '/',
-            disallow: ['/admin', '/api', '/vote', '/nextbook'],
+            disallow: [
+                '/admin',
+                '/api',
+                '/vote',
+                '/nextbook',
+                '/suggestnextbook',
+            ],
         },
     };
 }

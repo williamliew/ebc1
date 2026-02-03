@@ -409,7 +409,7 @@ export default function VotingBuilderPage() {
                 >
                     ← Back to home
                 </Link>
-                <h1 className="text-xl font-semibold">Voting page builder</h1>
+                <h1 className="text-xl font-semibold">Create a vote</h1>
                 <p className="text-sm text-muted mt-1">
                     Search books, select up to {MAX_SELECTED}, then create the
                     nomination round (min {MIN_TO_CREATE} books).

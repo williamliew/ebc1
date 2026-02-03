@@ -94,18 +94,25 @@ export function AdminPanel({
                     </div>
                     <nav className="flex flex-col gap-2">
                         <Link
-                            href="/admin/voting-builder"
+                            href="/admin/create-a-vote"
                             onClick={close}
                             className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)] transition-colors"
                         >
-                            Voting page builder
+                            Create a vote
                         </Link>
                         <Link
-                            href="/admin/question-builder"
+                            href="/admin/open-suggestions"
                             onClick={close}
                             className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)] transition-colors"
                         >
-                            Question builder
+                            Open book suggestions
+                        </Link>
+                        <Link
+                            href="/admin/book-of-the-month-graphic"
+                            onClick={close}
+                            className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)] transition-colors"
+                        >
+                            Book of the month graphic
                         </Link>
                         <Link
                             href="/admin/vote-results"

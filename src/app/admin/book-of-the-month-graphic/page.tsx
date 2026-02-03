@@ -150,7 +150,7 @@ export default function QuestionBuilderPage() {
                     ← Back to home
                 </Link>
                 <h1 className="text-xl font-semibold">
-                    Question building page
+                    Book of the month graphic
                 </h1>
                 <p className="text-sm text-muted mt-1">
                     Build a spread with a QR code for the WhatsApp group.

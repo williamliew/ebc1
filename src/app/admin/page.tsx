@@ -7,16 +7,22 @@ export default function AdminPage() {
                 <h1 className="text-2xl font-semibold">Admin</h1>
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
                     <Link
-                        href="/admin/voting-builder"
+                        href="/admin/create-a-vote"
                         className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
                     >
-                        Voting page builder
+                        Create a vote
                     </Link>
                     <Link
-                        href="/admin/question-builder"
+                        href="/admin/open-suggestions"
                         className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
                     >
-                        Question builder
+                        Open book suggestions
+                    </Link>
+                    <Link
+                        href="/admin/book-of-the-month-graphic"
+                        className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+                    >
+                        Book of the month graphic
                     </Link>
                     <Link
                         href="/admin/vote-results"

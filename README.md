@@ -17,19 +17,19 @@ The app also shows the **next book** (winner + meeting date) after the admin set
 
 ## Main routes
 
-| Route                     | Who      | Purpose                                                                                                                                                    |
-| ------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                       | Everyone | Home: links to Vote, Next book; admin panel link when logged in                                                                                            |
-| `/vote`                   | Members  | Current vote round: shortlist in a swipeable gallery, one vote per round; password form if round is protected                                              |
-| `/nextbook`               | Everyone | Winning book and meeting date for the latest round                                                                                                         |
-| `/admin`                  | Admin    | Admin hub (links to voting builder, question builder)                                                                                                      |
-| `/admin/login`            | Admin    | Login to access admin routes                                                                                                                               |
-| `/admin/voting-builder`   | Admin    | Search books, select 2–4, **review** (edit cover/title/author), then create the nomination round with meeting/close dates and optional vote password       |
-| `/admin/question-builder` | Admin    | Build a printable spread: questions, book club title, book title/author, extra text, background, font/size, QR code; in-page and fullscreen preview, print |
+| Route                              | Who      | Purpose                                                                                                                                                    |
+| ---------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                | Everyone | Home: links to Vote, Next book; admin panel link when logged in                                                                                            |
+| `/vote`                            | Members  | Current vote round: shortlist in a swipeable gallery, one vote per round; password form if round is protected                                              |
+| `/nextbook`                        | Everyone | Winning book and meeting date for the latest round                                                                                                         |
+| `/admin`                           | Admin    | Admin hub (links to Create a vote, Book of the month graphic, Vote results)                                                                                |
+| `/admin/login`                     | Admin    | Login to access admin routes                                                                                                                               |
+| `/admin/create-a-vote`             | Admin    | Search books, select 2–4, **review** (edit cover/title/author), then create the nomination round with meeting/close dates and optional vote password       |
+| `/admin/book-of-the-month-graphic` | Admin    | Build a printable spread: questions, book club title, book title/author, extra text, background, font/size, QR code; in-page and fullscreen preview, print |
 
 ---
 
-## How the voting builder works
+## How Create a vote works
 
 1. **Search** – Title and/or author; results from Open Library (no API key). Pagination, “Read more” for blurbs.
 2. **Select** – Up to 4 books; “Selected” list in a fixed footer with meeting date, close-vote date, optional vote access password.
@@ -70,7 +70,7 @@ The builder panel and review panel are each full viewport width (100vw); the sli
 
 ## Vote access password
 
-- **Admin**: Optional “Vote access password” in the voting builder footer. If set, the round is protected.
+- **Admin**: Optional “Vote access password” in the Create a vote footer. If set, the round is protected.
 - **Voters**: On `/vote`, a form is shown until the correct password is entered; then an HttpOnly, signed cookie is set for that round and the books/vote UI are shown. Stored and checked server-side.
 
 ---

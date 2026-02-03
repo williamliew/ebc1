@@ -12,18 +12,24 @@ import { relations } from 'drizzle-orm';
 
 /**
  * One row per "suggestions open" period. When close_at is set and in the past,
- * suggestions are closed and /next is admin-only (tally view).
+ * suggestions are closed. "Open suggestions for" = which month/meeting this is for.
  */
 export const suggestionRounds = pgTable('suggestion_rounds', {
     id: serial('id').primaryKey(),
+    /** Date label e.g. "Open suggestions for" (same day, one month forward). */
+    suggestionsForDate: date('suggestions_for_date', { mode: 'string' }),
     label: varchar('label', { length: 64 }),
     closeAt: timestamp('close_at', { withTimezone: true }),
+    /** Optional password to access /suggestnextbook for this round. */
+    suggestionAccessPassword: varchar('suggestion_access_password', {
+        length: 256,
+    }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 /**
  * One row per member suggestion. Max 2 suggestions per person per round (enforced in app).
- * Tally = COUNT per book_external_id for the round.
+ * Cached book details so we can show list without calling Open Library.
  */
 export const suggestions = pgTable('suggestions', {
     id: serial('id').primaryKey(),
@@ -32,6 +38,11 @@ export const suggestions = pgTable('suggestions', {
         .references(() => suggestionRounds.id, { onDelete: 'cascade' }),
     bookExternalId: varchar('book_external_id', { length: 256 }).notNull(),
     suggesterKeyHash: varchar('suggester_key_hash', { length: 256 }).notNull(),
+    title: varchar('title', { length: 512 }),
+    author: varchar('author', { length: 512 }),
+    coverUrl: text('cover_url'),
+    blurb: text('blurb'),
+    link: text('link'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
