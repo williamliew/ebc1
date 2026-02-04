@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { isAdminAuthenticated } from '@/lib/admin-auth-server';
 import { EbcLogo } from '@/components/ebc-logo';
 import { AdminPanel } from '@/components/admin-panel';
-import { LoadingAnimationDemos } from '@/components/loading-animation-demos';
 
 export default async function Home() {
     const showAdmin = await isAdminAuthenticated();
@@ -73,8 +72,6 @@ export default async function Home() {
                         Next book
                     </Link>
                 </div>
-
-                <LoadingAnimationDemos />
             </main>
         </div>
     );
