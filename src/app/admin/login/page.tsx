@@ -3,12 +3,13 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { LoadingBookFlip } from '@/components/loading-book-flip';
 
 function LoginFallback() {
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground">
             <main className="max-w-sm w-full text-center">
-                <p className="text-muted">Loading…</p>
+                <LoadingBookFlip />
             </main>
         </div>
     );

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { getOrCreateVisitorKeyHash } from '@/lib/visitor-key';
+import { LoadingBookFlip } from '@/components/loading-book-flip';
+import { LoadingMinDuration } from '@/components/loading-min-duration';
 
 type VoteBook = {
     id: number;
@@ -247,317 +249,320 @@ export default function VotePage() {
         }
     }, [round, books, currentIndex]);
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
-                <p className="text-muted">Loading…</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="min-h-screen bg-background text-foreground">
-                <header className="border-b border-border bg-surface px-4 py-4">
-                    <Link
-                        href="/"
-                        className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
-                    >
-                        ← Back to home
-                    </Link>
-                    <h1 className="text-xl font-semibold">Vote</h1>
-                </header>
-                <main className="max-w-md mx-auto p-6 text-center">
-                    <p className="text-red-600 dark:text-red-400" role="alert">
-                        {error}
-                    </p>
-                </main>
-            </div>
-        );
-    }
-
-    if (round && round.requiresPassword && books.length === 0) {
-        return (
-            <div className="min-h-screen bg-background text-foreground">
-                <header className="border-b border-border bg-surface px-4 py-4">
-                    <Link
-                        href="/"
-                        className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
-                    >
-                        ← Back to home
-                    </Link>
-                    <h1 className="text-xl font-semibold">Vote</h1>
-                    {round.meetingDate && (
-                        <p className="text-sm text-muted mt-1">
-                            Book club meet:{' '}
-                            {formatMeetingDate(round.meetingDate)}
-                        </p>
-                    )}
-                </header>
-                <main className="max-w-md mx-auto p-6">
-                    <p className="text-muted text-center mb-4">
-                        This vote round is protected. Enter the access password
-                        to view and vote.
-                    </p>
-                    <form onSubmit={handleVerifyPassword} className="space-y-3">
-                        <label
-                            htmlFor="vote-access-password"
-                            className="block text-sm font-medium text-foreground"
-                        >
-                            Access password
-                        </label>
-                        <input
-                            id="vote-access-password"
-                            type="password"
-                            value={accessPassword}
-                            onChange={(e) => setAccessPassword(e.target.value)}
-                            placeholder="Password"
-                            autoComplete="current-password"
-                            disabled={verifyPasswordStatus === 'pending'}
-                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] disabled:opacity-50"
-                            aria-describedby={
-                                verifyPasswordError
-                                    ? 'vote-password-error'
-                                    : undefined
-                            }
-                        />
-                        {verifyPasswordError && (
-                            <p
-                                id="vote-password-error"
-                                className="text-sm text-red-600 dark:text-red-400"
-                                role="alert"
-                            >
-                                {verifyPasswordError}
-                            </p>
-                        )}
-                        <button
-                            type="submit"
-                            disabled={
-                                verifyPasswordStatus === 'pending' ||
-                                !accessPassword.trim()
-                            }
-                            className="w-full rounded-lg bg-primary text-primary-foreground py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-                        >
-                            {verifyPasswordStatus === 'pending'
-                                ? 'Verifying…'
-                                : 'Continue'}
-                        </button>
-                    </form>
-                </main>
-            </div>
-        );
-    }
-
-    if (!round || books.length === 0) {
-        return (
-            <div className="min-h-screen bg-background text-foreground">
-                <header className="border-b border-border bg-surface px-4 py-4">
-                    <Link
-                        href="/"
-                        className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
-                    >
-                        ← Back to home
-                    </Link>
-                    <h1 className="text-xl font-semibold">Vote</h1>
-                </header>
-                <main className="max-w-md mx-auto p-6 text-center">
-                    <p className="text-muted">
-                        No vote is available right now. Check back later.
-                    </p>
-                </main>
-            </div>
-        );
-    }
-
-    if (!round.isOpen) {
-        return (
-            <div className="min-h-screen bg-background text-foreground">
-                <header className="border-b border-border bg-surface px-4 py-4">
-                    <Link
-                        href="/"
-                        className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
-                    >
-                        ← Back to home
-                    </Link>
-                    <h1 className="text-xl font-semibold">Vote</h1>
-                </header>
-                <main className="max-w-md mx-auto p-6 text-center">
-                    <p className="text-foreground font-medium">Voting closed</p>
-                    {round.meetingDate && (
-                        <p className="text-sm text-muted mt-1">
-                            Book club meet:{' '}
-                            {formatMeetingDate(round.meetingDate)}
-                        </p>
-                    )}
-                </main>
-            </div>
-        );
-    }
-
     const slidePercent = books.length > 0 ? 100 / books.length : 100;
     const trackTranslateX = `calc(-${currentIndex * slidePercent}% + ${dragOffset}px)`;
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col">
-            <header className="border-b border-border bg-surface px-4 py-4 shrink-0">
-                <Link
-                    href="/"
-                    className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
-                >
-                    ← Back to home
-                </Link>
-                <h1 className="text-xl font-semibold">Vote</h1>
-                {round.meetingDate && (
-                    <p className="text-sm text-muted mt-1">
-                        Book club meet: {formatMeetingDate(round.meetingDate)}
-                    </p>
-                )}
-            </header>
-
-            <main className="flex-1 flex flex-col max-w-lg mx-auto w-full">
-                {/* Swipeable book cards with smooth drag and transition */}
-                <section
-                    className="flex-1 min-h-0 flex flex-col px-4 pt-4 select-none"
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                    onMouseDown={handleMouseDown}
-                    style={{ touchAction: 'pan-y' }}
-                >
-                    <div className="flex-1 min-h-0 overflow-hidden rounded-xl">
-                        <div
-                            className="h-full flex will-change-transform"
-                            style={{
-                                width: `${books.length * 100}%`,
-                                transform: `translateX(${trackTranslateX})`,
-                                transition: isDragging
-                                    ? 'none'
-                                    : `transform ${SWIPE_TRANSITION_MS}ms ease-out`,
-                            }}
+        <LoadingMinDuration
+            isLoading={loading}
+            loaderWrapperClassName="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6"
+        >
+            {error ? (
+                <div className="min-h-screen bg-background text-foreground">
+                    <header className="border-b border-border bg-surface px-4 py-4">
+                        <Link
+                            href="/"
+                            className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                         >
-                            {books.map((book) => (
-                                <div
-                                    key={book.externalId}
-                                    className="h-full flex flex-col flex-shrink-0 min-w-0 pr-4"
-                                    style={{ width: `${slidePercent}%` }}
-                                >
-                                    <div className="h-full flex flex-col rounded-xl border border-border bg-surface overflow-hidden">
-                                        {book.coverUrl ? (
-                                            <div className="relative w-full aspect-[3/4] shrink-0 bg-[var(--border)]">
-                                                <Image
-                                                    src={book.coverUrl}
-                                                    alt=""
-                                                    fill
-                                                    className="object-cover"
-                                                    unoptimized
-                                                    sizes="(max-width: 512px) 100vw, 512px"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="w-full aspect-[3/4] shrink-0 bg-[var(--border)] flex items-center justify-center">
-                                                <span className="text-muted text-sm">
-                                                    No cover
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div className="p-4 flex-1 min-h-0 overflow-y-auto">
-                                            <h2 className="text-lg font-semibold">
-                                                {book.title}
-                                            </h2>
-                                            <p className="text-sm text-muted mt-0.5">
-                                                by {book.author}
-                                            </p>
-                                            {book.blurb && (
-                                                <div
-                                                    className="text-sm text-muted mt-3 leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-foreground"
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: sanitiseBlurb(
-                                                            book.blurb,
-                                                        ),
-                                                    }}
-                                                />
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Dots */}
-                    <div
-                        className="flex justify-center gap-2 py-4"
-                        role="tablist"
-                        aria-label="Book options"
-                    >
-                        {books.map((_, i) => (
-                            <button
-                                key={i}
-                                type="button"
-                                onClick={() => goTo(i)}
-                                role="tab"
-                                aria-selected={i === currentIndex}
-                                aria-label={`Book ${i + 1} of ${books.length}`}
-                                className={`h-2 rounded-full transition-colors ${
-                                    i === currentIndex
-                                        ? 'w-6 bg-primary'
-                                        : 'w-2 bg-[var(--border)] hover:bg-[var(--surface-hover)]'
-                                }`}
+                            ← Back to home
+                        </Link>
+                        <h1 className="text-xl font-semibold">Vote</h1>
+                    </header>
+                    <main className="max-w-md mx-auto p-6 text-center">
+                        <p
+                            className="text-red-600 dark:text-red-400"
+                            role="alert"
+                        >
+                            {error}
+                        </p>
+                    </main>
+                </div>
+            ) : round && round.requiresPassword && books.length === 0 ? (
+                <div className="min-h-screen bg-background text-foreground">
+                    <header className="border-b border-border bg-surface px-4 py-4">
+                        <Link
+                            href="/"
+                            className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
+                        >
+                            ← Back to home
+                        </Link>
+                        <h1 className="text-xl font-semibold">Vote</h1>
+                        {round.meetingDate && (
+                            <p className="text-sm text-muted mt-1">
+                                Book club meet:{' '}
+                                {formatMeetingDate(round.meetingDate)}
+                            </p>
+                        )}
+                    </header>
+                    <main className="max-w-md mx-auto p-6">
+                        <p className="text-muted text-center mb-4">
+                            This vote round is protected. Enter the access
+                            password to view and vote.
+                        </p>
+                        <form
+                            onSubmit={handleVerifyPassword}
+                            className="space-y-3"
+                        >
+                            <label
+                                htmlFor="vote-access-password"
+                                className="block text-sm font-medium text-foreground"
+                            >
+                                Access password
+                            </label>
+                            <input
+                                id="vote-access-password"
+                                type="password"
+                                value={accessPassword}
+                                onChange={(e) =>
+                                    setAccessPassword(e.target.value)
+                                }
+                                placeholder="Password"
+                                autoComplete="current-password"
+                                disabled={verifyPasswordStatus === 'pending'}
+                                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] disabled:opacity-50"
+                                aria-describedby={
+                                    verifyPasswordError
+                                        ? 'vote-password-error'
+                                        : undefined
+                                }
                             />
-                        ))}
-                    </div>
-                </section>
-
-                {/* Vote for this book */}
-                <section className="p-4 pt-0 pb-8">
-                    {alreadyVoted || submitStatus === 'success' ? (
-                        <div className="text-center">
-                            <p
-                                className="text-green-600 dark:text-green-400 font-medium"
-                                role="status"
-                            >
-                                {submitStatus === 'success'
-                                    ? submitMessage
-                                    : "You've already voted in this round."}
-                            </p>
-                            {chosenBookExternalId && (
-                                <p className="text-sm text-muted mt-1">
-                                    You voted for{' '}
-                                    {books.find(
-                                        (b) =>
-                                            b.externalId ===
-                                            chosenBookExternalId,
-                                    )?.title ?? 'this round'}
-                                </p>
-                            )}
-                        </div>
-                    ) : (
-                        <>
-                            <p className="text-center text-sm text-muted mb-2">
-                                Only 1 vote per round
-                            </p>
-                            <button
-                                type="button"
-                                onClick={handleSubmitVote}
-                                disabled={submitStatus === 'pending'}
-                                className="w-full rounded-lg bg-primary text-primary-foreground py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-                            >
-                                {submitStatus === 'pending'
-                                    ? 'Voting…'
-                                    : 'Vote for this'}
-                            </button>
-                            {submitStatus === 'error' && submitMessage && (
+                            {verifyPasswordError && (
                                 <p
-                                    className="mt-2 text-center text-sm text-red-600 dark:text-red-400"
+                                    id="vote-password-error"
+                                    className="text-sm text-red-600 dark:text-red-400"
                                     role="alert"
                                 >
-                                    {submitMessage}
+                                    {verifyPasswordError}
                                 </p>
                             )}
-                        </>
-                    )}
-                </section>
-            </main>
-        </div>
+                            <button
+                                type="submit"
+                                disabled={
+                                    verifyPasswordStatus === 'pending' ||
+                                    !accessPassword.trim()
+                                }
+                                className="w-full rounded-lg bg-primary text-primary-foreground py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+                            >
+                                {verifyPasswordStatus === 'pending'
+                                    ? 'Verifying…'
+                                    : 'Continue'}
+                            </button>
+                        </form>
+                    </main>
+                </div>
+            ) : !round || books.length === 0 ? (
+                <div className="min-h-screen bg-background text-foreground">
+                    <header className="border-b border-border bg-surface px-4 py-4">
+                        <Link
+                            href="/"
+                            className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
+                        >
+                            ← Back to home
+                        </Link>
+                        <h1 className="text-xl font-semibold">Vote</h1>
+                    </header>
+                    <main className="max-w-md mx-auto p-6 text-center">
+                        <p className="text-muted">
+                            No vote is available right now. Check back later.
+                        </p>
+                    </main>
+                </div>
+            ) : !round.isOpen ? (
+                <div className="min-h-screen bg-background text-foreground">
+                    <header className="border-b border-border bg-surface px-4 py-4">
+                        <Link
+                            href="/"
+                            className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
+                        >
+                            ← Back to home
+                        </Link>
+                        <h1 className="text-xl font-semibold">Vote</h1>
+                    </header>
+                    <main className="max-w-md mx-auto p-6 text-center">
+                        <p className="text-foreground font-medium">
+                            Voting closed
+                        </p>
+                        {round.meetingDate && (
+                            <p className="text-sm text-muted mt-1">
+                                Book club meet:{' '}
+                                {formatMeetingDate(round.meetingDate)}
+                            </p>
+                        )}
+                    </main>
+                </div>
+            ) : (
+                <>
+                    <div className="min-h-screen bg-background text-foreground flex flex-col">
+                        <header className="border-b border-border bg-surface px-4 py-4 shrink-0">
+                            <Link
+                                href="/"
+                                className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
+                            >
+                                ← Back to home
+                            </Link>
+                            <h1 className="text-xl font-semibold">Vote</h1>
+                            {round.meetingDate && (
+                                <p className="text-sm text-muted mt-1">
+                                    Book club meet:{' '}
+                                    {formatMeetingDate(round.meetingDate)}
+                                </p>
+                            )}
+                        </header>
+
+                        <main className="flex-1 flex flex-col max-w-lg mx-auto w-full">
+                            {/* Swipeable book cards with smooth drag and transition */}
+                            <section
+                                className="flex-1 min-h-0 flex flex-col px-4 pt-4 select-none"
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
+                                onMouseDown={handleMouseDown}
+                                style={{ touchAction: 'pan-y' }}
+                            >
+                                <div className="flex-1 min-h-0 overflow-hidden rounded-xl">
+                                    <div
+                                        className="h-full flex will-change-transform"
+                                        style={{
+                                            width: `${books.length * 100}%`,
+                                            transform: `translateX(${trackTranslateX})`,
+                                            transition: isDragging
+                                                ? 'none'
+                                                : `transform ${SWIPE_TRANSITION_MS}ms ease-out`,
+                                        }}
+                                    >
+                                        {books.map((book) => (
+                                            <div
+                                                key={book.externalId}
+                                                className="h-full flex flex-col flex-shrink-0 min-w-0 pr-4"
+                                                style={{
+                                                    width: `${slidePercent}%`,
+                                                }}
+                                            >
+                                                <div className="h-full flex flex-col rounded-xl border border-border bg-surface overflow-hidden">
+                                                    {book.coverUrl ? (
+                                                        <div className="relative w-full aspect-[3/4] shrink-0 bg-[var(--border)]">
+                                                            <Image
+                                                                src={
+                                                                    book.coverUrl
+                                                                }
+                                                                alt=""
+                                                                fill
+                                                                className="object-cover"
+                                                                unoptimized
+                                                                sizes="(max-width: 512px) 100vw, 512px"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-full aspect-[3/4] shrink-0 bg-[var(--border)] flex items-center justify-center">
+                                                            <span className="text-muted text-sm">
+                                                                No cover
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div className="p-4 flex-1 min-h-0 overflow-y-auto">
+                                                        <h2 className="text-lg font-semibold">
+                                                            {book.title}
+                                                        </h2>
+                                                        <p className="text-sm text-muted mt-0.5">
+                                                            by {book.author}
+                                                        </p>
+                                                        {book.blurb && (
+                                                            <div
+                                                                className="text-sm text-muted mt-3 leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-foreground"
+                                                                dangerouslySetInnerHTML={{
+                                                                    __html: sanitiseBlurb(
+                                                                        book.blurb,
+                                                                    ),
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Dots */}
+                                <div
+                                    className="flex justify-center gap-2 py-4"
+                                    role="tablist"
+                                    aria-label="Book options"
+                                >
+                                    {books.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            onClick={() => goTo(i)}
+                                            role="tab"
+                                            aria-selected={i === currentIndex}
+                                            aria-label={`Book ${i + 1} of ${books.length}`}
+                                            className={`h-2 rounded-full transition-colors ${
+                                                i === currentIndex
+                                                    ? 'w-6 bg-primary'
+                                                    : 'w-2 bg-[var(--border)] hover:bg-[var(--surface-hover)]'
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Vote for this book */}
+                            <section className="p-4 pt-0 pb-8">
+                                {alreadyVoted || submitStatus === 'success' ? (
+                                    <div className="text-center">
+                                        <p
+                                            className="text-green-600 dark:text-green-400 font-medium"
+                                            role="status"
+                                        >
+                                            {submitStatus === 'success'
+                                                ? submitMessage
+                                                : "You've already voted in this round."}
+                                        </p>
+                                        {chosenBookExternalId && (
+                                            <p className="text-sm text-muted mt-1">
+                                                You voted for{' '}
+                                                {books.find(
+                                                    (b) =>
+                                                        b.externalId ===
+                                                        chosenBookExternalId,
+                                                )?.title ?? 'this round'}
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <p className="text-center text-sm text-muted mb-2">
+                                            Only 1 vote per round
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={handleSubmitVote}
+                                            disabled={
+                                                submitStatus === 'pending'
+                                            }
+                                            className="w-full rounded-lg bg-primary text-primary-foreground py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+                                        >
+                                            {submitStatus === 'pending'
+                                                ? 'Voting…'
+                                                : 'Vote for this'}
+                                        </button>
+                                        {submitStatus === 'error' &&
+                                            submitMessage && (
+                                                <p
+                                                    className="mt-2 text-center text-sm text-red-600 dark:text-red-400"
+                                                    role="alert"
+                                                >
+                                                    {submitMessage}
+                                                </p>
+                                            )}
+                                    </>
+                                )}
+                            </section>
+                        </main>
+                    </div>
+                </>
+            )}
+        </LoadingMinDuration>
     );
 }

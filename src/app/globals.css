@@ -243,3 +243,62 @@ body {
     opacity: 1;
   }
 }
+
+@keyframes draw {
+  0% {
+   stroke-dashoffset: 500;
+    fill: none;
+ }
+  60% {
+    fill: transparent;
+  }
+  68% {
+    fill: #fff;
+  }
+ 100% {
+   stroke-dashoffset: 0;
+ }
+}
+
+/* ========== Loading animation demos (homepage) ========== */
+@keyframes demo-page-flip {
+  0% { transform: rotateY(0deg) translateZ(0); }
+  45% { transform: rotateY(-130deg) translateZ(0); }
+  55% { transform: rotateY(-130deg) translateZ(0); }
+  100% { transform: rotateY(0deg) translateZ(0); }
+}
+
+.demo-perspective {
+  perspective: 600px;
+  perspective-origin: center center;
+}
+
+/* Tilt the whole book so it reads as 3D (slight side + top angle) */
+.demo-book-tilt {
+  transform-style: preserve-3d;
+  transform: rotateY(-18deg) rotateX(6deg);
+}
+
+.demo-page-flip-single {
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  animation: demo-page-flip 2.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Front/back faces for the flipping page (first demo) */
+.demo-page-face {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  border: none;
+  outline: none;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.demo-page-back {
+  /* So when the parent rotates 180deg, this face is toward the camera */
+  transform: rotateY(180deg);
+  /* Slightly warmer/darker "other side of paper" */
+  background: color-mix(in srgb, var(--surface) 92%, var(--muted)) !important;
+}

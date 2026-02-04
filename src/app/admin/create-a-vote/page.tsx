@@ -5,6 +5,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
+import { LoadingBookFlip } from '@/components/loading-book-flip';
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_TRANSITION_MS = 280;
@@ -491,6 +492,13 @@ export default function VotingBuilderPage() {
                         </p>
                     )}
                 </section>
+
+                {/* Searching: show book flip while search is in progress */}
+                {searchMutation.isPending && (
+                    <section className="flex justify-center py-8">
+                        <LoadingBookFlip size="sm" />
+                    </section>
+                )}
 
                 {/* Search results */}
                 {searchResults.length > 0 && (

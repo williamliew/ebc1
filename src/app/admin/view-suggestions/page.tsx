@@ -3,22 +3,22 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from 'recharts';
-import type { PieSectorShapeProps } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
 import { LoadingMinDuration } from '@/components/loading-min-duration';
 
-type VoteResultItem = {
-    externalId: string;
-    title: string;
-    voteCount: number;
-    isWinner: boolean;
+type SuggestionResultItem = {
+    bookExternalId: string;
+    title: string | null;
+    author: string | null;
+    suggestionCount: number;
 };
 
-type VoteResultsRound = {
+type SuggestionResultsRound = {
     id: number;
-    meetingDate: string;
-    results: VoteResultItem[];
+    suggestionsForDate: string | null;
+    closeAt: string | null;
+    results: SuggestionResultItem[];
 };
 
 const PIE_COLOURS = [
@@ -26,29 +26,63 @@ const PIE_COLOURS = [
     'var(--chart-2, #10b981)',
     'var(--chart-3, #f59e0b)',
     'var(--chart-4, #ef4444)',
+    'var(--chart-5, #8b5cf6)',
 ];
-const WINNER_RADIUS_BUMP = 12;
 
-function formatMeetingDate(iso: string): string {
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
+function formatRoundLabel(round: SuggestionResultsRound): string {
+    if (round.suggestionsForDate) {
+        const d = new Date(round.suggestionsForDate + 'T12:00:00');
+        const month = new Intl.DateTimeFormat('en-GB', {
+            month: 'long',
+        }).format(d);
+        return month;
+    }
+    if (round.closeAt) {
+        const d = new Date(round.closeAt);
+        return new Intl.DateTimeFormat('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+        }).format(d);
+    }
+    return `Round ${round.id}`;
 }
 
-async function fetchVoteResults(): Promise<{ rounds: VoteResultsRound[] }> {
-    const res = await fetch('/api/admin/vote-results', {
+function formatRoundMonthTitle(round: SuggestionResultsRound): string {
+    if (round.suggestionsForDate) {
+        const d = new Date(round.suggestionsForDate + 'T12:00:00');
+        return new Intl.DateTimeFormat('en-GB', {
+            month: 'long',
+            year: 'numeric',
+        }).format(d);
+    }
+    if (round.closeAt) {
+        const d = new Date(round.closeAt);
+        return new Intl.DateTimeFormat('en-GB', {
+            month: 'long',
+            year: 'numeric',
+        }).format(d);
+    }
+    return `Round ${round.id}`;
+}
+
+async function fetchSuggestionResults(): Promise<{
+    rounds: SuggestionResultsRound[];
+}> {
+    const res = await fetch('/api/admin/suggestion-results', {
         credentials: 'include',
     });
     if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? 'Failed to load vote results');
+        throw new Error(data.error ?? 'Failed to load suggestion results');
     }
     return res.json();
 }
 
-export default function VoteResultsPage() {
+export default function ViewSuggestionsPage() {
     const { data, isLoading, error } = useQuery({
-        queryKey: ['admin', 'vote-results'],
-        queryFn: fetchVoteResults,
+        queryKey: ['admin', 'suggestion-results'],
+        queryFn: fetchSuggestionResults,
     });
 
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -57,15 +91,10 @@ export default function VoteResultsPage() {
 
     const pieData =
         selectedRound?.results.map((r, i) => ({
-            name: r.title,
-            value: r.voteCount > 0 ? r.voteCount : 0.01,
-            fullLabel: `${r.title} (${r.voteCount})`,
-            isWinner: r.isWinner,
+            name: r.title ?? 'Unknown',
+            value: r.suggestionCount > 0 ? r.suggestionCount : 0.01,
             fill: PIE_COLOURS[i % PIE_COLOURS.length],
         })) ?? [];
-
-    const winnerIndex =
-        selectedRound?.results.findIndex((r) => r.isWinner) ?? -1;
 
     return (
         <LoadingMinDuration
@@ -95,23 +124,25 @@ export default function VoteResultsPage() {
                         >
                             ← Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">Vote results</h1>
+                        <h1 className="text-xl font-semibold">
+                            View suggestions
+                        </h1>
                         <p className="text-sm text-muted mt-1">
-                            View vote counts and results for each round.
+                            View suggestion counts per book for each round.
                         </p>
                     </header>
 
                     <main className="max-w-2xl mx-auto p-4 w-full">
                         {rounds.length === 0 ? (
                             <p className="text-muted py-8">
-                                No vote rounds yet. Create one from the voting
-                                builder.
+                                No suggestion rounds yet. Open book suggestions
+                                from the admin panel to create one.
                             </p>
                         ) : (
                             <>
                                 <section className="mb-6">
                                     <p className="text-xs font-medium text-muted mb-2">
-                                        Round (meeting date)
+                                        Round
                                     </p>
                                     <div className="flex flex-wrap gap-2">
                                         {rounds.map((round, i) => (
@@ -127,9 +158,7 @@ export default function VoteResultsPage() {
                                                         : 'border-border bg-surface hover:bg-[var(--surface-hover)]'
                                                 }`}
                                             >
-                                                {formatMeetingDate(
-                                                    round.meetingDate,
-                                                )}
+                                                {formatRoundLabel(round)}
                                             </button>
                                         ))}
                                     </div>
@@ -138,8 +167,13 @@ export default function VoteResultsPage() {
                                 {selectedRound && (
                                     <section
                                         className="rounded-xl border border-border bg-surface p-4"
-                                        aria-label={`Results for ${formatMeetingDate(selectedRound.meetingDate)}`}
+                                        aria-label={`Suggestions for ${formatRoundLabel(selectedRound)}`}
                                     >
+                                        <h2 className="text-lg font-semibold text-foreground mb-3">
+                                            {formatRoundMonthTitle(
+                                                selectedRound,
+                                            )}
+                                        </h2>
                                         <div className="h-[320px] w-full">
                                             <ResponsiveContainer
                                                 width="100%"
@@ -156,40 +190,6 @@ export default function VoteResultsPage() {
                                                         outerRadius="75%"
                                                         paddingAngle={0}
                                                         minAngle={0}
-                                                        shape={(
-                                                            props: PieSectorShapeProps,
-                                                            index: number,
-                                                        ) => {
-                                                            const isWinner =
-                                                                winnerIndex >=
-                                                                    0 &&
-                                                                index ===
-                                                                    winnerIndex;
-                                                            const baseRadius =
-                                                                Number(
-                                                                    props.outerRadius ??
-                                                                        0,
-                                                                ) || 0;
-                                                            return (
-                                                                <Sector
-                                                                    {...props}
-                                                                    outerRadius={
-                                                                        isWinner
-                                                                            ? baseRadius +
-                                                                              WINNER_RADIUS_BUMP
-                                                                            : baseRadius
-                                                                    }
-                                                                    fill={
-                                                                        (props.fill as string) ??
-                                                                        PIE_COLOURS[0]
-                                                                    }
-                                                                    stroke="var(--background)"
-                                                                    strokeWidth={
-                                                                        1
-                                                                    }
-                                                                />
-                                                            );
-                                                        }}
                                                         isAnimationActive
                                                         animationDuration={500}
                                                         animationEasing="ease-out"
@@ -212,11 +212,16 @@ export default function VoteResultsPage() {
                                                 </PieChart>
                                             </ResponsiveContainer>
                                         </div>
-                                        <ul className="mt-4 space-y-2 list-none">
+                                        <h2 className="text-sm font-medium text-foreground mt-4 mb-2">
+                                            Suggestions:
+                                        </h2>
+                                        <ul className="space-y-2 list-none">
                                             {selectedRound.results.map(
                                                 (item, i) => (
                                                     <li
-                                                        key={item.externalId}
+                                                        key={
+                                                            item.bookExternalId
+                                                        }
                                                         className="flex items-center gap-2 text-sm"
                                                     >
                                                         <span
@@ -230,22 +235,17 @@ export default function VoteResultsPage() {
                                                             }}
                                                             aria-hidden
                                                         />
-                                                        <span
-                                                            className={
-                                                                item.isWinner
-                                                                    ? 'font-semibold'
-                                                                    : ''
+                                                        <span>
+                                                            {item.title ??
+                                                                'Unknown title'}{' '}
+                                                            by{' '}
+                                                            {item.author ??
+                                                                'Unknown author'}{' '}
+                                                            (
+                                                            {
+                                                                item.suggestionCount
                                                             }
-                                                        >
-                                                            {item.title}
-                                                        </span>
-                                                        <span className="text-muted ml-auto">
-                                                            {item.voteCount}{' '}
-                                                            vote
-                                                            {item.voteCount !==
-                                                            1
-                                                                ? 's'
-                                                                : ''}
+                                                            )
                                                         </span>
                                                     </li>
                                                 ),
