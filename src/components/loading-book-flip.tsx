@@ -59,7 +59,7 @@ export function LoadingBookFlip({
                             }}
                         >
                             <div
-                                className="text-[0.2rem] leading-[0.36rem] text-foreground/75 font-mono overflow-hidden"
+                                className="text-[0.2rem] leading-[0.36rem] text-foreground/75 font-mono overflow-hidden ml-[5px]"
                                 style={{
                                     fontFamily: 'ui-monospace, monospace',
                                 }}
@@ -111,7 +111,7 @@ export function LoadingBookFlip({
                             }}
                         >
                             <div
-                                className="text-[0.2rem] leading-[0.36rem] text-foreground/75 font-mono overflow-hidden"
+                                className="text-[0.2rem] leading-[0.36rem] text-foreground/75 font-mono overflow-hidden ml-[5px]"
                                 style={{
                                     fontFamily: 'ui-monospace, monospace',
                                 }}
