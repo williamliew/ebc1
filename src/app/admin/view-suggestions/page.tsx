@@ -180,6 +180,27 @@ export default function ViewSuggestionsPage() {
                                                 height="100%"
                                             >
                                                 <PieChart>
+                                                    <defs>
+                                                        <filter
+                                                            id="view-suggestions-pie-shadow"
+                                                            x="-20%"
+                                                            y="-20%"
+                                                            width="140%"
+                                                            height="140%"
+                                                        >
+                                                            <feDropShadow
+                                                                dx={0}
+                                                                dy={1}
+                                                                stdDeviation={
+                                                                    1.5
+                                                                }
+                                                                floodOpacity={
+                                                                    0.12
+                                                                }
+                                                                floodColor="var(--foreground)"
+                                                            />
+                                                        </filter>
+                                                    </defs>
                                                     <Pie
                                                         data={pieData}
                                                         dataKey="value"
@@ -205,6 +226,9 @@ export default function ViewSuggestionsPage() {
                                                                     strokeWidth={
                                                                         1
                                                                     }
+                                                                    style={{
+                                                                        filter: 'url(#view-suggestions-pie-shadow)',
+                                                                    }}
                                                                 />
                                                             ),
                                                         )}

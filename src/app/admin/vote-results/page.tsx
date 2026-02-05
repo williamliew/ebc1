@@ -146,6 +146,27 @@ export default function VoteResultsPage() {
                                                 height="100%"
                                             >
                                                 <PieChart>
+                                                    <defs>
+                                                        <filter
+                                                            id="vote-results-pie-shadow"
+                                                            x="-20%"
+                                                            y="-20%"
+                                                            width="140%"
+                                                            height="140%"
+                                                        >
+                                                            <feDropShadow
+                                                                dx={0}
+                                                                dy={1}
+                                                                stdDeviation={
+                                                                    1.5
+                                                                }
+                                                                floodOpacity={
+                                                                    0.12
+                                                                }
+                                                                floodColor="var(--foreground)"
+                                                            />
+                                                        </filter>
+                                                    </defs>
                                                     <Pie
                                                         data={pieData}
                                                         dataKey="value"
@@ -187,6 +208,9 @@ export default function VoteResultsPage() {
                                                                     strokeWidth={
                                                                         1
                                                                     }
+                                                                    style={{
+                                                                        filter: 'url(#vote-results-pie-shadow)',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
