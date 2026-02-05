@@ -3,8 +3,16 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { suggestions } from '@/db/schema';
 import { eq, sql, and } from 'drizzle-orm';
+import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
+import {
+    containsBlocklistedWord,
+    stripHtmlForCheck,
+} from '@/lib/sfw-blocklist';
 
 const MAX_SUGGESTIONS_PER_PERSON = 2;
+/** Max plain-text character count for suggestion comment (after stripping HTML). */
+const MAX_COMMENT_CHARS = 350;
+const MAX_COMMENT_HTML_LENGTH = 4000;
 
 const keyHashSchema = z.string().min(1, 'Key hash required').max(256);
 
@@ -14,6 +22,21 @@ const optionalUrl = z
     .union([z.string().url(), z.literal(''), z.null()])
     .optional()
     .transform((v) => (v === '' || v === undefined ? null : v));
+
+const optionalComment = z
+    .string()
+    .max(MAX_COMMENT_HTML_LENGTH)
+    .optional()
+    .transform((v) => (v == null || v.trim() === '' ? undefined : v.trim()));
+
+const MAX_COMMENTER_NAME_LENGTH = 128;
+const optionalCommenterName = z
+    .string()
+    .max(MAX_COMMENTER_NAME_LENGTH)
+    .optional()
+    .transform((v) =>
+        v == null || typeof v !== 'string' || v.trim() === '' ? null : v.trim(),
+    );
 
 const postBodySchema = z.object({
     suggestionRoundId: z.number().int().positive(),
@@ -30,6 +53,8 @@ const postBodySchema = z.object({
     coverUrl: optionalUrl,
     blurb: z.string().nullable().optional(),
     link: optionalUrl,
+    comment: optionalComment,
+    commenterName: optionalCommenterName,
 });
 
 export async function GET(request: Request) {
@@ -90,6 +115,8 @@ export async function GET(request: Request) {
                 coverUrl: suggestions.coverUrl,
                 blurb: suggestions.blurb,
                 link: suggestions.link,
+                comment: suggestions.comment,
+                commenterName: suggestions.commenterName,
                 createdAt: suggestions.createdAt,
             })
             .from(suggestions)
@@ -126,6 +153,8 @@ export async function GET(request: Request) {
             coverUrl: s.coverUrl,
             blurb: s.blurb,
             link: s.link,
+            comment: s.comment ?? null,
+            commenterName: s.commenterName ?? null,
             createdAt: s.createdAt,
             suggestedByMe: myHash !== null && s.suggesterKeyHash === myHash,
         }));
@@ -213,6 +242,43 @@ export async function POST(request: Request) {
             );
         }
 
+        let commentValue: string | null = null;
+        if (parsed.data.comment != null && parsed.data.comment !== '') {
+            const plainForCount = parsed.data.comment
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\r\n|\r|\n/g, ' ')
+                .trim();
+            const charCount = plainForCount.length;
+            if (charCount > MAX_COMMENT_CHARS) {
+                return NextResponse.json(
+                    {
+                        error: `Comment must be ${MAX_COMMENT_CHARS} characters or fewer (you have ${charCount})`,
+                    },
+                    { status: 400 },
+                );
+            }
+            const plain = stripHtmlForCheck(parsed.data.comment);
+            if (containsBlocklistedWord(plain)) {
+                return NextResponse.json(
+                    {
+                        error: 'Comment contains language that isn’t allowed. Please keep it safe for work.',
+                    },
+                    { status: 400 },
+                );
+            }
+            commentValue = sanitiseSuggestionComment(parsed.data.comment);
+            if (commentValue === '') commentValue = null;
+        }
+
+        const rawName = parsed.data.commenterName;
+        const commenterNameValue =
+            rawName == null || rawName === ''
+                ? null
+                : rawName
+                      .replace(/<[^>]*>/g, '')
+                      .trim()
+                      .slice(0, MAX_COMMENTER_NAME_LENGTH) || null;
+
         const [row] = await db
             .insert(suggestions)
             .values({
@@ -224,6 +290,8 @@ export async function POST(request: Request) {
                 coverUrl: parsed.data.coverUrl ?? null,
                 blurb: parsed.data.blurb ?? null,
                 link: parsed.data.link ?? null,
+                comment: commentValue,
+                commenterName: commenterNameValue,
             })
             .returning({
                 id: suggestions.id,

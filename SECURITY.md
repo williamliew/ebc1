@@ -6,13 +6,13 @@ This document summarises the security posture of the Elwood Book Club app and ho
 
 ### Input validation
 
-- **API request bodies** are validated with Zod before use (votes, book search, nomination, suggestions, admin login, vote access password). Length and type limits are applied (e.g. `title`/`author` max 200, `voterKeyHash` max 256).
+- **API request bodies** are validated with Zod before use (votes, book search, nomination, suggestions, admin login, vote access password). Length and type limits are applied (e.g. `title`/`author` max 512, `voterKeyHash` max 256, suggestion `comment` max 4000 raw chars, 350 plain-text characters). Suggestion comments are additionally checked for safe-for-work language (server-side blocklist) and rejected if they contain blocklisted words.
 - **Query parameters** used in DB or external calls are validated: `roundId` as integer, `date` as YYYY-MM-DD (nomination), `ids` as Open Library work keys (book details).
 
 ### Injection
 
 - **Database:** All access goes through Drizzle with parameterised queries. No raw SQL built from user input; SQL injection is not possible from request data.
-- **HTML / XSS:** The only user/API-controlled HTML rendered is book blurbs. Blurbs are sanitised with `sanitiseBlurb()` (sanitize-html) with a fixed allowlist of tags and schemes (`http`, `https`, `mailto` only for links). Script injection via blurbs is mitigated.
+- **HTML / XSS:** User/API-controlled HTML is limited to (1) book blurbs and (2) suggestion comments. Blurbs are sanitised with `sanitiseBlurb()` (sanitize-html) with a fixed allowlist of tags and schemes (`http`, `https`, `mailto` only for links). Suggestion comments are sanitised with `sanitiseSuggestionComment()` (sanitize-html) allowing only `p`, `br`, `strong`, `em`, `b`, `i`, `u`, `span` (no links or script). Script injection via blurbs or comments is mitigated.
 - **External APIs:** Open Library URLs are built from validated keys only; no `eval()` or dynamic code execution.
 
 ### Auth and secrets
@@ -52,15 +52,17 @@ Set in `next.config.ts`:
 
 ## Residual risks
 
-| Area              | Status      | Note                                             |
-| ----------------- | ----------- | ------------------------------------------------ |
-| SQL injection     | Mitigated   | Drizzle parameterised queries only.              |
-| XSS (blurbs)      | Mitigated   | Sanitised allowlist; no script schemes.          |
-| Input validation  | Mitigated   | Bodies and key query params validated.           |
-| Secrets in client | Mitigated   | No API keys in frontend.                         |
-| Rate limiting     | Best-effort | In-memory; use external store for strict limits. |
-| CSRF              | Partial     | SameSite cookies help; no CSRF tokens.           |
-| Brute force       | Reduced     | Rate limit on login and vote password.           |
+| Area              | Status      | Note                                                     |
+| ----------------- | ----------- | -------------------------------------------------------- |
+| SQL injection     | Mitigated   | Drizzle parameterised queries only.                      |
+| XSS (blurbs)      | Mitigated   | Sanitised allowlist; no script schemes.                  |
+| XSS (comments)    | Mitigated   | Sanitised allowlist (bold/italic/underline only).        |
+| Comment content   | Mitigated   | SFW blocklist; comments with blocklisted words rejected. |
+| Input validation  | Mitigated   | Bodies and key query params validated.                   |
+| Secrets in client | Mitigated   | No API keys in frontend.                                 |
+| Rate limiting     | Best-effort | In-memory; use external store for strict limits.         |
+| CSRF              | Partial     | SameSite cookies help; no CSRF tokens.                   |
+| Brute force       | Reduced     | Rate limit on login and vote password.                   |
 
 ---
 

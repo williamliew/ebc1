@@ -63,12 +63,17 @@ body {
 .headless-editor-content.ProseMirror {
   min-height: inherit;
 }
-.headless-editor-content.ProseMirror p.is-editor-empty:first-child::before {
+.headless-editor-content.ProseMirror p.is-editor-empty:first-child::before,
+.suggestion-comment-editor-content.ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
   color: var(--muted);
   pointer-events: none;
   height: 0;
+}
+
+.suggestion-comment-editor-content.ProseMirror {
+  min-height: inherit;
 }
 
 /* List styling inside editor (site CSS / Tailwind preflight resets lists) */

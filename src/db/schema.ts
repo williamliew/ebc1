@@ -43,6 +43,10 @@ export const suggestions = pgTable('suggestions', {
     coverUrl: text('cover_url'),
     blurb: text('blurb'),
     link: text('link'),
+    /** Optional comment with the suggestion (rich text, sanitised; max 350 characters enforced in API). */
+    comment: text('comment'),
+    /** Optional name shown with the comment; null/blank is displayed as "Anonymous". */
+    commenterName: varchar('commenter_name', { length: 128 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

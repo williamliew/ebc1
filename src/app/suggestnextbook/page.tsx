@@ -4,9 +4,15 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
+import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
 import { getOrCreateVisitorKeyHash } from '@/lib/visitor-key';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
 import { LoadingMinDuration } from '@/components/loading-min-duration';
+import {
+    SuggestionCommentEditor,
+    countCommentChars,
+    MAX_COMMENT_CHARS,
+} from '@/components/suggestion-comment-editor';
 
 const MAX_SUGGESTIONS_PER_PERSON = 2;
 
@@ -26,6 +32,8 @@ type SuggestionItem = {
     coverUrl: string | null;
     blurb: string | null;
     link: string | null;
+    comment: string | null;
+    commenterName: string | null;
     suggestedByMe: boolean;
 };
 
@@ -102,6 +110,8 @@ export default function SuggestNextBookPage() {
     const [confirmSuggest, setConfirmSuggest] = useState<SuggestionItem | null>(
         null,
     );
+    const [confirmSuggestComment, setConfirmSuggestComment] = useState('');
+    const [confirmSuggestName, setConfirmSuggestName] = useState('');
     const [confirmPending, setConfirmPending] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [modalStep, setModalStep] = useState<
@@ -116,6 +126,8 @@ export default function SuggestNextBookPage() {
     const [suggestPending, setSuggestPending] = useState(false);
     const [suggestSuccess, setSuggestSuccess] = useState(false);
     const [suggestError, setSuggestError] = useState<string | null>(null);
+    const [suggestionComment, setSuggestionComment] = useState('');
+    const [suggestionCommenterName, setSuggestionCommenterName] = useState('');
 
     const fetchRound = useCallback(async () => {
         setLoading(true);
@@ -165,6 +177,13 @@ export default function SuggestNextBookPage() {
         }
     }, [round, suggesterKeyHash, round?.requiresPassword, fetchSuggestions]);
 
+    useEffect(() => {
+        if (confirmSuggest) {
+            setConfirmSuggestComment('');
+            setConfirmSuggestName('');
+        }
+    }, [confirmSuggest]);
+
     const handleVerifyPassword = useCallback(
         async (e: React.FormEvent) => {
             e.preventDefault();
@@ -198,7 +217,11 @@ export default function SuggestNextBookPage() {
     );
 
     const handleSuggestThisToo = useCallback(
-        async (item: SuggestionItem) => {
+        async (
+            item: SuggestionItem,
+            comment?: string | null,
+            commenterName?: string | null,
+        ) => {
             if (
                 !round ||
                 !suggesterKeyHash ||
@@ -219,12 +242,22 @@ export default function SuggestNextBookPage() {
                         coverUrl: item.coverUrl,
                         blurb: item.blurb,
                         link: item.link,
+                        comment:
+                            comment != null && comment.trim() !== ''
+                                ? comment.trim()
+                                : null,
+                        commenterName:
+                            commenterName != null && commenterName.trim() !== ''
+                                ? commenterName.trim()
+                                : null,
                     }),
                     credentials: 'include',
                 });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(data.error ?? 'Failed to suggest');
                 setConfirmSuggest(null);
+                setConfirmSuggestComment('');
+                setConfirmSuggestName('');
                 fetchSuggestions();
             } catch {
                 // could show toast
@@ -297,10 +330,19 @@ export default function SuggestNextBookPage() {
         setSearchError(null);
         setSuggestSuccess(false);
         setSuggestError(null);
+        setSuggestionComment('');
+        setSuggestionCommenterName('');
     }, []);
 
     const handleSuggestNewBook = useCallback(async () => {
         if (!round || !suggesterKeyHash || !selectedBook) return;
+        const chars = countCommentChars(suggestionComment);
+        if (chars > MAX_COMMENT_CHARS) {
+            setSuggestError(
+                `Comment must be ${MAX_COMMENT_CHARS} characters or fewer (you have ${chars}).`,
+            );
+            return;
+        }
         setSuggestPending(true);
         try {
             const coverUrl = getEffectiveCoverUrl(selectedBook);
@@ -316,6 +358,14 @@ export default function SuggestNextBookPage() {
                     coverUrl,
                     blurb: selectedBook.blurb,
                     link: selectedBook.link,
+                    comment:
+                        suggestionComment.trim() === ''
+                            ? undefined
+                            : suggestionComment.trim(),
+                    commenterName:
+                        suggestionCommenterName.trim() === ''
+                            ? null
+                            : suggestionCommenterName.trim(),
                 }),
                 credentials: 'include',
             });
@@ -331,7 +381,15 @@ export default function SuggestNextBookPage() {
             );
             setSuggestPending(false);
         }
-    }, [round, suggesterKeyHash, selectedBook, fetchSuggestions, closeModal]);
+    }, [
+        round,
+        suggesterKeyHash,
+        selectedBook,
+        suggestionComment,
+        suggestionCommenterName,
+        fetchSuggestions,
+        closeModal,
+    ]);
 
     const uniqueSuggestions = useMemo(() => {
         const byBook = new Map<string, SuggestionItem>();
@@ -339,10 +397,12 @@ export default function SuggestNextBookPage() {
             const existing = byBook.get(item.bookExternalId);
             if (!existing) {
                 byBook.set(item.bookExternalId, { ...item });
-            } else if (item.suggestedByMe) {
+            } else {
                 byBook.set(item.bookExternalId, {
                     ...existing,
-                    suggestedByMe: true,
+                    suggestedByMe: existing.suggestedByMe || item.suggestedByMe,
+                    comment: existing.comment ?? item.comment,
+                    commenterName: existing.commenterName ?? item.commenterName,
                 });
             }
         }
@@ -464,9 +524,11 @@ export default function SuggestNextBookPage() {
 
                     <main className="max-w-lg mx-auto w-full p-4 flex-1">
                         <section>
-                            <h2 className="text-sm font-medium text-muted mb-2">
-                                Current suggestions
-                            </h2>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                                <h2 className="text-sm font-medium text-muted">
+                                    Current suggestions
+                                </h2>
+                            </div>
                             {uniqueSuggestions.length === 0 ? (
                                 <p className="text-muted text-sm">
                                     No books suggested yet. Be the first!
@@ -640,6 +702,27 @@ export default function SuggestNextBookPage() {
                                             No description available.
                                         </p>
                                     )}
+                                    {readMoreBook.comment &&
+                                        readMoreBook.comment.trim() !== '' && (
+                                            <div className="mt-4 pt-4 border-t border-border">
+                                                <h3 className="text-sm font-semibold text-foreground mb-2">
+                                                    Comments
+                                                </h3>
+                                                <div
+                                                    className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitiseSuggestionComment(
+                                                            readMoreBook.comment,
+                                                        ),
+                                                    }}
+                                                />
+                                                <p className="text-xs text-muted mt-1">
+                                                    —
+                                                    {readMoreBook.commenterName?.trim() ||
+                                                        'Anonymous'}
+                                                </p>
+                                            </div>
+                                        )}
                                 </div>
                             </div>
                         </div>
@@ -652,10 +735,14 @@ export default function SuggestNextBookPage() {
                             role="dialog"
                             aria-modal="true"
                             aria-label="Confirm suggestion"
-                            onClick={() => setConfirmSuggest(null)}
+                            onClick={() => {
+                                setConfirmSuggest(null);
+                                setConfirmSuggestComment('');
+                                setConfirmSuggestName('');
+                            }}
                         >
                             <div
-                                className="bg-surface rounded-xl shadow-xl max-w-sm w-full p-6"
+                                className="bg-surface rounded-xl shadow-xl max-w-sm w-full p-6 max-h-[90vh] overflow-y-auto"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <p className="text-sm mb-4">
@@ -668,10 +755,46 @@ export default function SuggestNextBookPage() {
                                     {confirmSuggest.author ?? 'Unknown author'}?
                                     This action can&apos;t be changed.
                                 </p>
+                                <div className="mb-4">
+                                    <label className="text-xs font-medium text-muted block mb-1">
+                                        Comment (optional)
+                                    </label>
+                                    <SuggestionCommentEditor
+                                        key={confirmSuggest.bookExternalId}
+                                        initialContent={confirmSuggestComment}
+                                        onUpdate={setConfirmSuggestComment}
+                                        placeholder="Why this book?"
+                                        className="min-h-[80px]"
+                                    />
+                                    {countCommentChars(confirmSuggestComment) >
+                                        0 && (
+                                        <div className="mt-3">
+                                            <label className="text-xs font-medium text-muted block mb-1">
+                                                Your name (optional)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={confirmSuggestName}
+                                                onChange={(e) =>
+                                                    setConfirmSuggestName(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Leave blank to show as Anonymous"
+                                                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                                maxLength={128}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="flex gap-3">
                                     <button
                                         type="button"
-                                        onClick={() => setConfirmSuggest(null)}
+                                        onClick={() => {
+                                            setConfirmSuggest(null);
+                                            setConfirmSuggestComment('');
+                                            setConfirmSuggestName('');
+                                        }}
                                         className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-[var(--surface-hover)]"
                                     >
                                         Back
@@ -679,7 +802,11 @@ export default function SuggestNextBookPage() {
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            handleSuggestThisToo(confirmSuggest)
+                                            handleSuggestThisToo(
+                                                confirmSuggest,
+                                                confirmSuggestComment,
+                                                confirmSuggestName,
+                                            )
                                         }
                                         disabled={confirmPending}
                                         className="flex-1 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50"
@@ -970,6 +1097,46 @@ export default function SuggestNextBookPage() {
                                                     />
                                                 </div>
                                             )}
+                                            <div>
+                                                <label className="text-xs font-medium text-muted block mb-1">
+                                                    Optional comment (max{' '}
+                                                    {MAX_COMMENT_CHARS}{' '}
+                                                    characters)
+                                                </label>
+                                                <SuggestionCommentEditor
+                                                    initialContent={
+                                                        suggestionComment
+                                                    }
+                                                    onUpdate={
+                                                        setSuggestionComment
+                                                    }
+                                                    placeholder="e.g. Why you suggest this book…"
+                                                />
+                                                {countCommentChars(
+                                                    suggestionComment,
+                                                ) > 0 && (
+                                                    <div className="mt-3">
+                                                        <label className="text-xs font-medium text-muted block mb-1">
+                                                            Your name (optional)
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={
+                                                                suggestionCommenterName
+                                                            }
+                                                            onChange={(e) =>
+                                                                setSuggestionCommenterName(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="Leave blank to show as Anonymous"
+                                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                                            maxLength={128}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
                                             {suggestError && (
                                                 <p
                                                     className="text-sm text-red-600 dark:text-red-400"
@@ -978,6 +1145,10 @@ export default function SuggestNextBookPage() {
                                                     {suggestError}
                                                 </p>
                                             )}
+                                            <p className="text-sm text-muted pt-2">
+                                                This action can&apos;t be
+                                                changed.
+                                            </p>
                                             <div className="flex gap-3 pt-2">
                                                 <button
                                                     type="button"

@@ -13,19 +13,22 @@ Two-sided web app for a monthly “book of the month” vote:
 
 The app also shows the **next book** (winner + meeting date) after the admin sets the winner.
 
+**Suggest next book** – When a suggestion round is open, members can suggest up to 2 books per round. Each suggestion can include an **optional comment** (e.g. why they suggest it): rich text with bold, italic, underline only; max 350 characters; emoji picker available. Comments are sanitised and checked for safe-for-work language server-side. Viewers can toggle “Show comments” / “Hide comments” on the suggest page.
+
 ---
 
 ## Main routes
 
-| Route                              | Who      | Purpose                                                                                                                                                    |
-| ---------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                                | Everyone | Home: links to Vote, Next book; admin panel link when logged in                                                                                            |
-| `/vote`                            | Members  | Current vote round: shortlist in a swipeable gallery, one vote per round; password form if round is protected                                              |
-| `/nextbook`                        | Everyone | Winning book and meeting date for the latest round                                                                                                         |
-| `/admin`                           | Admin    | Admin hub (links to Create a vote, Book of the month graphic, Vote results)                                                                                |
-| `/admin/login`                     | Admin    | Login to access admin routes                                                                                                                               |
-| `/admin/create-a-vote`             | Admin    | Search books, select 2–4, **review** (edit cover/title/author), then create the nomination round with meeting/close dates and optional vote password       |
-| `/admin/book-of-the-month-graphic` | Admin    | Build a printable spread: questions, book club title, book title/author, extra text, background, font/size, QR code; in-page and fullscreen preview, print |
+| Route                              | Who      | Purpose                                                                                                                                                                   |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                | Everyone | Home: links to Vote, Next book; admin panel link when logged in                                                                                                           |
+| `/vote`                            | Members  | Current vote round: shortlist in a swipeable gallery, one vote per round; password form if round is protected                                                             |
+| `/nextbook`                        | Everyone | Winning book and meeting date for the latest round                                                                                                                        |
+| `/admin`                           | Admin    | Admin hub (links to Create a vote, Book of the month graphic, Vote results)                                                                                               |
+| `/admin/login`                     | Admin    | Login to access admin routes                                                                                                                                              |
+| `/admin/create-a-vote`             | Admin    | Search books, select 2–4, **review** (edit cover/title/author), then create the nomination round with meeting/close dates and optional vote password                      |
+| `/admin/book-of-the-month-graphic` | Admin    | Build a printable spread: questions, book club title, book title/author, extra text, background, font/size, QR code; in-page and fullscreen preview, print                |
+| `/suggestnextbook`                 | Members  | When suggestions are open: search books, suggest up to 2 per round; optional comment (350 characters, bold/italic/underline, emoji); toggle to show/hide others’ comments |
 
 ---
 
