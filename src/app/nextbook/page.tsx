@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getNextBook } from '@/lib/nextbook';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
+import { StackOfBooks } from '@/components/stack-of-books';
 
 export default async function NextBookPage() {
     const { winner, meetingDate } = await getNextBook();
@@ -18,11 +19,25 @@ export default async function NextBookPage() {
                     </Link>
                     <h1 className="text-xl font-semibold">Next book</h1>
                 </header>
-                <main className="max-w-md mx-auto text-center p-6">
-                    <p className="text-muted">
-                        No winner has been selected yet. Check back after the
-                        next vote.
+                <main className="max-w-md mx-auto p-6 flex flex-col items-center justify-center min-h-[50vh] text-center">
+                    <StackOfBooks
+                        className="mb-4 text-muted"
+                        width={100}
+                        height={75}
+                    />
+                    <h2 className="text-lg font-semibold text-foreground mb-2">
+                        No book chosen yet
+                    </h2>
+                    <p className="text-muted max-w-sm">
+                        We&apos;ll have a winner after the next vote—check back
+                        soon to see what we&apos;re reading!
                     </p>
+                    <Link
+                        href="/"
+                        className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                    >
+                        Back to home
+                    </Link>
                 </main>
             </div>
         );

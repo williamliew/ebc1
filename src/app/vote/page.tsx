@@ -7,6 +7,7 @@ import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { getOrCreateVisitorKeyHash } from '@/lib/visitor-key';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
 import { LoadingMinDuration } from '@/components/loading-min-duration';
+import { StackOfBooks } from '@/components/stack-of-books';
 
 type VoteBook = {
     id: number;
@@ -266,7 +267,7 @@ export default function VotePage() {
                         >
                             ← Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">Vote</h1>
+                        <h1 className="text-xl font-semibold">Monthly book vote</h1>
                     </header>
                     <main className="max-w-md mx-auto p-6 text-center">
                         <p
@@ -286,7 +287,7 @@ export default function VotePage() {
                         >
                             ← Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">Vote</h1>
+                        <h1 className="text-xl font-semibold">Monthly book vote</h1>
                         {round.meetingDate && (
                             <p className="text-sm text-muted mt-1">
                                 Book club meet:{' '}
@@ -359,12 +360,28 @@ export default function VotePage() {
                         >
                             ← Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">Vote</h1>
+                        <h1 className="text-xl font-semibold">Monthly book vote</h1>
                     </header>
-                    <main className="max-w-md mx-auto p-6 text-center">
-                        <p className="text-muted">
-                            No vote is available right now. Check back later.
+                    <main className="max-w-md mx-auto p-6 flex flex-col items-center justify-center min-h-[50vh] text-center">
+                        <StackOfBooks
+                            className="mb-4 text-muted"
+                            width={100}
+                            height={75}
+                        />
+                        <h2 className="text-lg font-semibold text-foreground mb-2">
+                            No vote open at the moment
+                        </h2>
+                        <p className="text-muted max-w-sm">
+                            We vote for the book we&apos;ll read and chat about
+                            at the next meet-up. Check back when voting is
+                            open—we&apos;d love your vote!
                         </p>
+                        <Link
+                            href="/"
+                            className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                        >
+                            Back to home
+                        </Link>
                     </main>
                 </div>
             ) : !round.isOpen ? (
@@ -376,7 +393,7 @@ export default function VotePage() {
                         >
                             ← Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">Vote</h1>
+                        <h1 className="text-xl font-semibold">Monthly book vote</h1>
                     </header>
                     <main className="max-w-md mx-auto p-6 text-center">
                         <p className="text-foreground font-medium">
@@ -400,7 +417,7 @@ export default function VotePage() {
                             >
                                 ← Back to home
                             </Link>
-                            <h1 className="text-xl font-semibold">Vote</h1>
+                            <h1 className="text-xl font-semibold">Monthly book vote</h1>
                             {round.meetingDate && (
                                 <p className="text-sm text-muted mt-1">
                                     Book club meet:{' '}

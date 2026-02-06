@@ -13,6 +13,7 @@ import {
     countCommentChars,
     MAX_COMMENT_CHARS,
 } from '@/components/suggestion-comment-editor';
+import { StackOfBooks } from '@/components/stack-of-books';
 
 const MAX_SUGGESTIONS_PER_PERSON = 2;
 
@@ -420,22 +421,39 @@ export default function SuggestNextBookPage() {
             loaderWrapperClassName="min-h-screen bg-background text-foreground flex items-center justify-center p-6"
         >
             {!round ? (
-                <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
-                    <h1 className="text-xl font-semibold mb-2">
-                        Suggestions closed
-                    </h1>
-                    <p className="text-muted text-center max-w-md">
-                        Suggestions for the next book are currently closed. We
-                        open suggestions for a short period each month—check
-                        back later or ask the organisers when the next window
-                        opens.
-                    </p>
-                    <Link
-                        href="/"
-                        className="mt-6 text-sm text-primary underline hover:no-underline"
-                    >
-                        ← Back to home
-                    </Link>
+                <div className="min-h-screen bg-background text-foreground">
+                    <header className="border-b border-border bg-surface px-4 py-4">
+                        <Link
+                            href="/"
+                            className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
+                        >
+                            ← Back to home
+                        </Link>
+                        <h1 className="text-xl font-semibold">
+                            Suggest next book
+                        </h1>
+                    </header>
+                    <main className="max-w-md mx-auto p-6 flex flex-col items-center justify-center min-h-[50vh] text-center">
+                        <StackOfBooks
+                            className="mb-4 text-muted"
+                            width={100}
+                            height={75}
+                        />
+                        <h2 className="text-lg font-semibold text-foreground mb-2">
+                            We&apos;re currently not taking suggestions.
+                        </h2>
+                        <p className="text-muted max-w-sm">
+                            We open book suggestions for a short period each
+                            month—check back soon, we&apos;d love your idea for
+                            the next read!
+                        </p>
+                        <Link
+                            href="/"
+                            className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                        >
+                            Back to home
+                        </Link>
+                    </main>
                 </div>
             ) : round.requiresPassword ? (
                 <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
