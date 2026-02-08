@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
-/* Theme variables: default (Elwood brand), high-contrast, alternative (warm). */
+/* Theme variables: default (mint #91d8c5), high-contrast, alternative (green). */
 :root,
 [data-theme="default"] {
-  --background: #f0faf7;
+  --background: #f5fbf9;
   --foreground: #1a1a1a;
-  --primary: #1a6b52;
-  --primary-hover: #156b52;
-  --primary-foreground: #ffffff;
+  --primary: #91d8c5;
+  --primary-hover: #7bc9b5;
+  --primary-foreground: #1a1a1a;
   --surface: #ffffff;
-  --surface-hover: #e8f5f0;
-  --border: #c5e6d9;
+  --surface-hover: #d4efe8;
+  --border: #b8e4d9;
   --muted: #525252;
-  --focus-ring: 2px solid #1a6b52;
+  --focus-ring: 2px solid #91d8c5;
 }
 
 [data-theme="high-contrast"] {
@@ -28,17 +28,18 @@
   --focus-ring: 3px solid #000000;
 }
 
+/* Alternative theme: green (Elwood brand). */
 [data-theme="alternative"] {
-  --background: #faf8f5;
-  --foreground: #1c1917;
-  --primary: #b45309;
-  --primary-hover: #92400e;
+  --background: #f0faf7;
+  --foreground: #1a1a1a;
+  --primary: #1a6b52;
+  --primary-hover: #156b52;
   --primary-foreground: #ffffff;
   --surface: #ffffff;
-  --surface-hover: #fef3c7;
-  --border: #fcd34d;
-  --muted: #57534e;
-  --focus-ring: 2px solid #b45309;
+  --surface-hover: #e8f5f0;
+  --border: #c5e6d9;
+  --muted: #525252;
+  --focus-ring: 2px solid #1a6b52;
 }
 
 @theme inline {
