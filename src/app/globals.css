@@ -42,6 +42,20 @@
   --focus-ring: 2px solid #1a6b52;
 }
 
+/* Dark mode */
+[data-theme="dark"] {
+  --background: #1a1f1e;
+  --foreground: #e8edec;
+  --primary: #5eb89e;
+  --primary-hover: #7bc9b5;
+  --primary-foreground: #1a1f1e;
+  --surface: #252b2a;
+  --surface-hover: #323a38;
+  --border: #3d4846;
+  --muted: #9ca8a6;
+  --focus-ring: 2px solid #5eb89e;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

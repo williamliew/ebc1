@@ -2,19 +2,22 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-export type ThemeId = 'default' | 'high-contrast' | 'alternative';
+export type ThemeId = 'default' | 'high-contrast' | 'alternative' | 'dark';
 
 const THEME_STORAGE_KEY = 'ebc-theme';
 const THEMES: { id: ThemeId; label: string }[] = [
     { id: 'default', label: 'Default' },
     { id: 'high-contrast', label: 'High contrast' },
     { id: 'alternative', label: 'Alternative' },
+    { id: 'dark', label: 'Dark' },
 ];
+
+const STORED_THEMES: ThemeId[] = ['high-contrast', 'alternative', 'dark'];
 
 function getStoredTheme(): ThemeId {
     if (typeof window === 'undefined') return 'default';
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (stored === 'high-contrast' || stored === 'alternative') return stored;
+    if (stored && STORED_THEMES.includes(stored as ThemeId)) return stored as ThemeId;
     return 'default';
 }
 

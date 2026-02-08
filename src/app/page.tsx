@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { isAdminAuthenticated } from '@/lib/admin-auth-server';
 import { EbcLogo } from '@/components/ebc-logo';
 import { AdminPanel } from '@/components/admin-panel';
+import { HomeStatus } from '@/components/home-status';
 
 export default async function Home() {
     const showAdmin = await isAdminAuthenticated();
@@ -52,26 +52,7 @@ export default async function Home() {
                     </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mt-10">
-                    <Link
-                        href="/vote"
-                        className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-                    >
-                        Vote
-                    </Link>
-                    <Link
-                        href="/suggestnextbook"
-                        className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-                    >
-                        Suggest next book
-                    </Link>
-                    <Link
-                        href="/nextbook"
-                        className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-                    >
-                        Our current book
-                    </Link>
-                </div>
+                <HomeStatus />
             </main>
         </div>
     );

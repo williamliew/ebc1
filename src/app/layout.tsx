@@ -58,7 +58,7 @@ export default function RootLayout({
                 />
                 <script
                     dangerouslySetInnerHTML={{
-                        __html: `(function(){try{var t=localStorage.getItem('ebc-theme');if(t==='high-contrast'||t==='alternative')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
+                        __html: `(function(){try{var t=localStorage.getItem('ebc-theme');if(t==='high-contrast'||t==='alternative'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
                     }}
                 />
             </head>

@@ -105,7 +105,9 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Env: see `.env.example` (DB, admin credentials). Deployment: see repo root `Deployment.md`.
+Open [http://localhost:3000](http://localhost:3000). Env: see `.env.local.example` (DB, admin credentials).
+
+**Local vs deploy:** For a clear split of what to do locally vs when deploying to Vercel + Supabase, see **`docs/DEPLOYMENT-LOCAL-VS-VERCEL-SUPABASE.md`**. Full deployment guide: repo root **Deployment.md**.
 
 ### Local development: clear the DB and re-push schema
 
@@ -127,6 +129,7 @@ When using the Docker database locally, you can wipe tables and reapply the sche
 - **Description.md** (repo root) – Club overview, monthly process, platforms
 - **Instructions.md** (repo root) – Build goals, API list, data model, flows
 - **Deployment.md** (repo root) – Hosting and env
-- **ebc1/SECURITY.md** – Security mitigations and residual risks
-- **ebc1/docs/THEMING.md** – Theme variables and usage
-- **ebc1/docs/LOGO-ACCESSIBILITY.md** – Logo contrast and usage
+- **docs/DEPLOYMENT-LOCAL-VS-VERCEL-SUPABASE.md** – What to do locally vs when deploying to Vercel + Supabase
+- **SECURITY.md** – Security mitigations and residual risks
+- **docs/THEMING.md** – Theme variables and usage
+- **docs/LOGO-ACCESSIBILITY.md** – Logo contrast and usage
