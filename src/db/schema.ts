@@ -123,3 +123,19 @@ export const voteRoundBooksRelations = relations(voteRoundBooks, ({ one }) => ({
 export const votesRelations = relations(votes, ({ one }) => ({
     voteRound: one(voteRounds),
 }));
+
+/**
+ * Book of the month: set by admin (from vote or manually). One row per set;
+ * "current" is the latest by id. Used by /nextbook and Eventbrite form.
+ */
+export const bookOfTheMonth = pgTable('book_of_the_month', {
+    id: serial('id').primaryKey(),
+    meetingDate: date('meeting_date', { mode: 'string' }).notNull(),
+    externalId: varchar('external_id', { length: 256 }).notNull(),
+    title: varchar('title', { length: 512 }).notNull(),
+    author: varchar('author', { length: 512 }).notNull(),
+    coverUrl: text('cover_url'),
+    blurb: text('blurb'),
+    link: text('link'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -103,6 +103,24 @@ export default function VotingBuilderPage() {
     const queryClient = useQueryClient();
 
     const PAGE_SIZE = 10;
+
+    type LatestVoteBook = BookSearchResult & { voteCount: number };
+
+    const { data: latestVoteData } = useQuery({
+        queryKey: ['admin', 'latest-vote-books'],
+        queryFn: async () => {
+            const res = await fetch('/api/admin/latest-vote-books', {
+                credentials: 'include',
+            });
+            if (!res.ok) return { round: null, books: [] };
+            return res.json() as Promise<{
+                round: { id: number; meetingDate: string } | null;
+                books: LatestVoteBook[];
+            }>;
+        },
+    });
+
+    const latestVoteBooks = latestVoteData?.books ?? [];
 
     const searchMutation = useMutation({
         mutationFn: async ({
@@ -420,6 +438,90 @@ export default function VotingBuilderPage() {
             <main
                 className={`w-full max-w-2xl mx-auto p-4 space-y-6 ${selected.length >= 1 ? 'pb-80' : ''}`}
             >
+                {/* Latest suggestion round */}
+                {latestVoteBooks.length > 0 && (
+                    <section>
+                        <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
+                            Latest suggestion round
+                        </h2>
+                        <ul className="space-y-3">
+                            {latestVoteBooks.map((book) => {
+                                const alreadySelected = selectedIds.has(
+                                    book.externalId,
+                                );
+                                const atMax =
+                                    selected.length >= MAX_SELECTED;
+                                return (
+                                    <li
+                                        key={book.externalId}
+                                        className="flex gap-3 rounded-lg border border-border bg-surface p-3"
+                                    >
+                                        <div className="flex-shrink-0 w-12 h-18 relative bg-[var(--border)] rounded overflow-hidden">
+                                            {book.coverUrl ? (
+                                                <Image
+                                                    src={book.coverUrl}
+                                                    alt=""
+                                                    fill
+                                                    className="object-cover"
+                                                    unoptimized
+                                                    sizes="48px"
+                                                />
+                                            ) : (
+                                                <span className="text-xs text-muted flex items-center justify-center h-full">
+                                                    No cover
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-medium text-sm truncate">
+                                                {book.title}
+                                            </p>
+                                            <p className="text-xs text-muted truncate">
+                                                {book.author}
+                                            </p>
+                                            <p className="text-xs text-muted">
+                                                {book.voteCount}{' '}
+                                                {book.voteCount === 1
+                                                    ? 'vote'
+                                                    : 'votes'}
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setPreviewBook(book)
+                                                }
+                                                className="mt-1 text-xs text-muted hover:underline"
+                                            >
+                                                Read more
+                                            </button>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (alreadySelected) {
+                                                    removeSelected(
+                                                        book.externalId,
+                                                    );
+                                                } else {
+                                                    addSelected(book);
+                                                }
+                                            }}
+                                            disabled={
+                                                !alreadySelected && atMax
+                                            }
+                                            className="flex-shrink-0 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {alreadySelected
+                                                ? 'Remove'
+                                                : 'Select'}
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </section>
+                )}
+
                 {/* Search */}
                 <section className="w-full">
                     <form

@@ -3,9 +3,33 @@ import Image from 'next/image';
 import { getNextBook } from '@/lib/nextbook';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { StackOfBooks } from '@/components/stack-of-books';
+import { ExpandableBlurb } from '@/components/expandable-blurb';
+
+function formatMeetingDate(isoDate: string): string {
+    const d = new Date(isoDate + 'T12:00:00');
+    const day = d.getDate();
+    const ordinal =
+        day === 1 || day === 21 || day === 31
+            ? 'st'
+            : day === 2 || day === 22
+              ? 'nd'
+              : day === 3 || day === 23
+                ? 'rd'
+                : 'th';
+    const month = d.toLocaleDateString('en-GB', { month: 'long' });
+    const year = d.getFullYear();
+    return `${day}${ordinal} ${month} ${year}`;
+}
+
+function formatMonthYear(isoDate: string): string {
+    const d = new Date(isoDate + 'T12:00:00');
+    const month = d.toLocaleDateString('en-GB', { month: 'long' });
+    const year = d.getFullYear();
+    return `${month} ${year}`;
+}
 
 export default async function NextBookPage() {
-    const { winner, meetingDate } = await getNextBook();
+    const { winner, meetingDate, pastBooks } = await getNextBook();
 
     if (!winner) {
         return (
@@ -17,7 +41,7 @@ export default async function NextBookPage() {
                     >
                         ← Back to home
                     </Link>
-                    <h1 className="text-xl font-semibold">Next book</h1>
+                    <h1 className="text-xl font-semibold">Our current book</h1>
                 </header>
                 <main className="max-w-md mx-auto p-6 flex flex-col items-center justify-center min-h-[50vh] text-center">
                     <StackOfBooks
@@ -52,33 +76,35 @@ export default async function NextBookPage() {
                 >
                     ← Back to home
                 </Link>
-                <h1 className="text-xl font-semibold">Next book</h1>
+                <h1 className="text-xl font-semibold">Our current book</h1>
                 {meetingDate && (
                     <p className="text-sm text-muted mt-1">
-                        Book club: {meetingDate}
+                        Book club: {formatMeetingDate(meetingDate)}
                     </p>
                 )}
             </header>
             <main className="max-w-lg mx-auto p-6">
                 <article className="rounded-lg border border-border bg-surface overflow-hidden">
-                    <div className="flex gap-4 p-4">
-                        <div className="flex-shrink-0 w-28 h-40 relative bg-[var(--border)] rounded overflow-hidden">
-                            {winner.coverUrl ? (
-                                <Image
-                                    src={winner.coverUrl}
-                                    alt=""
-                                    fill
-                                    className="object-cover"
-                                    unoptimized
-                                    sizes="112px"
-                                />
-                            ) : (
-                                <span className="text-sm text-muted flex items-center justify-center h-full">
-                                    No cover
-                                </span>
-                            )}
+                    <div className="p-4">
+                        <div className="w-full flex justify-center">
+                            <div className="relative w-28 h-40 bg-[var(--border)] rounded overflow-hidden">
+                                {winner.coverUrl ? (
+                                    <Image
+                                        src={winner.coverUrl}
+                                        alt=""
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
+                                        sizes="112px"
+                                    />
+                                ) : (
+                                    <span className="text-sm text-muted flex items-center justify-center h-full">
+                                        No cover
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                        <div className="min-w-0 flex-1">
+                        <div className="mt-4">
                             <h2 className="text-lg font-semibold">
                                 {winner.title}
                             </h2>
@@ -86,11 +112,9 @@ export default async function NextBookPage() {
                                 by {winner.author}
                             </p>
                             {winner.blurb && (
-                                <div
-                                    className="text-sm text-muted mt-3 line-clamp-4 [&_p]:my-1 [&_a]:underline [&_a]:text-foreground"
-                                    dangerouslySetInnerHTML={{
-                                        __html: sanitiseBlurb(winner.blurb),
-                                    }}
+                                <ExpandableBlurb
+                                    html={sanitiseBlurb(winner.blurb)}
+                                    className="mt-3"
                                 />
                             )}
                             {winner.link && (
@@ -106,6 +130,33 @@ export default async function NextBookPage() {
                         </div>
                     </div>
                 </article>
+
+                {pastBooks.length > 0 && (
+                    <section className="mt-8">
+                        <h2 className="text-lg font-semibold text-foreground mb-3">
+                            Past books
+                        </h2>
+                        <ul className="space-y-3">
+                            {pastBooks.map((book) => (
+                                <li
+                                    key={`${book.meetingDate}-${book.title}`}
+                                    className="rounded-lg border border-border bg-surface p-3"
+                                >
+                                    <p className="text-sm font-medium text-muted">
+                                        {formatMonthYear(book.meetingDate)}
+                                    </p>
+                                    <p className="font-medium text-foreground mt-0.5">
+                                        {book.title}
+                                    </p>
+                                    <p className="text-sm text-muted">
+                                        by {book.author}
+                                    </p>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
                 <p className="mt-4 text-center">
                     <Link
                         href="/"

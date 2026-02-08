@@ -771,7 +771,7 @@ export default function SuggestNextBookPage() {
                                     </strong>{' '}
                                     by{' '}
                                     {confirmSuggest.author ?? 'Unknown author'}?
-                                    This action can&apos;t be changed.
+                                    Suggesting a book can&apos;t be changed.
                                 </p>
                                 <div className="mb-4">
                                     <label className="text-xs font-medium text-muted block mb-1">
@@ -1164,7 +1164,7 @@ export default function SuggestNextBookPage() {
                                                 </p>
                                             )}
                                             <p className="text-sm text-muted pt-2">
-                                                This action can&apos;t be
+                                                Suggesting a book can&apos;t be
                                                 changed.
                                             </p>
                                             <div className="flex gap-3 pt-2">

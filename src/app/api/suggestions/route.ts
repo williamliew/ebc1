@@ -33,6 +33,7 @@ const MAX_COMMENTER_NAME_LENGTH = 128;
 const optionalCommenterName = z
     .string()
     .max(MAX_COMMENTER_NAME_LENGTH)
+    .nullable()
     .optional()
     .transform((v) =>
         v == null || typeof v !== 'string' || v.trim() === '' ? null : v.trim(),

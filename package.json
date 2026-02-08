@@ -20,6 +20,7 @@
         "@tiptap/starter-kit": "^3.18.0",
         "drizzle-orm": "^0.36",
         "emoji-picker-element": "^1.28.1",
+        "luxon": "^3.7.2",
         "next": "16.1.6",
         "postgres": "^3",
         "qrcode.react": "^4.2.0",
@@ -31,6 +32,7 @@
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4",
+        "@types/luxon": "^3.7.1",
         "@types/node": "^20",
         "@types/react": "^19",
         "@types/react-dom": "^19",
