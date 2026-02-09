@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useCallback } from 'react';
+import { SignOutIcon } from '@/components/sign-out-icon';
 
 function PenWritingIcon({ className }: { className?: string }) {
     return (
@@ -22,20 +23,13 @@ function PenWritingIcon({ className }: { className?: string }) {
     );
 }
 
-export function AdminPanel({
-    showAdmin,
-    isLocal,
-}: {
-    showAdmin: boolean;
-    isLocal: boolean;
-}) {
+export function AdminPanel({ showAdmin }: { showAdmin: boolean }) {
     const [open, setOpen] = useState(false);
-    const showButton = showAdmin || isLocal;
 
     const close = useCallback(() => setOpen(false), []);
     const toggle = useCallback(() => setOpen((prev) => !prev), []);
 
-    if (!showButton) return null;
+    if (!showAdmin) return null;
 
     return (
         <>
@@ -69,7 +63,7 @@ export function AdminPanel({
             >
                 <div className="flex h-full flex-col p-4 pt-14">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-foreground">
+                        <h2 className="font-heading text-lg font-semibold text-foreground">
                             Manage club
                         </h2>
                         <button
@@ -143,6 +137,15 @@ export function AdminPanel({
                             View suggestions
                         </Link>
                     </nav>
+                    <div className="mt-auto pt-4 border-t border-border">
+                        <Link
+                            href="/api/admin/logout"
+                            className="flex items-center justify-center gap-1.5 text-sm text-muted underline hover:no-underline hover:text-foreground py-2"
+                        >
+                            Sign out
+                            <SignOutIcon className="size-4 shrink-0" />
+                        </Link>
+                    </div>
                 </div>
             </aside>
         </>

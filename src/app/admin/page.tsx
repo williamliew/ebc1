@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
+import { SignOutIcon } from '@/components/sign-out-icon';
 
 export default function AdminPage() {
     return (
@@ -44,18 +45,19 @@ export default function AdminPage() {
                         View suggestions
                     </Link>
                 </div>
-                <p className="text-sm text-muted space-x-4">
+                <div className="flex flex-row flex-wrap items-center justify-center gap-6 py-2 text-sm text-muted">
                     <Link href="/" className="inline-flex items-center gap-1.5 underline hover:no-underline">
                         <BackArrowIcon className="size-4 shrink-0" />
                         Back to home
                     </Link>
                     <Link
                         href="/api/admin/logout"
-                        className="underline hover:no-underline"
+                        className="inline-flex items-center gap-1.5 underline hover:no-underline"
                     >
                         Sign out
+                        <SignOutIcon className="size-4 shrink-0" />
                     </Link>
-                </p>
+                </div>
             </main>
         </div>
     );
