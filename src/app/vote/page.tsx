@@ -437,13 +437,47 @@ export default function VotePage() {
                         <main className="flex-1 flex flex-col max-w-lg mx-auto w-full pb-44">
                             {/* Swipeable book cards with smooth drag and transition */}
                             <section
-                                className="flex-1 min-h-0 flex flex-col px-4 pt-4 select-none"
+                                className="flex-1 min-h-0 flex flex-col px-4 pt-4 select-none relative"
                                 onTouchStart={handleTouchStart}
                                 onTouchMove={handleTouchMove}
                                 onTouchEnd={handleTouchEnd}
                                 onMouseDown={handleMouseDown}
                                 style={{ touchAction: 'pan-y' }}
                             >
+                                {books.length > 1 && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={() => goTo(currentIndex - 1)}
+                                            disabled={currentIndex === 0}
+                                            className="absolute -left-1 top-[18%] z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-md disabled:opacity-40 disabled:pointer-events-none hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+                                            aria-label="Previous book"
+                                        >
+                                            <BackArrowIcon className="size-5 shrink-0" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => goTo(currentIndex + 1)}
+                                            disabled={currentIndex === books.length - 1}
+                                            className="absolute -right-1 top-[18%] z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-md disabled:opacity-40 disabled:pointer-events-none hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+                                            aria-label="Next book"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                className="size-5 shrink-0"
+                                                aria-hidden
+                                            >
+                                                <path d="M5 12h14M12 5l7 7-7 7" />
+                                            </svg>
+                                        </button>
+                                    </>
+                                )}
                                 <div className="flex-1 min-h-0 overflow-hidden rounded-xl">
                                     <div
                                         className="h-full flex will-change-transform"
@@ -458,7 +492,7 @@ export default function VotePage() {
                                         {books.map((book) => (
                                             <div
                                                 key={book.externalId}
-                                                className="h-full flex flex-col flex-shrink-0 min-w-0 pr-4"
+                                                className="h-full flex flex-col flex-shrink-0 min-w-0"
                                                 style={{
                                                     width: `${slidePercent}%`,
                                                 }}

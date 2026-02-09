@@ -53,8 +53,8 @@ export function AccessibilityThemeSwitcher() {
 
     useEffect(() => {
         const stored = getStoredTheme();
-        setTheme(stored);
         applyTheme(stored);
+        queueMicrotask(() => setTheme(stored));
     }, []);
 
     useEffect(() => {

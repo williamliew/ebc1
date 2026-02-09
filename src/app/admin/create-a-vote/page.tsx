@@ -430,7 +430,9 @@ export default function VotingBuilderPage() {
                     <BackArrowIcon className="size-4 shrink-0" />
                     Back to home
                 </Link>
-                <h1 className="font-heading text-xl font-semibold">Create a vote</h1>
+                <h1 className="font-heading text-xl font-semibold">
+                    Create a vote
+                </h1>
                 <p className="text-sm text-muted mt-1">
                     Search books, select up to {MAX_SELECTED}, then create the
                     nomination round (min {MIN_TO_CREATE} books).
@@ -451,8 +453,7 @@ export default function VotingBuilderPage() {
                                 const alreadySelected = selectedIds.has(
                                     book.externalId,
                                 );
-                                const atMax =
-                                    selected.length >= MAX_SELECTED;
+                                const atMax = selected.length >= MAX_SELECTED;
                                 return (
                                     <li
                                         key={book.externalId}
@@ -508,9 +509,7 @@ export default function VotingBuilderPage() {
                                                     addSelected(book);
                                                 }
                                             }}
-                                            disabled={
-                                                !alreadySelected && atMax
-                                            }
+                                            disabled={!alreadySelected && atMax}
                                             className="flex-shrink-0 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {alreadySelected
@@ -846,7 +845,7 @@ export default function VotingBuilderPage() {
                             onMouseDown={reviewHandleMouseDown}
                             style={{ touchAction: 'pan-y' }}
                         >
-                            <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-visible rounded-xl">
+                            <div className="flex-1 min-h-0 overflow-y-visible rounded-xl">
                                 <div
                                     className="flex will-change-transform"
                                     style={{
@@ -865,7 +864,7 @@ export default function VotingBuilderPage() {
                                                 width: `${100 / reviewBooks.length}%`,
                                             }}
                                         >
-                                            <div className="flex flex-col rounded-xl border border-border bg-surface">
+                                            <div className="flex flex-col rounded-xl border border-border bg-surface overflow-x-hidden">
                                                 {getEffectiveCoverUrl(book) ? (
                                                     <div className="relative w-full aspect-[3/4] shrink-0 bg-[var(--border)]">
                                                         <Image

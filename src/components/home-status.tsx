@@ -2,6 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { SuggestIcon } from '@/components/suggest-icon';
+import { VoteIcon } from '@/components/vote-icon';
 
 type StatusData = {
     voteOpen: boolean;
@@ -67,18 +69,28 @@ export function HomeStatus() {
         <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mt-10">
             <Link href="/vote" className={linkClass}>
                 <span>Vote</span>
-                <span className="text-xs opacity-90 mt-0.5">
-                    {data.voteOpen
-                        ? 'Open — cast your vote'
-                        : 'No vote at the moment'}
+                <span className="text-xs opacity-90 mt-0.5 inline-flex items-center justify-center gap-1">
+                    {data.voteOpen ? (
+                        <>
+                            Open — cast your vote
+                            <VoteIcon className="size-3.5 shrink-0" />
+                        </>
+                    ) : (
+                        'No vote at the moment'
+                    )}
                 </span>
             </Link>
             <Link href="/suggestnextbook" className={linkClass}>
                 <span>Suggest next book</span>
-                <span className="text-xs opacity-90 mt-0.5">
-                    {data.suggestionsOpen
-                        ? 'Open — suggest a book'
-                        : 'Suggestions closed'}
+                <span className="text-xs opacity-90 mt-0.5 inline-flex items-center justify-center gap-1">
+                    {data.suggestionsOpen ? (
+                        <>
+                            Open — suggest a book
+                            <SuggestIcon className="size-3.5 shrink-0" />
+                        </>
+                    ) : (
+                        'Suggestions closed'
+                    )}
                 </span>
             </Link>
             <Link href="/nextbook" className={linkClass}>
