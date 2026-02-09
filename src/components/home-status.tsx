@@ -39,7 +39,7 @@ export function HomeStatus() {
         return (
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mt-10">
                 <Link href="/vote" className={linkClass}>
-                    Vote
+                    Book vote
                 </Link>
                 <Link href="/suggestnextbook" className={linkClass}>
                     Suggest next book
@@ -54,7 +54,7 @@ export function HomeStatus() {
     if (isLoading || !data) {
         return (
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mt-10">
-                <span className={linkClass + ' opacity-70'}>Vote</span>
+                <span className={linkClass + ' opacity-70'}>Book vote</span>
                 <span className={linkClass + ' opacity-70'}>
                     Suggest next book
                 </span>
@@ -68,7 +68,7 @@ export function HomeStatus() {
     return (
         <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mt-10">
             <Link href="/vote" className={linkClass}>
-                <span>Vote</span>
+                <span>Book vote</span>
                 <span className="text-xs opacity-90 mt-0.5 inline-flex items-center justify-center gap-1">
                     {data.voteOpen ? (
                         <>
@@ -89,7 +89,7 @@ export function HomeStatus() {
                             <SuggestIcon className="size-3.5 shrink-0" />
                         </>
                     ) : (
-                        'Suggestions closed'
+                        'Suggestions are currently closed'
                     )}
                 </span>
             </Link>
