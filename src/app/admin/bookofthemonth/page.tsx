@@ -228,7 +228,7 @@ export default function BookOfTheMonthPage() {
                     ← Back to home
                 </Link>
                 <h1 className="text-xl font-semibold">
-                    Set book and create event
+                    Set book of the month
                 </h1>
             </header>
 

@@ -43,7 +43,7 @@ export function AdminPanel({
                 type="button"
                 onClick={toggle}
                 className="fixed left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)] transition-colors"
-                aria-label="Open admin panel"
+                aria-label="Open manage club"
                 aria-expanded={open}
             >
                 <PenWritingIcon className="h-5 w-5" />
@@ -55,7 +55,7 @@ export function AdminPanel({
                     type="button"
                     onClick={close}
                     className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px] transition-opacity"
-                    aria-label="Close admin panel"
+                    aria-label="Close manage club"
                 />
             )}
 
@@ -70,7 +70,7 @@ export function AdminPanel({
                 <div className="flex h-full flex-col p-4 pt-14">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-foreground">
-                            Admin panel
+                            Manage club
                         </h2>
                         <button
                             type="button"
@@ -112,7 +112,7 @@ export function AdminPanel({
                             onClick={close}
                             className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)] transition-colors"
                         >
-                            Set book and create event
+                            Set book of the month
                         </Link>
                         <Link
                             href="/admin/create-eventbrite-event"

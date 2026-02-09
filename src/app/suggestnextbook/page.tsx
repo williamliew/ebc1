@@ -36,6 +36,8 @@ type SuggestionItem = {
     comment: string | null;
     commenterName: string | null;
     suggestedByMe: boolean;
+    /** ISO date string from API; used for ordering comments in read-more lightbox. */
+    createdAt?: string;
 };
 
 type BookSearchResult = {
@@ -404,6 +406,7 @@ export default function SuggestNextBookPage() {
                     suggestedByMe: existing.suggestedByMe || item.suggestedByMe,
                     comment: existing.comment ?? item.comment,
                     commenterName: existing.commenterName ?? item.commenterName,
+                    createdAt: existing.createdAt ?? item.createdAt,
                 });
             }
         }
@@ -720,27 +723,60 @@ export default function SuggestNextBookPage() {
                                             No description available.
                                         </p>
                                     )}
-                                    {readMoreBook.comment &&
-                                        readMoreBook.comment.trim() !== '' && (
+                                    {(() => {
+                                        const commentsForBook = suggestions
+                                            .filter(
+                                                (s) =>
+                                                    s.bookExternalId ===
+                                                        readMoreBook.bookExternalId &&
+                                                    s.comment != null &&
+                                                    s.comment.trim() !== '',
+                                            )
+                                            .sort((a, b) => {
+                                                const aT =
+                                                    a.createdAt != null
+                                                        ? new Date(a.createdAt).getTime()
+                                                        : 0;
+                                                const bT =
+                                                    b.createdAt != null
+                                                        ? new Date(b.createdAt).getTime()
+                                                        : 0;
+                                                return bT - aT;
+                                            });
+                                        if (commentsForBook.length === 0)
+                                            return null;
+                                        return (
                                             <div className="mt-4 pt-4 border-t border-border">
                                                 <h3 className="text-sm font-semibold text-foreground mb-2">
                                                     Comments
                                                 </h3>
-                                                <div
-                                                    className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none"
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: sanitiseSuggestionComment(
-                                                            readMoreBook.comment,
+                                                <ul className="space-y-4 list-none p-0 m-0">
+                                                    {commentsForBook.map(
+                                                        (c) => (
+                                                            <li
+                                                                key={c.id}
+                                                                className="border-b border-border pb-3 last:border-0 last:pb-0"
+                                                            >
+                                                                <div
+                                                                    className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none"
+                                                                    dangerouslySetInnerHTML={{
+                                                                        __html: sanitiseSuggestionComment(
+                                                                            c.comment!,
+                                                                        ),
+                                                                    }}
+                                                                />
+                                                                <p className="text-xs text-muted mt-1">
+                                                                    —{' '}
+                                                                    {c.commenterName?.trim() ||
+                                                                        'Anonymous'}
+                                                                </p>
+                                                            </li>
                                                         ),
-                                                    }}
-                                                />
-                                                <p className="text-xs text-muted mt-1">
-                                                    —
-                                                    {readMoreBook.commenterName?.trim() ||
-                                                        'Anonymous'}
-                                                </p>
+                                                    )}
+                                                </ul>
                                             </div>
-                                        )}
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
