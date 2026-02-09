@@ -31,7 +31,7 @@ export function ExpandableBlurb({
                 <button
                     type="button"
                     onClick={() => setExpanded((e) => !e)}
-                    className="mt-2 text-sm font-medium text-[var(--primary)] hover:underline"
+                    className="mt-2 text-sm font-medium text-foreground underline underline-offset-2 decoration-[var(--primary)] hover:decoration-2"
                 >
                     {expanded ? 'Show less' : 'Show more'}
                 </button>

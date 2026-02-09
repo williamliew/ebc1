@@ -13,6 +13,7 @@ import {
     countCommentChars,
     MAX_COMMENT_CHARS,
 } from '@/components/suggestion-comment-editor';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { StackOfBooks } from '@/components/stack-of-books';
 
 const MAX_SUGGESTIONS_PER_PERSON = 2;
@@ -430,9 +431,10 @@ export default function SuggestNextBookPage() {
                             href="/"
                             className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                         >
-                            ← Back to home
+                            <BackArrowIcon className="size-4 shrink-0" />
+                            Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">
+                        <h1 className="font-heading text-xl font-semibold">
                             Suggest next book
                         </h1>
                     </header>
@@ -452,15 +454,16 @@ export default function SuggestNextBookPage() {
                         </p>
                         <Link
                             href="/"
-                            className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                            className="mt-6 inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)]"
                         >
+                            <BackArrowIcon className="size-4 shrink-0" />
                             Back to home
                         </Link>
                     </main>
                 </div>
             ) : round.requiresPassword ? (
                 <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
-                    <h1 className="text-xl font-semibold mb-2">
+                    <h1 className="font-heading text-xl font-semibold mb-2">
                         Suggest next book
                     </h1>
                     <p className="text-muted text-center mb-4">
@@ -498,9 +501,10 @@ export default function SuggestNextBookPage() {
                     </form>
                     <Link
                         href="/"
-                        className="mt-6 text-sm text-muted underline hover:no-underline"
+                        className="mt-6 inline-flex items-center gap-1.5 text-sm text-muted underline hover:no-underline"
                     >
-                        ← Back to home
+                        <BackArrowIcon className="size-4 shrink-0" />
+                        Back to home
                     </Link>
                 </div>
             ) : (
@@ -510,9 +514,10 @@ export default function SuggestNextBookPage() {
                             href="/"
                             className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                         >
-                            ← Back to home
+                            <BackArrowIcon className="size-4 shrink-0" />
+                            Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">
+                        <h1 className="font-heading text-xl font-semibold">
                             Suggest next book
                         </h1>
                         {(round.suggestionsForDate || round.closeAt) && (
@@ -967,9 +972,10 @@ export default function SuggestNextBookPage() {
                                                 onClick={() =>
                                                     setModalStep('search')
                                                 }
-                                                className="text-sm text-muted underline hover:no-underline mb-2"
+                                                className="inline-flex items-center gap-1.5 text-sm text-muted underline hover:no-underline mb-2"
                                             >
-                                                ← Back to search
+                                                <BackArrowIcon className="size-4 shrink-0" />
+                                                Back to search
                                             </button>
                                             <ul className="space-y-2 max-h-60 overflow-y-auto">
                                                 {searchResults.map((book) => (
@@ -1022,9 +1028,10 @@ export default function SuggestNextBookPage() {
                                                 onClick={() =>
                                                     setModalStep('results')
                                                 }
-                                                className="text-sm text-muted underline hover:no-underline"
+                                                className="inline-flex items-center gap-1.5 text-sm text-muted underline hover:no-underline"
                                             >
-                                                ← Back
+                                                <BackArrowIcon className="size-4 shrink-0" />
+                                                Back
                                             </button>
                                             {selectedBook.coverOptions &&
                                                 selectedBook.coverOptions

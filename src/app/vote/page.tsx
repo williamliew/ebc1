@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { getOrCreateVisitorKeyHash } from '@/lib/visitor-key';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
@@ -67,6 +68,7 @@ export default function VotePage() {
     const [chosenBookExternalId, setChosenBookExternalId] = useState<
         string | null
     >(null);
+    const [showVoteConfirm, setShowVoteConfirm] = useState(false);
 
     const fetchRound = useCallback(async () => {
         setLoading(true);
@@ -265,9 +267,10 @@ export default function VotePage() {
                             href="/"
                             className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                         >
-                            ← Back to home
+                            <BackArrowIcon className="size-4 shrink-0" />
+                            Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">Monthly book vote</h1>
+                        <h1 className="font-heading text-xl font-semibold">Monthly book vote</h1>
                     </header>
                     <main className="max-w-md mx-auto p-6 text-center">
                         <p
@@ -285,9 +288,10 @@ export default function VotePage() {
                             href="/"
                             className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                         >
-                            ← Back to home
+                            <BackArrowIcon className="size-4 shrink-0" />
+                            Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">Monthly book vote</h1>
+                        <h1 className="font-heading text-xl font-semibold">Monthly book vote</h1>
                         {round.meetingDate && (
                             <p className="text-sm text-muted mt-1">
                                 Book club meet:{' '}
@@ -358,9 +362,10 @@ export default function VotePage() {
                             href="/"
                             className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                         >
-                            ← Back to home
+                            <BackArrowIcon className="size-4 shrink-0" />
+                            Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">Monthly book vote</h1>
+                        <h1 className="font-heading text-xl font-semibold">Monthly book vote</h1>
                     </header>
                     <main className="max-w-md mx-auto p-6 flex flex-col items-center justify-center min-h-[50vh] text-center">
                         <StackOfBooks
@@ -378,8 +383,9 @@ export default function VotePage() {
                         </p>
                         <Link
                             href="/"
-                            className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                            className="mt-6 inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)]"
                         >
+                            <BackArrowIcon className="size-4 shrink-0" />
                             Back to home
                         </Link>
                     </main>
@@ -391,9 +397,10 @@ export default function VotePage() {
                             href="/"
                             className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                         >
-                            ← Back to home
+                            <BackArrowIcon className="size-4 shrink-0" />
+                            Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">Monthly book vote</h1>
+                        <h1 className="font-heading text-xl font-semibold">Monthly book vote</h1>
                     </header>
                     <main className="max-w-md mx-auto p-6 text-center">
                         <p className="text-foreground font-medium">
@@ -415,9 +422,10 @@ export default function VotePage() {
                                 href="/"
                                 className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                             >
-                                ← Back to home
+                                <BackArrowIcon className="size-4 shrink-0" />
+                                Back to home
                             </Link>
-                            <h1 className="text-xl font-semibold">Monthly book vote</h1>
+                            <h1 className="font-heading text-xl font-semibold">Monthly book vote</h1>
                             {round.meetingDate && (
                                 <p className="text-sm text-muted mt-1">
                                     Book club meet:{' '}
@@ -426,7 +434,7 @@ export default function VotePage() {
                             )}
                         </header>
 
-                        <main className="flex-1 flex flex-col max-w-lg mx-auto w-full">
+                        <main className="flex-1 flex flex-col max-w-lg mx-auto w-full pb-44">
                             {/* Swipeable book cards with smooth drag and transition */}
                             <section
                                 className="flex-1 min-h-0 flex flex-col px-4 pt-4 select-none"
@@ -499,10 +507,14 @@ export default function VotePage() {
                                         ))}
                                     </div>
                                 </div>
+                            </section>
+                        </main>
 
-                                {/* Dots */}
+                        {/* Fixed footer: pagination first, then vote status / CTA */}
+                        <footer className="fixed bottom-0 left-0 right-0 border-t border-border bg-surface p-4 max-w-lg mx-auto w-full">
+                            {books.length > 0 && (
                                 <div
-                                    className="flex justify-center gap-2 py-4"
+                                    className="flex justify-center gap-2 pb-3"
                                     role="tablist"
                                     aria-label="Book options"
                                 >
@@ -522,62 +534,115 @@ export default function VotePage() {
                                         />
                                     ))}
                                 </div>
-                            </section>
-
-                            {/* Vote for this book */}
-                            <section className="p-4 pt-0 pb-8">
-                                {alreadyVoted || submitStatus === 'success' ? (
-                                    <div className="text-center">
-                                        <p
-                                            className="text-green-600 dark:text-green-400 font-medium"
-                                            role="status"
-                                        >
-                                            {submitStatus === 'success'
-                                                ? submitMessage
-                                                : "You've already voted in this round."}
+                            )}
+                            {alreadyVoted || submitStatus === 'success' ? (
+                                <div className="text-center">
+                                    <p
+                                        className="text-green-600 dark:text-green-400 font-medium"
+                                        role="status"
+                                    >
+                                        {submitStatus === 'success'
+                                            ? submitMessage
+                                            : "You've already voted in this round."}
+                                    </p>
+                                    {chosenBookExternalId && (
+                                        <p className="text-sm text-muted mt-1">
+                                            You voted for{' '}
+                                            {books.find(
+                                                (b) =>
+                                                    b.externalId ===
+                                                    chosenBookExternalId,
+                                            )?.title ?? 'this round'}
                                         </p>
-                                        {chosenBookExternalId && (
-                                            <p className="text-sm text-muted mt-1">
-                                                You voted for{' '}
-                                                {books.find(
-                                                    (b) =>
-                                                        b.externalId ===
-                                                        chosenBookExternalId,
-                                                )?.title ?? 'this round'}
+                                    )}
+                                </div>
+                            ) : (
+                                <>
+                                    <p className="text-center text-sm text-muted mb-2">
+                                        Only 1 vote per round
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowVoteConfirm(true)}
+                                        disabled={
+                                            submitStatus === 'pending'
+                                        }
+                                        className="w-full rounded-lg bg-primary text-primary-foreground py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+                                    >
+                                        {submitStatus === 'pending'
+                                            ? 'Voting…'
+                                            : (() => {
+                                                const b = books[currentIndex];
+                                                const title = b?.title ?? 'this book';
+                                                const author = b?.author ?? 'unknown';
+                                                return `Vote for '${title}' by ${author}`;
+                                            })()}
+                                    </button>
+                                    {submitStatus === 'error' &&
+                                        submitMessage && (
+                                            <p
+                                                className="mt-2 text-center text-sm text-red-600 dark:text-red-400"
+                                                role="alert"
+                                            >
+                                                {submitMessage}
                                             </p>
                                         )}
-                                    </div>
-                                ) : (
-                                    <>
-                                        <p className="text-center text-sm text-muted mb-2">
-                                            Only 1 vote per round
-                                        </p>
-                                        <button
-                                            type="button"
-                                            onClick={handleSubmitVote}
-                                            disabled={
-                                                submitStatus === 'pending'
-                                            }
-                                            className="w-full rounded-lg bg-primary text-primary-foreground py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
-                                        >
-                                            {submitStatus === 'pending'
-                                                ? 'Voting…'
-                                                : 'Vote for this'}
-                                        </button>
-                                        {submitStatus === 'error' &&
-                                            submitMessage && (
-                                                <p
-                                                    className="mt-2 text-center text-sm text-red-600 dark:text-red-400"
-                                                    role="alert"
-                                                >
-                                                    {submitMessage}
-                                                </p>
-                                            )}
-                                    </>
-                                )}
-                            </section>
-                        </main>
+                                </>
+                            )}
+                        </footer>
                     </div>
+
+                    {/* Vote confirmation dialog */}
+                    {showVoteConfirm && books[currentIndex] && (
+                        <div
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="vote-confirm-title"
+                            onClick={() => setShowVoteConfirm(false)}
+                        >
+                            <div
+                                className="bg-surface rounded-xl shadow-xl max-w-sm w-full p-6"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <h2
+                                    id="vote-confirm-title"
+                                    className="text-lg font-semibold text-foreground mb-2"
+                                >
+                                    Confirm your vote
+                                </h2>
+                                <p className="text-sm text-muted mb-6">
+                                    Are you sure you want to vote for{' '}
+                                    <strong className="text-foreground">
+                                        {'\u2018'}
+                                        {books[currentIndex].title ?? 'this book'}
+                                        {'\u2019'}
+                                    </strong>{' '}
+                                    by {books[currentIndex].author ?? 'unknown'}?
+                                </p>
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowVoteConfirm(false)}
+                                        className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowVoteConfirm(false);
+                                            handleSubmitVote();
+                                        }}
+                                        disabled={submitStatus === 'pending'}
+                                        className="flex-1 rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+                                    >
+                                        Confirm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
         </LoadingMinDuration>

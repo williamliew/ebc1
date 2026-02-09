@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { EventbriteForm } from '@/components/eventbrite-form';
 
 type VoteBook = {
@@ -225,9 +226,10 @@ export default function BookOfTheMonthPage() {
                     href="/"
                     className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                 >
-                    ← Back to home
+                    <BackArrowIcon className="size-4 shrink-0" />
+                    Back to home
                 </Link>
-                <h1 className="text-xl font-semibold">
+                <h1 className="font-heading text-xl font-semibold">
                     Set book of the month
                 </h1>
             </header>
@@ -395,9 +397,10 @@ export default function BookOfTheMonthPage() {
                         <button
                             type="button"
                             onClick={backToSelect}
-                            className="text-sm text-muted underline hover:no-underline"
+                            className="inline-flex items-center gap-1.5 text-sm text-muted underline hover:no-underline"
                         >
-                            ← Back
+                            <BackArrowIcon className="size-4 shrink-0" />
+                            Back
                         </button>
                         <h2 className="text-lg font-semibold">Review</h2>
 

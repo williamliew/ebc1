@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 
 function getDefaultOpenForDate(): string {
     const d = new Date();
@@ -77,9 +78,10 @@ export default function OpenSuggestionsPage() {
                     href="/"
                     className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                 >
-                    ← Back to home
+                    <BackArrowIcon className="size-4 shrink-0" />
+                    Back to home
                 </Link>
-                <h1 className="text-xl font-semibold">Open book suggestions</h1>
+                <h1 className="font-heading text-xl font-semibold">Open book suggestions</h1>
                 <p className="text-sm text-muted mt-1">
                     Open the floor for members to suggest the next month&apos;s
                     book. Set dates and an optional access password.

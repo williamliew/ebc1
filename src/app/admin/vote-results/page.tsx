@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from 'recharts';
 import type { PieSectorShapeProps } from 'recharts';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
@@ -81,9 +82,10 @@ export default function VoteResultsPage() {
                     </p>
                     <Link
                         href="/"
-                        className="mt-4 text-sm text-muted underline hover:no-underline"
+                        className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted underline hover:no-underline"
                     >
-                        ← Back to home
+                        <BackArrowIcon className="size-4 shrink-0" />
+                        Back to home
                     </Link>
                 </div>
             ) : (
@@ -93,9 +95,10 @@ export default function VoteResultsPage() {
                             href="/"
                             className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                         >
-                            ← Back to home
+                            <BackArrowIcon className="size-4 shrink-0" />
+                            Back to home
                         </Link>
-                        <h1 className="text-xl font-semibold">Vote results</h1>
+                        <h1 className="font-heading text-xl font-semibold">Vote results</h1>
                         <p className="text-sm text-muted mt-1">
                             View vote counts and results for each round.
                         </p>

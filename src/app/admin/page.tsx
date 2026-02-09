@@ -1,10 +1,11 @@
 import Link from 'next/link';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 
 export default function AdminPage() {
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground">
             <main className="max-w-md w-full text-center space-y-6">
-                <h1 className="text-2xl font-semibold">Admin</h1>
+                <h1 className="font-heading text-2xl font-semibold">Admin</h1>
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
                     <Link
                         href="/admin/create-a-vote"
@@ -44,8 +45,9 @@ export default function AdminPage() {
                     </Link>
                 </div>
                 <p className="text-sm text-muted space-x-4">
-                    <Link href="/" className="underline hover:no-underline">
-                        ← Back to home
+                    <Link href="/" className="inline-flex items-center gap-1.5 underline hover:no-underline">
+                        <BackArrowIcon className="size-4 shrink-0" />
+                        Back to home
                     </Link>
                     <Link
                         href="/api/admin/logout"

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { HeadlessEditor } from '@/components/headless-editor';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 
@@ -147,9 +148,10 @@ export default function QuestionBuilderPage() {
                     href="/"
                     className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                 >
-                    ← Back to home
+                    <BackArrowIcon className="size-4 shrink-0" />
+                    Back to home
                 </Link>
-                <h1 className="text-xl font-semibold">
+                <h1 className="font-heading text-xl font-semibold">
                     Book of the month graphic
                 </h1>
                 <p className="text-sm text-muted mt-1">
@@ -462,8 +464,8 @@ export default function QuestionBuilderPage() {
                                     className="font-medium opacity-90"
                                     style={{ fontSize: '0.875em' }}
                                 >
-                                    {bookTitle || 'Book title'} by{' '}
-                                    {bookAuthor || 'Author'}
+                                    {bookTitle || latestBook?.title || 'Book title'} by{' '}
+                                    {bookAuthor || latestBook?.author || 'Author'}
                                 </p>
                                 {hasAdditionalText && (
                                     <div
@@ -585,8 +587,8 @@ export default function QuestionBuilderPage() {
                                     className="font-medium opacity-90"
                                     style={{ fontSize: '1em' }}
                                 >
-                                    {bookTitle || 'Book title'} by{' '}
-                                    {bookAuthor || 'Author'}
+                                    {bookTitle || latestBook?.title || 'Book title'} by{' '}
+                                    {bookAuthor || latestBook?.author || 'Author'}
                                 </p>
                                 {hasAdditionalText && (
                                     <div

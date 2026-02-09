@@ -74,6 +74,12 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Page headings: distinctive font (Courgette). Use class so it wins over Tailwind. */
+h1,
+.font-heading {
+  font-family: 'Courgette', cursive;
+}
+
 /* Headless Tiptap editor: minimal ProseMirror styles */
 .headless-editor-content.ProseMirror {
   min-height: inherit;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 
 const COMMON_TIMEZONES = [
     'Australia/Melbourne',
@@ -182,9 +183,10 @@ export function EventbriteForm({
                 <button
                     type="button"
                     onClick={onBack}
-                    className="text-sm text-muted underline hover:no-underline"
+                    className="inline-flex items-center gap-1.5 text-sm text-muted underline hover:no-underline"
                 >
-                    ← Back
+                    <BackArrowIcon className="size-4 shrink-0" />
+                    Back
                 </button>
             )}
             <h2 className="text-lg font-semibold">Create event on Eventbrite</h2>

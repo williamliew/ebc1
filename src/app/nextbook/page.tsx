@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 import Image from 'next/image';
 import { getNextBook } from '@/lib/nextbook';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
@@ -39,9 +40,10 @@ export default async function NextBookPage() {
                         href="/"
                         className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                     >
-                        ← Back to home
+                        <BackArrowIcon className="size-4 shrink-0" />
+                        Back to home
                     </Link>
-                    <h1 className="text-xl font-semibold">Our current book</h1>
+                    <h1 className="font-heading text-xl font-semibold">Our current book</h1>
                 </header>
                 <main className="max-w-md mx-auto p-6 flex flex-col items-center justify-center min-h-[50vh] text-center">
                     <StackOfBooks
@@ -56,12 +58,6 @@ export default async function NextBookPage() {
                         We&apos;ll have a winner after the next vote—check back
                         soon to see what we&apos;re reading!
                     </p>
-                    <Link
-                        href="/"
-                        className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)]"
-                    >
-                        Back to home
-                    </Link>
                 </main>
             </div>
         );
@@ -74,9 +70,10 @@ export default async function NextBookPage() {
                     href="/"
                     className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                 >
-                    ← Back to home
+                    <BackArrowIcon className="size-4 shrink-0" />
+                    Back to home
                 </Link>
-                <h1 className="text-xl font-semibold">Our current book</h1>
+                <h1 className="font-heading text-xl font-semibold">Our current book</h1>
                 {meetingDate && (
                     <p className="text-sm text-muted mt-1">
                         Book club: {formatMeetingDate(meetingDate)}
@@ -157,14 +154,6 @@ export default async function NextBookPage() {
                     </section>
                 )}
 
-                <p className="mt-4 text-center">
-                    <Link
-                        href="/"
-                        className="text-sm text-muted hover:underline"
-                    >
-                        Back to home
-                    </Link>
-                </p>
             </main>
         </div>
     );

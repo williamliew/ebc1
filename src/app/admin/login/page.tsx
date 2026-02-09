@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
 
 function LoginFallback() {
@@ -50,7 +51,7 @@ function AdminLoginForm() {
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground">
             <main className="max-w-sm w-full">
-                <h1 className="text-2xl font-semibold text-center mb-6">
+                <h1 className="font-heading text-2xl font-semibold text-center mb-6">
                     Admin login
                 </h1>
                 <form
@@ -87,8 +88,9 @@ function AdminLoginForm() {
                     </button>
                 </form>
                 <p className="text-center mt-4 text-sm text-muted">
-                    <Link href="/" className="underline hover:no-underline">
-                        ← Back to home
+                    <Link href="/" className="inline-flex items-center gap-1.5 justify-center underline hover:no-underline">
+                        <BackArrowIcon className="size-4 shrink-0" />
+                        Back to home
                     </Link>
                 </p>
             </main>

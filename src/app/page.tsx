@@ -16,17 +16,14 @@ export default async function Home() {
                     <EbcLogo className="block w-full h-full origin-center fill-current scale-[1.5]" />
                 </div>
 
-                <h1 className="text-2xl font-semibold">
+                <h1 className="font-heading text-2xl font-semibold">
                     Welcome to Elwood Book Club!
                 </h1>
 
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
                     <p>Elwood Book Club is a social monthly book club.</p>
 
-                    <p>
-                        For each meet-up we try out a new bar near Elwood. This
-                        month we are meeting at Republica in St Kilda.
-                    </p>
+                    <p>For each meet-up we try out a new bar near Elwood.</p>
 
                     <p>
                         We are a pretty chilled bunch - our meet-ups are relaxed
@@ -34,10 +31,7 @@ export default async function Home() {
                         other.
                     </p>
 
-                    <p>
-                        Our members choose our book each month. This month we
-                        are reading &apos;Heart the Lover&apos;.
-                    </p>
+                    <p>Our members choose our book each month.</p>
 
                     <p>
                         We&apos;re pretty keen on keeping it low-key, so if

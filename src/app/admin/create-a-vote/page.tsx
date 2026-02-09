@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
 
@@ -426,9 +427,10 @@ export default function VotingBuilderPage() {
                     href="/"
                     className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                 >
-                    ← Back to home
+                    <BackArrowIcon className="size-4 shrink-0" />
+                    Back to home
                 </Link>
-                <h1 className="text-xl font-semibold">Create a vote</h1>
+                <h1 className="font-heading text-xl font-semibold">Create a vote</h1>
                 <p className="text-sm text-muted mt-1">
                     Search books, select up to {MAX_SELECTED}, then create the
                     nomination round (min {MIN_TO_CREATE} books).
@@ -1054,8 +1056,9 @@ export default function VotingBuilderPage() {
                                 <button
                                     type="button"
                                     onClick={goBackFromReview}
-                                    className="flex-1 rounded-lg border border-border px-4 py-3 text-sm font-medium hover:bg-[var(--surface-hover)]"
+                                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-3 text-sm font-medium hover:bg-[var(--surface-hover)]"
                                 >
+                                    <BackArrowIcon className="size-4 shrink-0" />
                                     Back
                                 </button>
                                 <button

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { EventbriteForm } from '@/components/eventbrite-form';
 
 export default function CreateEventbriteEventPage() {
@@ -36,9 +37,10 @@ export default function CreateEventbriteEventPage() {
                     href="/"
                     className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
                 >
-                    ← Back to home
+                    <BackArrowIcon className="size-4 shrink-0" />
+                    Back to home
                 </Link>
-                <h1 className="text-xl font-semibold">
+                <h1 className="font-heading text-xl font-semibold">
                     Create event on Eventbrite
                 </h1>
             </header>
