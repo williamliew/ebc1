@@ -121,7 +121,9 @@ export function SuggestionCommentEditor({
         if (!editor || !onUpdate) return;
         const fn = () => onUpdate(editor.getHTML());
         editor.on('update', fn);
-        return () => editor.off('update', fn);
+        return () => {
+            editor.off('update', fn);
+        };
     }, [editor, onUpdate]);
 
     const charCount = editor
