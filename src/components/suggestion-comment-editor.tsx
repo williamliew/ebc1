@@ -148,8 +148,8 @@ export function SuggestionCommentEditor({
             .catch(() => import('emoji-picker-element'))
             .then((mod) => {
                 if (cancelled || !containerRef.current) return;
-                const PickerClass =
-                    mod.default ?? (mod as { Picker?: unknown }).Picker;
+                const modExports = mod as { default?: unknown; Picker?: unknown };
+                const PickerClass = modExports.default ?? modExports.Picker;
                 const picker =
                     typeof PickerClass === 'function'
                         ? new (PickerClass as new () => HTMLElement)()
