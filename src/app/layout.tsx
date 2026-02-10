@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     title: 'Elwood Book Club',
     icons: {
-        icon: '/favicon.jpg',
+        icon: '/favicon.ico',
     },
     description:
         'Monthly book club in Elwood and St Kilda, Melbourne. Social meet-ups at local bars – members choose the book each month. Relaxed, low-key and welcoming. Find your local book club in Melbourne.',
