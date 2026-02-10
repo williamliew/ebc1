@@ -74,6 +74,13 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Show only on real touch devices (narrow viewport + coarse pointer). Hides in desktop emulator. */
+@media (max-width: 767px) and (pointer: coarse) {
+  .show-page-text-mobile-only {
+    display: block !important;
+  }
+}
+
 /* Prevent mobile zoom when focusing inputs (iOS zooms if font-size < 16px) */
 @media (max-width: 768px) {
   input,

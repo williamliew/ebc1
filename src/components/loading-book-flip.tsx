@@ -8,6 +8,10 @@ import { EbcLogo } from '@/components/ebc-logo';
 const PAGE_TEXT = Array.from({ length: 23 }, (_, i) => (
     <div key={i}>All work and no play makes Jack a dull boy.</div>
 ));
+/** Extra 3 lines shown only on mobile (more vertical room on device) */
+const PAGE_TEXT_MOBILE = Array.from({ length: 3 }, (_, i) => (
+    <div key={`mobile-${i}`}>All work and no play makes Jack a dull boy.</div>
+));
 
 export function LoadingBookFlip({
     className = '',
@@ -66,6 +70,7 @@ export function LoadingBookFlip({
                                 aria-hidden
                             >
                                 {PAGE_TEXT}
+                                <span className="hidden show-page-text-mobile-only">{PAGE_TEXT_MOBILE}</span>
                             </div>
                         </div>
                     </div>
@@ -118,6 +123,7 @@ export function LoadingBookFlip({
                                 aria-hidden
                             >
                                 {PAGE_TEXT}
+                                <span className="hidden show-page-text-mobile-only">{PAGE_TEXT_MOBILE}</span>
                             </div>
                         </div>
                     </div>
