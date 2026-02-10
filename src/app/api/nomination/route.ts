@@ -128,6 +128,7 @@ export async function POST(request: Request) {
 
         revalidatePath('/');
         revalidatePath('/vote');
+        revalidatePath('/api/status');
 
         return NextResponse.json({
             voteRoundId: round.id,

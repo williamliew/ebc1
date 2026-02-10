@@ -121,6 +121,7 @@ export async function POST(request: Request) {
 
         revalidatePath('/');
         revalidatePath('/nextbook');
+        revalidatePath('/api/status');
 
         return NextResponse.json({
             id: inserted?.id,

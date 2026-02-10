@@ -143,6 +143,7 @@ export async function POST(request: Request) {
 
         revalidatePath('/');
         revalidatePath('/suggestnextbook');
+        revalidatePath('/api/status');
 
         return NextResponse.json({ round });
     } catch (err) {

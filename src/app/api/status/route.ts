@@ -8,7 +8,7 @@ import {
 } from '@/db/schema';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 
-const MAX_CACHE_SECONDS = 300; // Cap: never cache "open" for more than 5 minutes
+const MAX_CACHE_SECONDS = 60; // Cap: never cache "open" for more than 1 minute (so admin changes show quickly)
 
 /**
  * GET /api/status

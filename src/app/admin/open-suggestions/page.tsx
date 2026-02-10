@@ -32,6 +32,7 @@ export default function OpenSuggestionsPage() {
         'idle' | 'pending' | 'success' | 'error'
     >('idle');
     const [message, setMessage] = useState<string | null>(null);
+    const [showSuccessLightbox, setShowSuccessLightbox] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,9 +58,8 @@ export default function OpenSuggestionsPage() {
                 );
             }
             setStatus('success');
-            setMessage(
-                'Suggestions round created. Members can now suggest books at /suggestnextbook.',
-            );
+            setShowSuccessLightbox(true);
+            setMessage(null);
             setSuggestionsForDate(getDefaultOpenForDate());
             setCloseDate(getDefaultCloseDate());
             setAccessPassword('');
@@ -145,11 +145,8 @@ export default function OpenSuggestionsPage() {
                             and suggest on the Suggest next book page.
                         </p>
                     </div>
-                    {message && (
-                        <p
-                            role="alert"
-                            className={`text-sm ${status === 'error' ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}
-                        >
+                    {message && status === 'error' && (
+                        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
                             {message}
                         </p>
                     )}
@@ -164,6 +161,44 @@ export default function OpenSuggestionsPage() {
                     </button>
                 </form>
             </main>
+
+            {/* Success lightbox */}
+            {showSuccessLightbox && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="success-lightbox-title"
+                >
+                    <div className="rounded-xl bg-surface shadow-xl p-6 max-w-sm w-full text-center">
+                        <p
+                            id="success-lightbox-title"
+                            className="text-lg font-semibold text-foreground"
+                        >
+                            Suggestions opened!
+                        </p>
+                        <p className="text-sm text-muted mt-2">
+                            Members can now suggest books at /suggestnextbook.
+                        </p>
+                        <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
+                            <button
+                                type="button"
+                                onClick={() => setShowSuccessLightbox(false)}
+                                className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                            >
+                                Close
+                            </button>
+                            <Link
+                                href="/"
+                                onClick={() => setShowSuccessLightbox(false)}
+                                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] text-center"
+                            >
+                                Return to home
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
