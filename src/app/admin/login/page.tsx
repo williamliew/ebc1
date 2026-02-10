@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
@@ -20,8 +19,6 @@ function AdminLoginForm() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const searchParams = useSearchParams();
-    const from = searchParams.get('from') ?? '/';
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -40,7 +37,7 @@ function AdminLoginForm() {
                 return;
             }
             // Full-page redirect so the cookie is sent on the next request (fixes mobile Safari)
-            window.location.href = from;
+            window.location.href = '/';
         } catch {
             setError('Something went wrong');
         } finally {
