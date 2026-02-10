@@ -1,0 +1,14 @@
+{
+  "name": "Elwood Book Club",
+  "short_name": "Elwood Book Club",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone"
+}
