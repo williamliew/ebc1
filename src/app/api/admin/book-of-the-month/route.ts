@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { desc } from 'drizzle-orm';
 import { db } from '@/db';
@@ -117,6 +118,9 @@ export async function POST(request: Request) {
                 link: link ?? null,
             })
             .returning({ id: bookOfTheMonth.id });
+
+        revalidatePath('/');
+        revalidatePath('/nextbook');
 
         return NextResponse.json({
             id: inserted?.id,

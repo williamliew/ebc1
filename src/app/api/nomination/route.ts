@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/db';
@@ -124,6 +125,9 @@ export async function POST(request: Request) {
             };
         });
         await db.insert(voteRoundBooks).values(bookRows);
+
+        revalidatePath('/');
+        revalidatePath('/vote');
 
         return NextResponse.json({
             voteRoundId: round.id,

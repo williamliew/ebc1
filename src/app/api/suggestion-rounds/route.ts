@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/db';
@@ -139,6 +140,9 @@ export async function POST(request: Request) {
                 { status: 500 },
             );
         }
+
+        revalidatePath('/');
+        revalidatePath('/suggestnextbook');
 
         return NextResponse.json({ round });
     } catch (err) {
