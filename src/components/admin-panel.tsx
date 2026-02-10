@@ -147,6 +147,7 @@ export function AdminPanel({
                     <div className="mt-auto pt-4 border-t border-border">
                         <Link
                             href="/api/admin/logout"
+                            prefetch={false}
                             className="flex items-center justify-center gap-1.5 text-sm text-muted underline hover:no-underline hover:text-foreground py-2"
                         >
                             Sign out

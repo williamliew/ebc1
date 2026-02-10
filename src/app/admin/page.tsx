@@ -52,6 +52,7 @@ export default function AdminPage() {
                     </Link>
                     <Link
                         href="/api/admin/logout"
+                        prefetch={false}
                         className="inline-flex items-center gap-1.5 underline hover:no-underline"
                     >
                         Sign out
