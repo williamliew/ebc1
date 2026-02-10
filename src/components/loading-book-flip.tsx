@@ -52,7 +52,7 @@ export function LoadingBookFlip({
                             }}
                         />
                         <div
-                            className="flex-1 overflow-hidden px-1.5 pt-1.5"
+                            className="flex-1 overflow-hidden px-1 pt-1.5"
                             style={{
                                 background: `linear-gradient(90deg, var(--surface-hover) 0%, var(--surface) 20%)`,
                                 boxShadow: 'inset 1px 0 0 rgba(0,0,0,0.06)',
@@ -103,7 +103,7 @@ export function LoadingBookFlip({
                             </span>
                         </div>
                         <div
-                            className="absolute inset-0 rounded-r-sm demo-page-face demo-page-back overflow-hidden px-1.5 pt-1.5"
+                            className="absolute inset-0 rounded-r-sm demo-page-face demo-page-back overflow-hidden px-1 pt-1.5"
                             style={{
                                 backfaceVisibility: 'hidden',
                                 border: 'none',
