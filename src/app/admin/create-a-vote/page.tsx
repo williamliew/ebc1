@@ -97,6 +97,9 @@ export default function VotingBuilderPage() {
     );
     const [step, setStep] = useState<'builder' | 'review'>('builder');
     const [reviewBooks, setReviewBooks] = useState<ReviewBook[]>([]);
+    const [reviewModalStep, setReviewModalStep] = useState<'books' | 'details'>(
+        'books',
+    );
     const [reviewIndex, setReviewIndex] = useState(0);
     const [reviewDragOffset, setReviewDragOffset] = useState(0);
     const [reviewIsDragging, setReviewIsDragging] = useState(false);
@@ -280,6 +283,7 @@ export default function VotingBuilderPage() {
             }),
         );
         setReviewIndex(0);
+        setReviewModalStep('books');
         setStep('review');
     }, [selected]);
 
@@ -824,224 +828,341 @@ export default function VotingBuilderPage() {
                     aria-modal="true"
                     aria-labelledby="review-modal-title"
                 >
-                    <div className="bg-surface rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+                    <div className="relative bg-surface rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
                         <div className="p-4 border-b border-border shrink-0">
                             <h2
                                 id="review-modal-title"
                                 className="text-xl font-semibold"
                             >
-                                Review selections
+                                {reviewModalStep === 'books'
+                                    ? 'Review selections'
+                                    : 'Meeting & vote details'}
                             </h2>
                             <p className="text-sm text-muted mt-1">
-                                Check cover, title and author. Swipe between
-                                books.
+                                {reviewModalStep === 'books'
+                                    ? 'Check cover, title and author. Swipe between books.'
+                                    : 'Set the meeting date, close vote date and optional password.'}
                             </p>
                         </div>
-                        <section
-                            className="flex-1 min-h-0 flex flex-col px-4 pt-4 overflow-y-auto select-none"
-                            onTouchStart={reviewHandleTouchStart}
-                            onTouchMove={reviewHandleTouchMove}
-                            onTouchEnd={reviewHandleTouchEnd}
-                            onMouseDown={reviewHandleMouseDown}
-                            style={{ touchAction: 'pan-y' }}
-                        >
-                            <div className="flex-1 min-h-0 overflow-y-visible rounded-xl">
-                                <div
-                                    className="flex will-change-transform"
-                                    style={{
-                                        width: `${reviewBooks.length * 100}%`,
-                                        transform: `translateX(calc(-${reviewIndex * (100 / reviewBooks.length)}% + ${reviewDragOffset}px))`,
-                                        transition: reviewIsDragging
-                                            ? 'none'
-                                            : `transform ${SWIPE_TRANSITION_MS}ms ease-out`,
-                                    }}
+                        {/* Previous / Next arrows fixed in modal (step 1 only) */}
+                        {reviewModalStep === 'books' && reviewIndex > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => reviewGoTo(reviewIndex - 1)}
+                                className="absolute left-2 top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-surface border border-border shadow-md text-foreground hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                aria-label="Previous book"
+                            >
+                                <BackArrowIcon className="h-5 w-5" />
+                            </button>
+                        )}
+                        {reviewModalStep === 'books' &&
+                            reviewIndex < reviewBooks.length - 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => reviewGoTo(reviewIndex + 1)}
+                                    className="absolute right-2 top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-surface border border-border shadow-md text-foreground hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    aria-label="Next book"
                                 >
-                                    {reviewBooks.map((book, i) => (
-                                        <div
-                                            key={book.externalId}
-                                            className="flex flex-col flex-shrink-0 min-w-0 pr-4 max-h-[65vh] overflow-y-auto overscroll-contain"
-                                            style={{
-                                                width: `${100 / reviewBooks.length}%`,
-                                            }}
-                                        >
-                                            <div className="flex flex-col rounded-xl border border-border bg-surface overflow-x-hidden">
-                                                {getEffectiveCoverUrl(book) ? (
-                                                    <div className="relative w-full aspect-[3/4] shrink-0 bg-[var(--border)]">
-                                                        <Image
-                                                            src={
-                                                                getEffectiveCoverUrl(
-                                                                    book,
-                                                                )!
-                                                            }
-                                                            alt=""
-                                                            fill
-                                                            className="object-cover"
-                                                            unoptimized
-                                                            sizes="(max-width: 512px) 100vw, 512px"
-                                                            onError={() => {
-                                                                const effective =
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="h-5 w-5"
+                                        aria-hidden
+                                    >
+                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            )}
+                        {reviewModalStep === 'books' && (
+                            <section
+                                className="flex-1 min-h-0 flex flex-col px-4 pt-4 overflow-y-auto select-none"
+                                onTouchStart={reviewHandleTouchStart}
+                                onTouchMove={reviewHandleTouchMove}
+                                onTouchEnd={reviewHandleTouchEnd}
+                                onMouseDown={reviewHandleMouseDown}
+                                style={{ touchAction: 'pan-y' }}
+                            >
+                                <div className="flex-1 min-h-0 overflow-y-visible rounded-xl">
+                                    <div
+                                        className="flex will-change-transform"
+                                        style={{
+                                            width: `${reviewBooks.length * 100}%`,
+                                            transform: `translateX(calc(-${reviewIndex * (100 / reviewBooks.length)}% + ${reviewDragOffset}px))`,
+                                            transition: reviewIsDragging
+                                                ? 'none'
+                                                : `transform ${SWIPE_TRANSITION_MS}ms ease-out`,
+                                        }}
+                                    >
+                                        {reviewBooks.map((book, i) => (
+                                            <div
+                                                key={book.externalId}
+                                                className="flex flex-col flex-shrink-0 min-w-0 pr-4 max-h-[65vh] overflow-y-auto overscroll-contain"
+                                                style={{
+                                                    width: `${100 / reviewBooks.length}%`,
+                                                }}
+                                            >
+                                                <div className="flex flex-col border border-border bg-surface overflow-x-hidden">
+                                                    {getEffectiveCoverUrl(
+                                                        book,
+                                                    ) ? (
+                                                        <div className="relative w-full aspect-[3/4] max-h-[45vh] shrink-0 bg-[var(--border)]">
+                                                            <Image
+                                                                src={
                                                                     getEffectiveCoverUrl(
                                                                         book,
-                                                                    );
-                                                                const isOverride =
-                                                                    book.manualOverride !=
-                                                                        null &&
-                                                                    book.manualOverride.trim() !==
-                                                                        '' &&
-                                                                    effective ===
-                                                                        book.manualOverride.trim();
-                                                                if (isOverride)
+                                                                    )!
+                                                                }
+                                                                alt=""
+                                                                fill
+                                                                className="object-contain object-top"
+                                                                unoptimized
+                                                                sizes="(max-width: 512px) 100vw, 512px"
+                                                                onError={() => {
+                                                                    const effective =
+                                                                        getEffectiveCoverUrl(
+                                                                            book,
+                                                                        );
+                                                                    const isOverride =
+                                                                        book.manualOverride !=
+                                                                            null &&
+                                                                        book.manualOverride.trim() !==
+                                                                            '' &&
+                                                                        effective ===
+                                                                            book.manualOverride.trim();
+                                                                    if (
+                                                                        isOverride
+                                                                    )
+                                                                        updateReviewBook(
+                                                                            i,
+                                                                            'manualOverride',
+                                                                            null,
+                                                                        );
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-full aspect-[3/4] max-h-[45vh] shrink-0 bg-[var(--border)] flex items-center justify-center">
+                                                            <span className="text-muted text-sm">
+                                                                No cover
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div className="p-4 pb-10 space-y-3">
+                                                        {book.coverOptions
+                                                            .length > 1 && (
+                                                            <div>
+                                                                <label className="text-xs font-medium text-muted block mb-1">
+                                                                    Thumbnail
+                                                                    options
+                                                                </label>
+                                                                <select
+                                                                    value={
+                                                                        book.selectedCoverIndex
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        updateReviewBook(
+                                                                            i,
+                                                                            'selectedCoverIndex',
+                                                                            Number(
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            ),
+                                                                        )
+                                                                    }
+                                                                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                                                >
+                                                                    {book.coverOptions.map(
+                                                                        (
+                                                                            _,
+                                                                            optIdx,
+                                                                        ) => (
+                                                                            <option
+                                                                                key={
+                                                                                    optIdx
+                                                                                }
+                                                                                value={
+                                                                                    optIdx
+                                                                                }
+                                                                            >
+                                                                                Option{' '}
+                                                                                {optIdx +
+                                                                                    1}
+                                                                            </option>
+                                                                        ),
+                                                                    )}
+                                                                </select>
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <label className="text-xs font-medium text-muted block mb-1">
+                                                                Manual thumbnail
+                                                                URL override
+                                                            </label>
+                                                            <input
+                                                                type="url"
+                                                                value={
+                                                                    book.manualOverride ??
+                                                                    ''
+                                                                }
+                                                                onChange={(
+                                                                    e,
+                                                                ) => {
+                                                                    const v =
+                                                                        e.target.value.trim() ||
+                                                                        null;
                                                                     updateReviewBook(
                                                                         i,
                                                                         'manualOverride',
-                                                                        null,
+                                                                        v,
                                                                     );
-                                                            }}
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="w-full aspect-[3/4] shrink-0 bg-[var(--border)] flex items-center justify-center">
-                                                        <span className="text-muted text-sm">
-                                                            No cover
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                <div className="p-4 space-y-3">
-                                                    {book.coverOptions.length >
-                                                        1 && (
+                                                                }}
+                                                                placeholder="https://… (overrides thumbnail option)"
+                                                                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                                            />
+                                                        </div>
                                                         <div>
                                                             <label className="text-xs font-medium text-muted block mb-1">
-                                                                Thumbnail
-                                                                options
+                                                                Title
                                                             </label>
-                                                            <select
+                                                            <input
+                                                                type="text"
                                                                 value={
-                                                                    book.selectedCoverIndex
+                                                                    book.title
                                                                 }
                                                                 onChange={(e) =>
                                                                     updateReviewBook(
                                                                         i,
-                                                                        'selectedCoverIndex',
-                                                                        Number(
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        ),
+                                                                        'title',
+                                                                        e.target
+                                                                            .value,
                                                                     )
                                                                 }
                                                                 className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                                            >
-                                                                {book.coverOptions.map(
-                                                                    (
-                                                                        _,
-                                                                        optIdx,
-                                                                    ) => (
-                                                                        <option
-                                                                            key={
-                                                                                optIdx
-                                                                            }
-                                                                            value={
-                                                                                optIdx
-                                                                            }
-                                                                        >
-                                                                            Option{' '}
-                                                                            {optIdx +
-                                                                                1}
-                                                                        </option>
-                                                                    ),
-                                                                )}
-                                                            </select>
+                                                            />
                                                         </div>
-                                                    )}
-                                                    <div>
-                                                        <label className="text-xs font-medium text-muted block mb-1">
-                                                            Manual thumbnail URL
-                                                            override
-                                                        </label>
-                                                        <input
-                                                            type="url"
-                                                            value={
-                                                                book.manualOverride ??
-                                                                ''
-                                                            }
-                                                            onChange={(e) => {
-                                                                const v =
-                                                                    e.target.value.trim() ||
-                                                                    null;
-                                                                updateReviewBook(
-                                                                    i,
-                                                                    'manualOverride',
-                                                                    v,
-                                                                );
-                                                            }}
-                                                            placeholder="https://… (overrides thumbnail option)"
-                                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs font-medium text-muted block mb-1">
-                                                            Title
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={book.title}
-                                                            onChange={(e) =>
-                                                                updateReviewBook(
-                                                                    i,
-                                                                    'title',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs font-medium text-muted block mb-1">
-                                                            Author
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={book.author}
-                                                            onChange={(e) =>
-                                                                updateReviewBook(
-                                                                    i,
-                                                                    'author',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                                        />
+                                                        <div>
+                                                            <label className="text-xs font-medium text-muted block mb-1">
+                                                                Author
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={
+                                                                    book.author
+                                                                }
+                                                                onChange={(e) =>
+                                                                    updateReviewBook(
+                                                                        i,
+                                                                        'author',
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div
+                                    className="flex justify-center gap-2 py-4 shrink-0"
+                                    role="tablist"
+                                    aria-label="Book options"
+                                >
+                                    {reviewBooks.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            onClick={() => reviewGoTo(i)}
+                                            role="tab"
+                                            aria-selected={i === reviewIndex}
+                                            aria-label={`Book ${i + 1} of ${reviewBooks.length}`}
+                                            className={`h-2 rounded-full transition-colors ${
+                                                i === reviewIndex
+                                                    ? 'w-6 bg-primary'
+                                                    : 'w-2 bg-[var(--border)] hover:bg-[var(--surface-hover)]'
+                                            }`}
+                                        />
                                     ))}
                                 </div>
-                            </div>
-                            <div
-                                className="flex justify-center gap-2 py-4 shrink-0"
-                                role="tablist"
-                                aria-label="Book options"
-                            >
-                                {reviewBooks.map((_, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onClick={() => reviewGoTo(i)}
-                                        role="tab"
-                                        aria-selected={i === reviewIndex}
-                                        aria-label={`Book ${i + 1} of ${reviewBooks.length}`}
-                                        className={`h-2 rounded-full transition-colors ${
-                                            i === reviewIndex
-                                                ? 'w-6 bg-primary'
-                                                : 'w-2 bg-[var(--border)] hover:bg-[var(--surface-hover)]'
-                                        }`}
+                            </section>
+                        )}
+                        {reviewModalStep === 'details' && (
+                            <section className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-4 space-y-4">
+                                <div>
+                                    <label
+                                        htmlFor="review-meeting-date"
+                                        className="text-sm font-medium text-muted block mb-1"
+                                    >
+                                        Meeting date (book club)
+                                    </label>
+                                    <input
+                                        id="review-meeting-date"
+                                        type="date"
+                                        value={meetingDate}
+                                        onChange={(e) => {
+                                            setMeetingDate(e.target.value);
+                                            setCloseVoteDate(
+                                                getDefaultCloseVoteDate(
+                                                    e.target.value,
+                                                ),
+                                            );
+                                        }}
+                                        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                        aria-label="Meeting date"
                                     />
-                                ))}
-                            </div>
-                        </section>
+                                </div>
+                                <div>
+                                    <label
+                                        htmlFor="review-close-vote-date"
+                                        className="text-sm font-medium text-muted block mb-1"
+                                    >
+                                        Close vote date
+                                    </label>
+                                    <input
+                                        id="review-close-vote-date"
+                                        type="date"
+                                        value={closeVoteDate}
+                                        onChange={(e) =>
+                                            setCloseVoteDate(e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                        aria-label="Close vote date"
+                                    />
+                                </div>
+                                <div>
+                                    <label
+                                        htmlFor="review-vote-access-password"
+                                        className="text-sm font-medium text-muted block mb-1"
+                                    >
+                                        Vote access password (optional)
+                                    </label>
+                                    <input
+                                        id="review-vote-access-password"
+                                        type="password"
+                                        value={voteAccessPassword}
+                                        onChange={(e) =>
+                                            setVoteAccessPassword(
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Leave blank for no password"
+                                        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                        aria-label="Vote access password"
+                                    />
+                                </div>
+                            </section>
+                        )}
                         <div className="p-4 border-t border-border shrink-0 bg-surface">
                             {createMessage?.type === 'error' && (
                                 <p
@@ -1052,24 +1173,50 @@ export default function VotingBuilderPage() {
                                 </p>
                             )}
                             <div className="flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={goBackFromReview}
-                                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-3 text-sm font-medium hover:bg-[var(--surface-hover)]"
-                                >
-                                    <BackArrowIcon className="size-4 shrink-0" />
-                                    Back
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={createFromReview}
-                                    disabled={createMutation.isPending}
-                                    className="flex-1 rounded-lg bg-primary text-primary-foreground px-4 py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50"
-                                >
-                                    {createMutation.isPending
-                                        ? 'Creating…'
-                                        : 'Create'}
-                                </button>
+                                {reviewModalStep === 'books' ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={goBackFromReview}
+                                            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-3 text-sm font-medium hover:bg-[var(--surface-hover)]"
+                                        >
+                                            <BackArrowIcon className="size-4 shrink-0" />
+                                            Back
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setReviewModalStep('details')
+                                            }
+                                            className="flex-1 rounded-lg bg-primary text-primary-foreground px-4 py-3 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                                        >
+                                            Next
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setReviewModalStep('books')
+                                            }
+                                            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-3 text-sm font-medium hover:bg-[var(--surface-hover)]"
+                                        >
+                                            <BackArrowIcon className="size-4 shrink-0" />
+                                            Back
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={createFromReview}
+                                            disabled={createMutation.isPending}
+                                            className="flex-1 rounded-lg bg-primary text-primary-foreground px-4 py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50"
+                                        >
+                                            {createMutation.isPending
+                                                ? 'Creating…'
+                                                : 'Confirm'}
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1080,68 +1227,6 @@ export default function VotingBuilderPage() {
             {selected.length >= 1 && (
                 <footer className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
                     <div className="max-w-2xl mx-auto px-4 py-4">
-                        <div className="mb-3 flex gap-4 flex-wrap">
-                            <div className="flex-1 min-w-[140px]">
-                                <label
-                                    htmlFor="meeting-date"
-                                    className="text-sm font-medium text-muted dark:text-muted block mb-1"
-                                >
-                                    Meeting date (book club)
-                                </label>
-                                <input
-                                    id="meeting-date"
-                                    type="date"
-                                    value={meetingDate}
-                                    onChange={(e) => {
-                                        setMeetingDate(e.target.value);
-                                        setCloseVoteDate(
-                                            getDefaultCloseVoteDate(
-                                                e.target.value,
-                                            ),
-                                        );
-                                    }}
-                                    className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                    aria-label="Meeting date"
-                                />
-                            </div>
-                            <div className="flex-1 min-w-[140px]">
-                                <label
-                                    htmlFor="close-vote-date"
-                                    className="text-sm font-medium text-muted dark:text-muted block mb-1"
-                                >
-                                    Close vote
-                                </label>
-                                <input
-                                    id="close-vote-date"
-                                    type="date"
-                                    value={closeVoteDate}
-                                    onChange={(e) =>
-                                        setCloseVoteDate(e.target.value)
-                                    }
-                                    className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                    aria-label="Close vote date"
-                                />
-                            </div>
-                            <div className="flex-1 min-w-[140px]">
-                                <label
-                                    htmlFor="vote-access-password"
-                                    className="text-sm font-medium text-muted dark:text-muted block mb-1"
-                                >
-                                    Vote access password (optional)
-                                </label>
-                                <input
-                                    id="vote-access-password"
-                                    type="password"
-                                    value={voteAccessPassword}
-                                    onChange={(e) =>
-                                        setVoteAccessPassword(e.target.value)
-                                    }
-                                    placeholder="Leave blank for no password"
-                                    className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                    aria-label="Vote access password"
-                                />
-                            </div>
-                        </div>
                         <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
                             Selected ({selected.length}/{MAX_SELECTED})
                         </h2>

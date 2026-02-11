@@ -7,6 +7,7 @@ import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
 import { getOrCreateVisitorKeyHash } from '@/lib/visitor-key';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
+import { LoadingDots } from '@/components/loading-dots';
 import { LoadingMinDuration } from '@/components/loading-min-duration';
 import {
     SuggestionCommentEditor,
@@ -959,8 +960,8 @@ export default function SuggestNextBookPage() {
                                                     : 'Search'}
                                             </button>
                                             {searchPending && (
-                                                <div className="flex justify-center pt-4">
-                                                    <LoadingBookFlip size="sm" />
+                                                <div className="flex justify-center pt-4 min-h-[2rem]">
+                                                    <LoadingDots className="text-muted" />
                                                 </div>
                                             )}
                                         </form>
