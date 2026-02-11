@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { VisitorKeyInit } from '@/components/visitor-key-init';
 import { AccessibilityThemeSwitcher } from '@/components/accessibility-theme-switcher';
+import { ScrollToTop } from '@/components/scroll-to-top';
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const [queryClient] = useState(
@@ -18,6 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
             <VisitorKeyInit />
             <AccessibilityThemeSwitcher />
+            <ScrollToTop />
             {children}
         </QueryClientProvider>
     );
