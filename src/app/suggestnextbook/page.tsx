@@ -15,6 +15,7 @@ import {
 } from '@/components/suggestion-comment-editor';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { BookCoverImage } from '@/components/book-cover-image';
+import { CloseIcon } from '@/components/close-icon';
 import { StackOfBooks } from '@/components/stack-of-books';
 
 const MAX_SUGGESTIONS_PER_PERSON = 2;
@@ -683,7 +684,7 @@ export default function SuggestNextBookPage() {
                                         className="rounded p-1 -m-1 hover:bg-[var(--surface-hover)]"
                                         aria-label="Close"
                                     >
-                                        ×
+                                        <CloseIcon className="h-5 w-5" />
                                     </button>
                                 </div>
                                 <div className="p-4 overflow-y-auto flex-1">
@@ -891,7 +892,7 @@ export default function SuggestNextBookPage() {
                                             className="rounded p-1 -m-1 hover:bg-[var(--surface-hover)]"
                                             aria-label="Close"
                                         >
-                                            ×
+                                            <CloseIcon className="h-5 w-5" />
                                         </button>
                                     )}
                                 </div>

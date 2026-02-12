@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
+import { CloseIcon } from '@/components/close-icon';
 import { HeadlessEditor } from '@/components/headless-editor';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 
@@ -531,9 +532,10 @@ export default function QuestionBuilderPage() {
                                     e.stopPropagation();
                                     setIsPreviewFullScreen(false);
                                 }}
-                                className="rounded-lg bg-primary/90 text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-[var(--primary-hover)]/90"
+                                className="rounded-lg bg-primary/90 text-primary-foreground p-2.5 text-sm font-medium hover:bg-[var(--primary-hover)]/90 inline-flex items-center justify-center"
+                                aria-label="Close"
                             >
-                                Close
+                                <CloseIcon className="h-5 w-5" />
                             </button>
                         </div>
                         <div className="flex justify-center pb-4">

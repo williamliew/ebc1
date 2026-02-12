@@ -532,7 +532,7 @@ export default function VotePage() {
                         </main>
 
                         {/* Fixed footer: pagination first, then vote status / CTA */}
-                        <footer className="fixed bottom-0 left-0 right-0 border-t border-border bg-surface p-4 max-w-lg mx-auto w-full">
+                        <footer className="fixed bottom-0 left-0 right-0 border-t border-border bg-surface p-4 w-full">
                             {books.length > 0 && (
                                 <div
                                     className="flex justify-center gap-2 pb-3"
@@ -559,7 +559,7 @@ export default function VotePage() {
                             {alreadyVoted || submitStatus === 'success' ? (
                                 <div className="text-center">
                                     <p
-                                        className="text-green-600 dark:text-green-400 font-medium"
+                                        className="text-green-600 dark:text-green-400 font-semibold"
                                         role="status"
                                     >
                                         {submitStatus === 'success'

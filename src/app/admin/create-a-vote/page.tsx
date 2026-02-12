@@ -7,6 +7,7 @@ import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
 import { BookCoverImage } from '@/components/book-cover-image';
+import { CloseIcon } from '@/components/close-icon';
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_TRANSITION_MS = 280;
@@ -734,7 +735,7 @@ export default function VotingBuilderPage() {
                                     className="flex-shrink-0 rounded p-1.5 text-muted hover:bg-[var(--surface-hover)] hover:text-foreground"
                                     aria-label="Close"
                                 >
-                                    ×
+                                    <CloseIcon className="h-5 w-5" />
                                 </button>
                             </div>
                             <div className="px-4 pb-4 overflow-y-auto flex-1 min-h-0">
@@ -786,9 +787,10 @@ export default function VotingBuilderPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowSuccessLightbox(false)}
-                                className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                                className="rounded-lg bg-primary text-primary-foreground p-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] inline-flex items-center justify-center"
+                                aria-label="Close"
                             >
-                                Close
+                                <CloseIcon className="h-5 w-5" />
                             </button>
                             <Link
                                 href="/"

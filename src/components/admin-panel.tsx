@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useCallback } from 'react';
+import { CloseIcon } from '@/components/close-icon';
 import { SignOutIcon } from '@/components/sign-out-icon';
 
 function PenWritingIcon({ className }: { className?: string }) {
@@ -79,18 +80,7 @@ export function AdminPanel({
                             className="rounded p-1.5 text-muted hover:bg-[var(--surface-hover)] hover:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                             aria-label="Close panel"
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="h-5 w-5"
-                            >
-                                <path d="M18 6L6 18M6 6l12 12" />
-                            </svg>
+                            <CloseIcon className="h-5 w-5" />
                         </button>
                     </div>
                     <nav className="flex flex-col gap-2">

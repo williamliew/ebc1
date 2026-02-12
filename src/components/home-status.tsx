@@ -39,13 +39,16 @@ export function HomeStatus() {
         return (
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mt-10">
                 <Link href="/vote" className={linkClass}>
-                    Book vote
+                    <span className="font-semibold">Book vote</span>
                 </Link>
                 <Link href="/suggestnextbook" className={linkClass}>
-                    Suggest next book
+                    <span className="font-semibold">Suggest next book</span>
                 </Link>
                 <Link href="/nextbook" className={linkClass}>
-                    Our current book
+                    <span className="font-semibold">Our current book</span>
+                    <span className="text-xs opacity-90 mt-0.5">
+                        What we&apos;re reading for next book club
+                    </span>
                 </Link>
             </div>
         );
@@ -54,12 +57,17 @@ export function HomeStatus() {
     if (isLoading || !data) {
         return (
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mt-10">
-                <span className={linkClass + ' opacity-70'}>Book vote</span>
                 <span className={linkClass + ' opacity-70'}>
-                    Suggest next book
+                    <span className="font-semibold">Book vote</span>
                 </span>
                 <span className={linkClass + ' opacity-70'}>
-                    Our current book
+                    <span className="font-semibold">Suggest next book</span>
+                </span>
+                <span className={linkClass + ' opacity-70'}>
+                    <span className="font-semibold">Our current book</span>
+                    <span className="text-xs opacity-90 mt-0.5">
+                        What we&apos;re reading for next book club
+                    </span>
                 </span>
             </div>
         );
@@ -68,7 +76,7 @@ export function HomeStatus() {
     return (
         <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mt-10">
             <Link href="/vote" className={linkClass}>
-                <span>Book vote</span>
+                <span className="font-semibold">Book vote</span>
                 <span className="text-xs opacity-90 mt-0.5 inline-flex items-center justify-center gap-1">
                     {data.voteOpen ? (
                         <>
@@ -81,7 +89,7 @@ export function HomeStatus() {
                 </span>
             </Link>
             <Link href="/suggestnextbook" className={linkClass}>
-                <span>Suggest next book</span>
+                <span className="font-semibold">Suggest next book</span>
                 <span className="text-xs opacity-90 mt-0.5 inline-flex items-center justify-center gap-1">
                     {data.suggestionsOpen ? (
                         <>
@@ -94,7 +102,10 @@ export function HomeStatus() {
                 </span>
             </Link>
             <Link href="/nextbook" className={linkClass}>
-                <span>Our current book</span>
+                <span className="font-semibold">Our current book</span>
+                <span className="text-xs opacity-90 mt-0.5">
+                    What we&apos;re reading for next book club
+                </span>
             </Link>
         </div>
     );
