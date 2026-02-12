@@ -84,11 +84,11 @@ export default async function NextBookPage() {
                 <article className="rounded-lg border border-border bg-surface overflow-hidden">
                     <div className="p-4">
                         <div className="w-full flex justify-center">
-                            <div className="relative w-28 h-40 rounded overflow-hidden">
+                            <div className="relative w-44 h-[17rem] rounded overflow-hidden">
                                 <BookCoverImage
                                     src={winner.coverUrl}
                                     containerClassName="absolute inset-0"
-                                    sizes="112px"
+                                    sizes="176px"
                                 />
                             </div>
                         </div>
