@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
-import Image from 'next/image';
+import { BookCoverImage } from '@/components/book-cover-image';
 import { getNextBook } from '@/lib/nextbook';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { StackOfBooks } from '@/components/stack-of-books';
@@ -84,21 +84,12 @@ export default async function NextBookPage() {
                 <article className="rounded-lg border border-border bg-surface overflow-hidden">
                     <div className="p-4">
                         <div className="w-full flex justify-center">
-                            <div className="relative w-28 h-40 bg-[var(--border)] rounded overflow-hidden">
-                                {winner.coverUrl ? (
-                                    <Image
-                                        src={winner.coverUrl}
-                                        alt=""
-                                        fill
-                                        className="object-cover"
-                                        unoptimized
-                                        sizes="112px"
-                                    />
-                                ) : (
-                                    <span className="text-sm text-muted flex items-center justify-center h-full">
-                                        No cover
-                                    </span>
-                                )}
+                            <div className="relative w-28 h-40 rounded overflow-hidden">
+                                <BookCoverImage
+                                    src={winner.coverUrl}
+                                    containerClassName="absolute inset-0"
+                                    sizes="112px"
+                                />
                             </div>
                         </div>
                         <div className="mt-4">

@@ -2,11 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
+import { BookCoverImage } from '@/components/book-cover-image';
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_TRANSITION_MS = 280;
@@ -463,21 +463,12 @@ export default function VotingBuilderPage() {
                                         key={book.externalId}
                                         className="flex gap-3 rounded-lg border border-border bg-surface p-3"
                                     >
-                                        <div className="flex-shrink-0 w-12 h-18 relative bg-[var(--border)] rounded overflow-hidden">
-                                            {book.coverUrl ? (
-                                                <Image
-                                                    src={book.coverUrl}
-                                                    alt=""
-                                                    fill
-                                                    className="object-cover"
-                                                    unoptimized
-                                                    sizes="48px"
-                                                />
-                                            ) : (
-                                                <span className="text-xs text-muted flex items-center justify-center h-full">
-                                                    No cover
-                                                </span>
-                                            )}
+                                        <div className="flex-shrink-0 w-12 h-18 rounded overflow-hidden">
+                                            <BookCoverImage
+                                                src={book.coverUrl}
+                                                containerClassName="w-full h-full"
+                                                sizes="48px"
+                                            />
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <p className="font-medium text-sm truncate">
@@ -624,21 +615,12 @@ export default function VotingBuilderPage() {
                                         key={book.externalId}
                                         className="flex gap-3 rounded-lg border border-border bg-surface p-3"
                                     >
-                                        <div className="flex-shrink-0 w-12 h-18 relative bg-[var(--border)] rounded overflow-hidden">
-                                            {book.coverUrl ? (
-                                                <Image
-                                                    src={book.coverUrl}
-                                                    alt=""
-                                                    fill
-                                                    className="object-cover"
-                                                    unoptimized
-                                                    sizes="48px"
-                                                />
-                                            ) : (
-                                                <span className="text-xs text-muted flex items-center justify-center h-full">
-                                                    No cover
-                                                </span>
-                                            )}
+                                        <div className="flex-shrink-0 w-12 h-18 rounded overflow-hidden">
+                                            <BookCoverImage
+                                                src={book.coverUrl}
+                                                containerClassName="w-full h-full"
+                                                sizes="48px"
+                                            />
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <p className="font-medium text-sm truncate">
@@ -911,17 +893,16 @@ export default function VotingBuilderPage() {
                                                         book,
                                                     ) ? (
                                                         <div className="relative w-full aspect-[3/4] max-h-[45vh] shrink-0 bg-[var(--border)]">
-                                                            <Image
+                                                            <BookCoverImage
                                                                 src={
                                                                     getEffectiveCoverUrl(
                                                                         book,
-                                                                    )!
+                                                                    ) ?? undefined
                                                                 }
-                                                                alt=""
-                                                                fill
-                                                                className="object-contain object-top"
-                                                                unoptimized
+                                                                containerClassName="absolute inset-0"
                                                                 sizes="(max-width: 512px) 100vw, 512px"
+                                                                objectFit="contain"
+                                                                objectPosition="top"
                                                                 onError={() => {
                                                                     const effective =
                                                                         getEffectiveCoverUrl(

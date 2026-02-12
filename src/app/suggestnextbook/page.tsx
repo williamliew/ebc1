@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
 import { getOrCreateVisitorKeyHash } from '@/lib/visitor-key';
@@ -15,6 +14,7 @@ import {
     MAX_COMMENT_CHARS,
 } from '@/components/suggestion-comment-editor';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
+import { BookCoverImage } from '@/components/book-cover-image';
 import { StackOfBooks } from '@/components/stack-of-books';
 
 const MAX_SUGGESTIONS_PER_PERSON = 2;
@@ -589,24 +589,13 @@ export default function SuggestNextBookPage() {
                                                     </svg>
                                                 </span>
                                             )}
-                                            {item.coverUrl ? (
-                                                <div className="relative w-16 h-[96px] shrink-0 rounded overflow-hidden bg-[var(--border)]">
-                                                    <Image
-                                                        src={item.coverUrl}
-                                                        alt=""
-                                                        fill
-                                                        className="object-cover"
-                                                        unoptimized
-                                                        sizes="64px"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="w-16 h-[96px] shrink-0 rounded bg-[var(--border)] flex items-center justify-center">
-                                                    <span className="text-xs text-muted">
-                                                        No cover
-                                                    </span>
-                                                </div>
-                                            )}
+                                            <div className="w-16 h-[96px] shrink-0 rounded overflow-hidden">
+                                                <BookCoverImage
+                                                    src={item.coverUrl}
+                                                    containerClassName="w-full h-full"
+                                                    sizes="64px"
+                                                />
+                                            </div>
                                             <div className="flex-1 min-w-0 flex flex-col">
                                                 <p className="font-medium">
                                                     {item.title ??
@@ -698,18 +687,13 @@ export default function SuggestNextBookPage() {
                                     </button>
                                 </div>
                                 <div className="p-4 overflow-y-auto flex-1">
-                                    {readMoreBook.coverUrl && (
-                                        <div className="relative w-full aspect-[3/4] max-w-[200px] mx-auto mb-4 rounded overflow-hidden bg-[var(--border)]">
-                                            <Image
-                                                src={readMoreBook.coverUrl}
-                                                alt=""
-                                                fill
-                                                className="object-cover"
-                                                unoptimized
-                                                sizes="200px"
-                                            />
-                                        </div>
-                                    )}
+                                    <div className="relative w-full aspect-[3/4] max-w-[200px] mx-auto mb-4 rounded overflow-hidden">
+                                        <BookCoverImage
+                                            src={readMoreBook.coverUrl}
+                                            containerClassName="absolute inset-0"
+                                            sizes="200px"
+                                        />
+                                    </div>
                                     <p className="text-sm text-muted mb-4">
                                         by{' '}
                                         {readMoreBook.author ??
@@ -984,20 +968,13 @@ export default function SuggestNextBookPage() {
                                                         key={book.externalId}
                                                         className="flex gap-3 rounded-lg border border-border p-3 items-center"
                                                     >
-                                                        {book.coverUrl && (
-                                                            <div className="relative w-12 h-[72px] shrink-0 rounded overflow-hidden bg-[var(--border)]">
-                                                                <Image
-                                                                    src={
-                                                                        book.coverUrl
-                                                                    }
-                                                                    alt=""
-                                                                    fill
-                                                                    className="object-cover"
-                                                                    unoptimized
-                                                                    sizes="48px"
-                                                                />
-                                                            </div>
-                                                        )}
+                                                        <div className="w-12 h-[72px] shrink-0 rounded overflow-hidden">
+                                                            <BookCoverImage
+                                                                src={book.coverUrl}
+                                                                containerClassName="w-full h-full"
+                                                                sizes="48px"
+                                                            />
+                                                        </div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className="font-medium text-sm truncate">
                                                                 {book.title}
@@ -1094,24 +1071,17 @@ export default function SuggestNextBookPage() {
                                                     className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
                                                 />
                                             </div>
-                                            {getEffectiveCoverUrl(
-                                                selectedBook,
-                                            ) && (
-                                                <div className="relative w-full max-w-[160px] aspect-[3/4] rounded overflow-hidden bg-[var(--border)]">
-                                                    <Image
-                                                        src={
-                                                            getEffectiveCoverUrl(
-                                                                selectedBook,
-                                                            )!
-                                                        }
-                                                        alt=""
-                                                        fill
-                                                        className="object-cover"
-                                                        unoptimized
-                                                        sizes="160px"
-                                                    />
-                                                </div>
-                                            )}
+                                            <div className="relative w-full max-w-[160px] aspect-[3/4] rounded overflow-hidden">
+                                                <BookCoverImage
+                                                    src={
+                                                        getEffectiveCoverUrl(
+                                                            selectedBook,
+                                                        ) ?? undefined
+                                                    }
+                                                    containerClassName="absolute inset-0"
+                                                    sizes="160px"
+                                                />
+                                            </div>
                                             <div>
                                                 <label className="text-xs font-medium text-muted block mb-1">
                                                     Title

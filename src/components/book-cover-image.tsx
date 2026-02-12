@@ -61,6 +61,8 @@ export function BookCoverImage({
     containerClassName,
     priority = false,
     onError,
+    objectFit = 'cover',
+    objectPosition = 'center',
 }: {
     src: string | null | undefined;
     alt?: string;
@@ -69,6 +71,10 @@ export function BookCoverImage({
     priority?: boolean;
     /** Called when the image fails to load (e.g. 404). Still shows No cover placeholder. */
     onError?: () => void;
+    /** e.g. 'cover' | 'contain'. Default 'cover'. */
+    objectFit?: 'cover' | 'contain';
+    /** e.g. 'center' | 'top'. Default 'center'. */
+    objectPosition?: string;
 }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -102,7 +108,8 @@ export function BookCoverImage({
                 src={src}
                 alt={alt}
                 fill
-                className="object-cover"
+                className={objectFit === 'contain' ? 'object-contain' : 'object-cover'}
+                style={{ objectPosition }}
                 unoptimized
                 sizes={sizes ?? '200px'}
                 priority={priority}

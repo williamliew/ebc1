@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
+import { BookCoverImage } from '@/components/book-cover-image';
 import { EventbriteForm } from '@/components/eventbrite-form';
 
 type VoteBook = {
@@ -249,22 +249,13 @@ export default function BookOfTheMonthPage() {
                                             key={book.externalId}
                                             className="flex gap-3 rounded-lg border border-border bg-surface p-3 items-center"
                                         >
-                                            {book.coverUrl ? (
-                                                <div className="relative w-12 h-[72px] shrink-0 rounded overflow-hidden bg-[var(--border)]">
-                                                    <Image
-                                                        src={book.coverUrl}
-                                                        alt=""
-                                                        fill
-                                                        className="object-cover"
-                                                        unoptimized
-                                                        sizes="48px"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="w-12 h-[72px] shrink-0 rounded bg-[var(--border)] flex items-center justify-center text-xs text-muted">
-                                                    No cover
-                                                </div>
-                                            )}
+                                            <div className="w-12 h-[72px] shrink-0 rounded overflow-hidden">
+                                                <BookCoverImage
+                                                    src={book.coverUrl}
+                                                    containerClassName="w-full h-full"
+                                                    sizes="48px"
+                                                />
+                                            </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-medium text-sm truncate">
                                                     {book.title}
@@ -351,22 +342,13 @@ export default function BookOfTheMonthPage() {
                                             key={book.externalId}
                                             className="flex gap-3 rounded-lg border border-border bg-surface p-3 items-center"
                                         >
-                                            {book.coverUrl ? (
-                                                <div className="relative w-12 h-[72px] shrink-0 rounded overflow-hidden bg-[var(--border)]">
-                                                    <Image
-                                                        src={book.coverUrl}
-                                                        alt=""
-                                                        fill
-                                                        className="object-cover"
-                                                        unoptimized
-                                                        sizes="48px"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="w-12 h-[72px] shrink-0 rounded bg-[var(--border)] flex items-center justify-center text-xs text-muted">
-                                                    No cover
-                                                </div>
-                                            )}
+                                            <div className="w-12 h-[72px] shrink-0 rounded overflow-hidden">
+                                                <BookCoverImage
+                                                    src={book.coverUrl}
+                                                    containerClassName="w-full h-full"
+                                                    sizes="48px"
+                                                />
+                                            </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-medium text-sm truncate">
                                                     {book.title}
@@ -443,20 +425,13 @@ export default function BookOfTheMonthPage() {
                                 placeholder="Override thumbnail URL (optional)"
                                 className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm mb-2"
                             />
-                            {getEffectiveCoverUrl(selectedBook) && (
-                                <div className="relative w-full max-w-[160px] aspect-[3/4] rounded overflow-hidden bg-[var(--border)]">
-                                    <Image
-                                        src={
-                                            getEffectiveCoverUrl(selectedBook)!
-                                        }
-                                        alt=""
-                                        fill
-                                        className="object-cover"
-                                        unoptimized
-                                        sizes="160px"
-                                    />
-                                </div>
-                            )}
+                            <div className="relative w-full max-w-[160px] aspect-[3/4] rounded overflow-hidden">
+                                <BookCoverImage
+                                    src={getEffectiveCoverUrl(selectedBook) ?? undefined}
+                                    containerClassName="absolute inset-0"
+                                    sizes="160px"
+                                />
+                            </div>
                         </div>
 
                         <div>

@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
+import { BookCoverImage } from '@/components/book-cover-image';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { getOrCreateVisitorKeyHash } from '@/lib/visitor-key';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
@@ -498,26 +498,13 @@ export default function VotePage() {
                                                 }}
                                             >
                                                 <div className="h-full flex flex-col rounded-xl border border-border bg-surface overflow-hidden">
-                                                    {book.coverUrl ? (
-                                                        <div className="relative w-full aspect-[3/4] shrink-0 bg-[var(--border)]">
-                                                            <Image
-                                                                src={
-                                                                    book.coverUrl
-                                                                }
-                                                                alt=""
-                                                                fill
-                                                                className="object-cover"
-                                                                unoptimized
-                                                                sizes="(max-width: 512px) 100vw, 512px"
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="w-full aspect-[3/4] shrink-0 bg-[var(--border)] flex items-center justify-center">
-                                                            <span className="text-muted text-sm">
-                                                                No cover
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                    <div className="relative w-full aspect-[3/4] shrink-0 bg-[var(--border)]">
+                                                        <BookCoverImage
+                                                            src={book.coverUrl}
+                                                            containerClassName="absolute inset-0"
+                                                            sizes="(max-width: 512px) 100vw, 512px"
+                                                        />
+                                                    </div>
                                                     <div className="p-4 flex-1 min-h-0 overflow-y-auto">
                                                         <h2 className="text-lg font-semibold">
                                                             {book.title}

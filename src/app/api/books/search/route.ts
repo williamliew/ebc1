@@ -92,13 +92,27 @@ export async function POST(request: Request) {
     const url = `${OPENLIBRARY_SEARCH}?${params.toString()}`;
 
     try {
-        const res = await fetch(url);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+        const res = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'BookclubApp/1.0 (https://github.com/openlibrary)',
+            },
+        });
+        clearTimeout(timeoutId);
         if (!res.ok) {
             const text = await res.text();
-            console.error('Open Library search error:', res.status, text);
+            console.error('Open Library search error:', res.status, url, text.slice(0, 200));
+            const message =
+                res.status === 429
+                    ? 'Search rate limit exceeded. Please try again in a minute.'
+                    : res.status >= 500
+                      ? 'Open Library is temporarily unavailable. Please try again.'
+                      : 'Book search failed';
             return NextResponse.json(
-                { error: 'Book search failed' },
-                { status: 502 },
+                { error: message },
+                { status: res.status === 429 ? 429 : 502 },
             );
         }
 
@@ -171,9 +185,20 @@ export async function POST(request: Request) {
             pageSize: PAGE_SIZE,
         });
     } catch (err) {
-        console.error('Book search error:', err);
+        const message = err instanceof Error ? err.message : String(err);
+        const isAbort = err instanceof Error && err.name === 'AbortError';
+        console.error('Book search error:', message, err);
+        const userMessage = isAbort
+            ? 'Search timed out. Please try again.'
+            : message.includes('fetch') ||
+                message.includes('network') ||
+                message.includes('ECONNREFUSED') ||
+                message.includes('ETIMEDOUT') ||
+                message.includes('ENOTFOUND')
+              ? 'Search unavailable. Open Library may be unreachable from this network (e.g. when running locally). Try again or check your connection.'
+              : 'Book search failed';
         return NextResponse.json(
-            { error: 'Book search failed' },
+            { error: userMessage },
             { status: 500 },
         );
     }
