@@ -1084,57 +1084,26 @@ export default function SuggestNextBookPage() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-xs font-medium text-muted block mb-1">
-                                                    Title
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={selectedBook.title}
-                                                    onChange={(e) =>
-                                                        updateReviewBook(
-                                                            'title',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-medium text-muted block mb-1">
-                                                    Author
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={selectedBook.author}
-                                                    onChange={(e) =>
-                                                        updateReviewBook(
-                                                            'author',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-                                                />
+                                                <p className="text-base font-semibold">
+                                                    {selectedBook.title}
+                                                </p>
+                                                <p className="text-sm text-muted">
+                                                    by {selectedBook.author}
+                                                </p>
                                             </div>
                                             {selectedBook.blurb && (
-                                                <div>
-                                                    <label className="text-xs font-medium text-muted block mb-1">
-                                                        Description
-                                                    </label>
-                                                    <div
-                                                        className="text-sm prose prose-sm dark:prose-invert max-w-none rounded-lg border border-border p-3 bg-[var(--surface)]"
-                                                        dangerouslySetInnerHTML={{
-                                                            __html: sanitiseBlurb(
-                                                                selectedBook.blurb,
-                                                            ),
-                                                        }}
-                                                    />
-                                                </div>
+                                                <div
+                                                    className="text-sm prose prose-sm dark:prose-invert max-w-none mt-2"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitiseBlurb(
+                                                            selectedBook.blurb,
+                                                        ),
+                                                    }}
+                                                />
                                             )}
                                             <div>
                                                 <label className="text-xs font-medium text-muted block mb-1">
-                                                    Optional comment (max{' '}
-                                                    {MAX_COMMENT_CHARS}{' '}
-                                                    characters)
+                                                    Leave optional comment
                                                 </label>
                                                 <SuggestionCommentEditor
                                                     initialContent={
@@ -1178,7 +1147,7 @@ export default function SuggestNextBookPage() {
                                                     {suggestError}
                                                 </p>
                                             )}
-                                            <p className="text-sm text-muted pt-2">
+                                            <p className="text-sm font-semibold text-red-600 dark:text-red-400 pt-2">
                                                 Suggesting a book can&apos;t be
                                                 changed.
                                             </p>
