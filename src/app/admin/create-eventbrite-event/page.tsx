@@ -43,6 +43,9 @@ export default function CreateEventbriteEventPage() {
                 <h1 className="font-heading text-xl font-semibold">
                     Create event on Eventbrite
                 </h1>
+                <p className="italic text-muted text-sm mt-1">
+                    in development
+                </p>
             </header>
 
             <main className="max-w-lg mx-auto p-6">

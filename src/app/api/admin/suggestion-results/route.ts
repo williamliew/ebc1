@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { desc, eq } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { suggestionRounds, suggestions } from '@/db/schema';
 import { requireAdmin } from '@/lib/admin-auth';
@@ -11,11 +11,21 @@ export type SuggestionResultItem = {
     suggestionCount: number;
 };
 
+export type SuggestionListItem = {
+    id: number;
+    createdAt: string;
+    title: string | null;
+    author: string | null;
+    comment: string | null;
+    commenterName: string | null;
+};
+
 export type SuggestionResultsRound = {
     id: number;
     suggestionsForDate: string | null;
     closeAt: string | null;
     results: SuggestionResultItem[];
+    items: SuggestionListItem[];
 };
 
 /**
@@ -48,12 +58,17 @@ export async function GET(request: Request) {
         for (const round of rounds) {
             const rows = await db
                 .select({
+                    id: suggestions.id,
                     bookExternalId: suggestions.bookExternalId,
                     title: suggestions.title,
                     author: suggestions.author,
+                    comment: suggestions.comment,
+                    commenterName: suggestions.commenterName,
+                    createdAt: suggestions.createdAt,
                 })
                 .from(suggestions)
-                .where(eq(suggestions.suggestionRoundId, round.id));
+                .where(eq(suggestions.suggestionRoundId, round.id))
+                .orderBy(asc(suggestions.createdAt));
 
             const byBook = new Map<
                 string,
@@ -81,11 +96,24 @@ export async function GET(request: Request) {
                 suggestionCount: count,
             }));
 
+            const items: SuggestionListItem[] = rows.map((r) => ({
+                id: r.id,
+                createdAt:
+                    r.createdAt instanceof Date
+                        ? r.createdAt.toISOString()
+                        : String(r.createdAt),
+                title: r.title ?? null,
+                author: r.author ?? null,
+                comment: r.comment ?? null,
+                commenterName: r.commenterName ?? null,
+            }));
+
             result.push({
                 id: round.id,
                 suggestionsForDate: round.suggestionsForDate ?? null,
                 closeAt: round.closeAt?.toISOString() ?? null,
                 results,
+                items,
             });
         }
 

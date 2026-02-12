@@ -461,6 +461,9 @@ export function EventbriteForm({
                         ? 'Creating…'
                         : 'Create event on Eventbrite'}
                 </button>
+                <p className="text-xs text-muted mt-1">
+                    — doesn&apos;t do anything yet
+                </p>
             </form>
         </div>
     );

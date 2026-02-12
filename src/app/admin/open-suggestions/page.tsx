@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { CloseIcon } from '@/components/close-icon';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
 
 function getDefaultOpenForDate(): string {
@@ -185,10 +184,9 @@ export default function OpenSuggestionsPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowSuccessLightbox(false)}
-                                className="rounded-lg bg-primary text-primary-foreground p-2.5 text-sm font-medium hover:bg-[var(--primary-hover)] inline-flex items-center justify-center"
-                                aria-label="Close"
+                                className="rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-[var(--primary-hover)]"
                             >
-                                <CloseIcon className="h-5 w-5" />
+                                Close
                             </button>
                             <Link
                                 href="/"

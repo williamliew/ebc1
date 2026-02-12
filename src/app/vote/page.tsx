@@ -43,6 +43,16 @@ function formatMeetingDate(isoDate: string): string {
     }).format(date);
 }
 
+function formatCloseVoteDate(closeVoteAt: string): string {
+    const date = new Date(closeVoteAt);
+    return new Intl.DateTimeFormat('en-GB', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    }).format(date);
+}
+
 export default function VotePage() {
     const [round, setRound] = useState<VoteRound | null>(null);
     const [books, setBooks] = useState<VoteBook[]>([]);
@@ -301,6 +311,12 @@ export default function VotePage() {
                                 {formatMeetingDate(round.meetingDate)}
                             </p>
                         )}
+                        {round.closeVoteAt && (
+                            <p className="text-sm text-muted mt-0.5">
+                                Vote closes:{' '}
+                                {formatCloseVoteDate(round.closeVoteAt)}
+                            </p>
+                        )}
                     </header>
                     <main className="max-w-md mx-auto p-6">
                         <p className="text-muted text-center mb-4">
@@ -419,6 +435,12 @@ export default function VotePage() {
                                 {formatMeetingDate(round.meetingDate)}
                             </p>
                         )}
+                        {round.closeVoteAt && (
+                            <p className="text-sm text-muted mt-0.5">
+                                Vote closes:{' '}
+                                {formatCloseVoteDate(round.closeVoteAt)}
+                            </p>
+                        )}
                     </main>
                 </div>
             ) : (
@@ -439,6 +461,12 @@ export default function VotePage() {
                                 <p className="text-sm text-muted mt-1">
                                     Book club meet:{' '}
                                     {formatMeetingDate(round.meetingDate)}
+                                </p>
+                            )}
+                            {round.closeVoteAt && (
+                                <p className="text-sm text-muted mt-0.5">
+                                    Vote closes:{' '}
+                                    {formatCloseVoteDate(round.closeVoteAt)}
                                 </p>
                             )}
                         </header>

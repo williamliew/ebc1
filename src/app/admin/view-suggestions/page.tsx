@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { LoadingBookFlip } from '@/components/loading-book-flip';
 import { LoadingMinDuration } from '@/components/loading-min-duration';
+import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
 
 type SuggestionResultItem = {
     bookExternalId: string;
@@ -15,11 +15,21 @@ type SuggestionResultItem = {
     suggestionCount: number;
 };
 
+type SuggestionListItem = {
+    id: number;
+    createdAt: string;
+    title: string | null;
+    author: string | null;
+    comment: string | null;
+    commenterName: string | null;
+};
+
 type SuggestionResultsRound = {
     id: number;
     suggestionsForDate: string | null;
     closeAt: string | null;
     results: SuggestionResultItem[];
+    items: SuggestionListItem[];
 };
 
 const PIE_COLOURS = [
@@ -81,14 +91,36 @@ async function fetchSuggestionResults(): Promise<{
 }
 
 export default function ViewSuggestionsPage() {
+    const queryClient = useQueryClient();
     const { data, isLoading, error } = useQuery({
         queryKey: ['admin', 'suggestion-results'],
         queryFn: fetchSuggestionResults,
     });
 
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const [itemToRemove, setItemToRemove] =
+        useState<SuggestionListItem | null>(null);
     const rounds = data?.rounds ?? [];
     const selectedRound = rounds[selectedIndex] ?? null;
+
+    const deleteMutation = useMutation({
+        mutationFn: async (suggestionId: number) => {
+            const res = await fetch(
+                `/api/admin/suggestions/${suggestionId}`,
+                { method: 'DELETE', credentials: 'include' },
+            );
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error ?? 'Failed to delete suggestion');
+            }
+        },
+        onSuccess: () => {
+            setItemToRemove(null);
+            queryClient.invalidateQueries({
+                queryKey: ['admin', 'suggestion-results'],
+            });
+        },
+    });
 
     const pieData =
         selectedRound?.results.map((r, i) => ({
@@ -240,7 +272,7 @@ export default function ViewSuggestionsPage() {
                                             </ResponsiveContainer>
                                         </div>
                                         <h2 className="text-sm font-medium text-foreground mt-4 mb-2">
-                                            Suggestions:
+                                            By book (count):
                                         </h2>
                                         <ul className="space-y-2 list-none">
                                             {selectedRound.results.map(
@@ -278,11 +310,190 @@ export default function ViewSuggestionsPage() {
                                                 ),
                                             )}
                                         </ul>
+
+                                        <h2 className="text-sm font-medium text-foreground mt-6 mb-2">
+                                            Each suggestion
+                                        </h2>
+                                        <ul className="space-y-4 list-none">
+                                            {selectedRound.items.map(
+                                                (item, idx) => (
+                                                    <li
+                                                        key={item.id}
+                                                        className="rounded-lg border border-border bg-background p-4 text-sm"
+                                                    >
+                                                        <div className="flex items-center justify-between gap-2 mb-2">
+                                                            <p className="text-xs text-muted">
+                                                                Added{' '}
+                                                                {new Date(
+                                                                    item.createdAt,
+                                                                ).toLocaleDateString(
+                                                                    'en-GB',
+                                                                    {
+                                                                        day: 'numeric',
+                                                                        month: 'short',
+                                                                        year: 'numeric',
+                                                                    },
+                                                                )}
+                                                            </p>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setItemToRemove(
+                                                                        item,
+                                                                    )
+                                                                }
+                                                                className="shrink-0 rounded border border-border px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </div>
+                                                        <p className="font-medium text-foreground">
+                                                            {item.title ??
+                                                                'Unknown title'}{' '}
+                                                            by{' '}
+                                                            {item.author ??
+                                                                'Unknown author'}
+                                                        </p>
+                                                        {(item.comment != null &&
+                                                            item.comment.trim() !==
+                                                                '') && (
+                                                            <div className="mt-2">
+                                                                <p className="text-xs font-medium text-muted mb-1">
+                                                                    Comment
+                                                                </p>
+                                                                <div className="text-foreground prose prose-sm dark:prose-invert max-w-none">
+                                                                    <span
+                                                                        dangerouslySetInnerHTML={{
+                                                                            __html: sanitiseSuggestionComment(
+                                                                                item.comment,
+                                                                            ),
+                                                                        }}
+                                                                    />
+                                                                    <span className="text-muted">
+                                                                        {' '}
+                                                                        —{' '}
+                                                                        {item.commenterName?.trim()
+                                                                            ? item.commenterName
+                                                                            : 'Anonymous'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {(!item.comment ||
+                                                            item.comment.trim() ===
+                                                                '') && (
+                                                            <p className="mt-2 text-muted">
+                                                                —{' '}
+                                                                {item.commenterName?.trim()
+                                                                    ? item.commenterName
+                                                                    : 'Anonymous'}
+                                                            </p>
+                                                        )}
+                                                    </li>
+                                                ),
+                                            )}
+                                        </ul>
                                     </section>
                                 )}
                             </>
                         )}
                     </main>
+
+                    {itemToRemove && (
+                        <div
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="delete-confirm-title"
+                        >
+                            <div className="rounded-xl border border-border bg-surface shadow-xl max-w-md w-full p-4">
+                                <h2
+                                    id="delete-confirm-title"
+                                    className="text-lg font-semibold text-foreground mb-3"
+                                >
+                                    Are you sure you want to delete this from
+                                    the records?
+                                </h2>
+                                <div className="rounded-lg border border-border bg-background p-4 text-sm mb-4">
+                                    <p className="text-xs text-muted mb-1">
+                                        Added{' '}
+                                        {new Date(
+                                            itemToRemove.createdAt,
+                                        ).toLocaleDateString('en-GB', {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            year: 'numeric',
+                                        })}
+                                    </p>
+                                    <p className="font-medium text-foreground">
+                                        {itemToRemove.title ??
+                                            'Unknown title'}{' '}
+                                        by{' '}
+                                        {itemToRemove.author ??
+                                            'Unknown author'}
+                                    </p>
+                                    {itemToRemove.comment != null &&
+                                        itemToRemove.comment.trim() !== '' && (
+                                        <div className="mt-2">
+                                            <p className="text-xs font-medium text-muted mb-1">
+                                                Comment
+                                            </p>
+                                            <div className="text-foreground prose prose-sm dark:prose-invert max-w-none">
+                                                <span
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitiseSuggestionComment(
+                                                            itemToRemove.comment,
+                                                        ),
+                                                    }}
+                                                />
+                                                <span className="text-muted">
+                                                    {' '}
+                                                    —{' '}
+                                                    {itemToRemove.commenterName?.trim()
+                                                        ? itemToRemove.commenterName
+                                                        : 'Anonymous'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {(!itemToRemove.comment ||
+                                        itemToRemove.comment.trim() === '') && (
+                                        <p className="mt-2 text-muted">
+                                            —{' '}
+                                            {itemToRemove.commenterName?.trim()
+                                                ? itemToRemove.commenterName
+                                                : 'Anonymous'}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex gap-3 justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setItemToRemove(null)
+                                        }
+                                        className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            deleteMutation.mutate(
+                                                itemToRemove.id,
+                                            )
+                                        }
+                                        disabled={deleteMutation.isPending}
+                                        className="rounded-lg bg-red-600 text-white px-4 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                    >
+                                        {deleteMutation.isPending
+                                            ? 'Deleting…'
+                                            : 'Confirm'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </LoadingMinDuration>

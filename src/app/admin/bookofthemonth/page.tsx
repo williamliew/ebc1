@@ -386,8 +386,15 @@ export default function BookOfTheMonthPage() {
                         </button>
                         <h2 className="text-lg font-semibold">Review</h2>
 
-                        {/* Thumbnail override */}
+                        {/* Thumbnail first, then override controls */}
                         <div>
+                            <div className="relative w-full max-w-[160px] aspect-[3/4] rounded overflow-hidden mb-3">
+                                <BookCoverImage
+                                    src={getEffectiveCoverUrl(selectedBook) ?? undefined}
+                                    containerClassName="absolute inset-0"
+                                    sizes="160px"
+                                />
+                            </div>
                             <label className="text-xs font-medium text-muted block mb-1">
                                 Thumbnail
                             </label>
@@ -423,15 +430,8 @@ export default function BookOfTheMonthPage() {
                                     )
                                 }
                                 placeholder="Override thumbnail URL (optional)"
-                                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm mb-2"
+                                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
                             />
-                            <div className="relative w-full max-w-[160px] aspect-[3/4] rounded overflow-hidden">
-                                <BookCoverImage
-                                    src={getEffectiveCoverUrl(selectedBook) ?? undefined}
-                                    containerClassName="absolute inset-0"
-                                    sizes="160px"
-                                />
-                            </div>
                         </div>
 
                         <div>
