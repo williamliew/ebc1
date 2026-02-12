@@ -61,7 +61,7 @@ export function BookCoverImage({
     containerClassName,
     priority = false,
     onError,
-    objectFit = 'cover',
+    objectFit = 'contain',
     objectPosition = 'center',
 }: {
     src: string | null | undefined;
@@ -139,7 +139,11 @@ export function BookCoverImage({
                     src={src}
                     alt={alt}
                     fill
-                    className={objectFit === 'contain' ? 'object-contain' : 'object-cover'}
+                    className={
+                        objectFit === 'contain'
+                            ? 'object-contain'
+                            : 'object-cover'
+                    }
                     style={{ objectPosition }}
                     unoptimized
                     sizes={sizes ?? '200px'}
