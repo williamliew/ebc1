@@ -413,14 +413,6 @@ export default function QuestionBuilderPage() {
                             className="w-full h-2 rounded-lg appearance-none bg-border accent-primary"
                         />
                     </div>
-
-                    <button
-                        type="button"
-                        onClick={() => setIsPreviewFullScreen(true)}
-                        className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)]"
-                    >
-                        Preview in full screen to screenshot
-                    </button>
                 </section>
 
                 {/* Preview - shown in-page and when printing */}
@@ -498,6 +490,15 @@ export default function QuestionBuilderPage() {
                                 </div>
                             )}
                         </div>
+                    </div>
+                    <div className="mt-4 print:hidden">
+                        <button
+                            type="button"
+                            onClick={() => setIsPreviewFullScreen(true)}
+                            className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                        >
+                            Preview in full screen to screenshot
+                        </button>
                     </div>
                 </section>
             </div>

@@ -6,7 +6,6 @@ import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { BookCoverImage } from '@/components/book-cover-image';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { getOrCreateVisitorKeyHash } from '@/lib/visitor-key';
-import { LoadingBookFlip } from '@/components/loading-book-flip';
 import { LoadingMinDuration } from '@/components/loading-min-duration';
 import { StackOfBooks } from '@/components/stack-of-books';
 
@@ -270,7 +269,9 @@ export default function VotePage() {
                             <BackArrowIcon className="size-4 shrink-0" />
                             Back to home
                         </Link>
-                        <h1 className="font-heading text-xl font-semibold">Monthly book vote</h1>
+                        <h1 className="font-heading text-xl font-semibold">
+                            Monthly book vote
+                        </h1>
                     </header>
                     <main className="max-w-md mx-auto p-6 text-center">
                         <p
@@ -291,7 +292,9 @@ export default function VotePage() {
                             <BackArrowIcon className="size-4 shrink-0" />
                             Back to home
                         </Link>
-                        <h1 className="font-heading text-xl font-semibold">Monthly book vote</h1>
+                        <h1 className="font-heading text-xl font-semibold">
+                            Monthly book vote
+                        </h1>
                         {round.meetingDate && (
                             <p className="text-sm text-muted mt-1">
                                 Book club meet:{' '}
@@ -365,7 +368,9 @@ export default function VotePage() {
                             <BackArrowIcon className="size-4 shrink-0" />
                             Back to home
                         </Link>
-                        <h1 className="font-heading text-xl font-semibold">Monthly book vote</h1>
+                        <h1 className="font-heading text-xl font-semibold">
+                            Monthly book vote
+                        </h1>
                     </header>
                     <main className="max-w-md mx-auto p-6 flex flex-col items-center justify-center min-h-[50vh] text-center">
                         <StackOfBooks
@@ -400,7 +405,9 @@ export default function VotePage() {
                             <BackArrowIcon className="size-4 shrink-0" />
                             Back to home
                         </Link>
-                        <h1 className="font-heading text-xl font-semibold">Monthly book vote</h1>
+                        <h1 className="font-heading text-xl font-semibold">
+                            Monthly book vote
+                        </h1>
                     </header>
                     <main className="max-w-md mx-auto p-6 text-center">
                         <p className="text-foreground font-medium">
@@ -425,7 +432,9 @@ export default function VotePage() {
                                 <BackArrowIcon className="size-4 shrink-0" />
                                 Back to home
                             </Link>
-                            <h1 className="font-heading text-xl font-semibold">Monthly book vote</h1>
+                            <h1 className="font-heading text-xl font-semibold">
+                                Monthly book vote
+                            </h1>
                             {round.meetingDate && (
                                 <p className="text-sm text-muted mt-1">
                                     Book club meet:{' '}
@@ -448,7 +457,9 @@ export default function VotePage() {
                                     <>
                                         <button
                                             type="button"
-                                            onClick={() => goTo(currentIndex - 1)}
+                                            onClick={() =>
+                                                goTo(currentIndex - 1)
+                                            }
                                             disabled={currentIndex === 0}
                                             className="absolute -left-1 top-[18%] z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-md disabled:opacity-40 disabled:pointer-events-none hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
                                             aria-label="Previous book"
@@ -457,8 +468,13 @@ export default function VotePage() {
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => goTo(currentIndex + 1)}
-                                            disabled={currentIndex === books.length - 1}
+                                            onClick={() =>
+                                                goTo(currentIndex + 1)
+                                            }
+                                            disabled={
+                                                currentIndex ===
+                                                books.length - 1
+                                            }
                                             className="absolute -right-1 top-[18%] z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-md disabled:opacity-40 disabled:pointer-events-none hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
                                             aria-label="Next book"
                                         >
@@ -478,7 +494,7 @@ export default function VotePage() {
                                         </button>
                                     </>
                                 )}
-                                <div className="flex-1 min-h-0 overflow-hidden rounded-xl">
+                                <div className="flex-1 min-h-[280px] overflow-hidden rounded-xl">
                                     <div
                                         className="h-full flex will-change-transform"
                                         style={{
@@ -498,7 +514,7 @@ export default function VotePage() {
                                                 }}
                                             >
                                                 <div className="h-full flex flex-col rounded-xl border border-border bg-surface overflow-hidden">
-                                                    <div className="relative w-full aspect-[3/4] shrink-0 bg-[var(--border)]">
+                                                    <div className="relative w-full min-h-[200px] aspect-[3/4] shrink-0 bg-[var(--border)]">
                                                         <BookCoverImage
                                                             src={book.coverUrl}
                                                             containerClassName="absolute inset-0"
@@ -585,19 +601,19 @@ export default function VotePage() {
                                     <button
                                         type="button"
                                         onClick={() => setShowVoteConfirm(true)}
-                                        disabled={
-                                            submitStatus === 'pending'
-                                        }
+                                        disabled={submitStatus === 'pending'}
                                         className="w-full rounded-lg bg-primary text-primary-foreground py-3 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
                                     >
                                         {submitStatus === 'pending'
                                             ? 'Voting…'
                                             : (() => {
-                                                const b = books[currentIndex];
-                                                const title = b?.title ?? 'this book';
-                                                const author = b?.author ?? 'unknown';
-                                                return `Vote for '${title}' by ${author}`;
-                                            })()}
+                                                  const b = books[currentIndex];
+                                                  const title =
+                                                      b?.title ?? 'this book';
+                                                  const author =
+                                                      b?.author ?? 'unknown';
+                                                  return `Vote for '${title}' by ${author}`;
+                                              })()}
                                     </button>
                                     {submitStatus === 'error' &&
                                         submitMessage && (
@@ -636,15 +652,19 @@ export default function VotePage() {
                                     Are you sure you want to vote for{' '}
                                     <strong className="text-foreground">
                                         {'\u2018'}
-                                        {books[currentIndex].title ?? 'this book'}
+                                        {books[currentIndex].title ??
+                                            'this book'}
                                         {'\u2019'}
                                     </strong>{' '}
-                                    by {books[currentIndex].author ?? 'unknown'}?
+                                    by {books[currentIndex].author ?? 'unknown'}
+                                    ?
                                 </p>
                                 <div className="flex gap-3">
                                     <button
                                         type="button"
-                                        onClick={() => setShowVoteConfirm(false)}
+                                        onClick={() =>
+                                            setShowVoteConfirm(false)
+                                        }
                                         className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
                                     >
                                         Back

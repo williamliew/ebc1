@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 /** Tiny grey blur placeholder for image load (reduces layout shift) */
 const BLUR_DATA =
@@ -78,6 +78,7 @@ export function BookCoverImage({
 }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
+    const imgRef = useRef<HTMLImageElement | null>(null);
 
     const handleError = () => {
         setError(true);
@@ -85,39 +86,70 @@ export function BookCoverImage({
         onError?.();
     };
 
+    // Cached or already-loaded images may not fire onLoad; check complete and listen for load
+    useEffect(() => {
+        if (!src) return;
+        const id = requestAnimationFrame(() => setLoading(true));
+        const checkAndListen = (img: HTMLImageElement | null) => {
+            if (!img) return () => {};
+            if (img.complete) {
+                setLoading(false);
+                return () => {};
+            }
+            const onImgLoad = () => setLoading(false);
+            img.addEventListener('load', onImgLoad);
+            return () => img.removeEventListener('load', onImgLoad);
+        };
+        let cleanup = checkAndListen(imgRef.current);
+        const t = setTimeout(() => {
+            cleanup();
+            cleanup = checkAndListen(imgRef.current);
+        }, 50);
+        return () => {
+            cancelAnimationFrame(id);
+            clearTimeout(t);
+            cleanup();
+        };
+    }, [src]);
+
     if (!src || error) {
         return (
-            <div className={`relative ${containerClassName}`}>
-                <NoCoverPlaceholder className="absolute inset-0 rounded overflow-hidden" />
+            <div className={containerClassName}>
+                <div className="relative h-full w-full overflow-hidden rounded">
+                    <NoCoverPlaceholder className="absolute inset-0 rounded overflow-hidden" />
+                </div>
             </div>
         );
     }
 
     return (
-        <div className={`relative overflow-hidden rounded ${containerClassName}`}>
-            {/* Loading overlay: bouncing dots */}
-            {loading && (
-                <div
-                    className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--border)] text-foreground/60"
-                    aria-hidden
-                >
-                    <BouncingDots />
-                </div>
-            )}
-            <Image
-                src={src}
-                alt={alt}
-                fill
-                className={objectFit === 'contain' ? 'object-contain' : 'object-cover'}
-                style={{ objectPosition }}
-                unoptimized
-                sizes={sizes ?? '200px'}
-                priority={priority}
-                placeholder="blur"
-                blurDataURL={BLUR_DATA}
-                onLoad={() => setLoading(false)}
-                onError={handleError}
-            />
+        <div className={containerClassName}>
+            {/* Inner wrapper: has explicit size (w-full h-full) and position relative so Image fill has a non-zero parent */}
+            <div className="relative h-full w-full overflow-hidden rounded">
+                {loading && (
+                    <div
+                        className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--border)] text-foreground/60"
+                        aria-hidden
+                    >
+                        <BouncingDots />
+                    </div>
+                )}
+                <Image
+                    ref={imgRef}
+                    src={src}
+                    alt={alt}
+                    fill
+                    className={objectFit === 'contain' ? 'object-contain' : 'object-cover'}
+                    style={{ objectPosition }}
+                    unoptimized
+                    sizes={sizes ?? '200px'}
+                    priority={priority}
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA}
+                    onLoad={() => setLoading(false)}
+                    onError={handleError}
+                />
+            </div>
         </div>
     );
 }

@@ -527,7 +527,14 @@ export default function VotingBuilderPage() {
                     >
                         <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div className="relative">
+                                <label
+                                    htmlFor="create-vote-search-title"
+                                    className="sr-only"
+                                >
+                                    Book title
+                                </label>
                                 <input
+                                    id="create-vote-search-title"
                                     type="text"
                                     value={titleSearch}
                                     onChange={(e) =>
@@ -535,7 +542,6 @@ export default function VotingBuilderPage() {
                                     }
                                     placeholder="Title"
                                     className="rounded-lg border border-border bg-surface pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                    aria-label="Book title"
                                 />
                                 {titleSearch && (
                                     <button
@@ -549,7 +555,14 @@ export default function VotingBuilderPage() {
                                 )}
                             </div>
                             <div className="relative">
+                                <label
+                                    htmlFor="create-vote-search-author"
+                                    className="sr-only"
+                                >
+                                    Author
+                                </label>
                                 <input
+                                    id="create-vote-search-author"
                                     type="text"
                                     value={authorSearch}
                                     onChange={(e) =>
@@ -557,7 +570,6 @@ export default function VotingBuilderPage() {
                                     }
                                     placeholder="Author"
                                     className="rounded-lg border border-border bg-surface pl-3 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                                    aria-label="Author"
                                 />
                                 {authorSearch && (
                                     <button
