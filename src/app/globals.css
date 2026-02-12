@@ -102,7 +102,8 @@ h1,
   min-height: inherit;
 }
 .headless-editor-content.ProseMirror p.is-editor-empty:first-child::before,
-.suggestion-comment-editor-content.ProseMirror p.is-editor-empty:first-child::before {
+.suggestion-comment-editor-content.ProseMirror p.is-editor-empty:first-child::before,
+.blurb-editor-content.ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
   color: var(--muted);
@@ -110,7 +111,8 @@ h1,
   height: 0;
 }
 
-.suggestion-comment-editor-content.ProseMirror {
+.suggestion-comment-editor-content.ProseMirror,
+.blurb-editor-content.ProseMirror {
   min-height: inherit;
 }
 

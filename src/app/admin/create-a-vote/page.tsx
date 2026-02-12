@@ -7,6 +7,7 @@ import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { LoadingBookFlip } from '@/components/loading-book-flip';
 import { BookCoverImage } from '@/components/book-cover-image';
+import { BlurbEditor } from '@/components/blurb-editor';
 import { CloseIcon } from '@/components/close-icon';
 
 const SWIPE_THRESHOLD = 50;
@@ -196,6 +197,7 @@ export default function VotingBuilderPage() {
                         title: b.title,
                         author: b.author,
                         coverUrl: getEffectiveCoverUrl(b as ReviewBook) ?? null,
+                        blurb: b.blurb ?? null,
                     })),
                 }),
             });
@@ -373,12 +375,18 @@ export default function VotingBuilderPage() {
 
     const reviewHandleTouchStart = useCallback(
         (e: React.TouchEvent) => {
-            const target = e.target;
+            const target = e.target as Node;
             if (
                 target instanceof HTMLInputElement ||
                 target instanceof HTMLTextAreaElement ||
                 target instanceof HTMLSelectElement ||
                 target instanceof HTMLLabelElement
+            ) {
+                return;
+            }
+            if (
+                target instanceof Element &&
+                target.closest('[contenteditable="true"]')
             ) {
                 return;
             }
@@ -400,12 +408,18 @@ export default function VotingBuilderPage() {
     );
     const reviewHandleMouseDown = useCallback(
         (e: React.MouseEvent) => {
-            const target = e.target;
+            const target = e.target as Node;
             if (
                 target instanceof HTMLInputElement ||
                 target instanceof HTMLTextAreaElement ||
                 target instanceof HTMLSelectElement ||
                 target instanceof HTMLLabelElement
+            ) {
+                return;
+            }
+            if (
+                target instanceof Element &&
+                target.closest('[contenteditable="true"]')
             ) {
                 return;
             }
@@ -1073,6 +1087,28 @@ export default function VotingBuilderPage() {
                                                                     )
                                                                 }
                                                                 className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                                            />
+                                                        </div>
+                                                        <div className="select-text">
+                                                            <label className="text-xs font-medium text-muted block mb-1">
+                                                                Description
+                                                            </label>
+                                                            <BlurbEditor
+                                                                key={`${book.externalId}-${i}`}
+                                                                initialContent={
+                                                                    book.blurb
+                                                                }
+                                                                onUpdate={(
+                                                                    html,
+                                                                ) =>
+                                                                    updateReviewBook(
+                                                                        i,
+                                                                        'blurb',
+                                                                        html ||
+                                                                            null,
+                                                                    )
+                                                                }
+                                                                placeholder="Add or edit description (e.g. from search result)…"
                                                             />
                                                         </div>
                                                     </div>

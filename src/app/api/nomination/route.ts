@@ -6,6 +6,7 @@ import { voteRounds, voteRoundBooks } from '@/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { getOpenLibraryBooksDetails } from '@/lib/open-library';
 import { getBookCoverUrl } from '@/lib/book-cover';
+import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { requireAdmin } from '@/lib/admin-auth';
 
 const meetingDateSchema = z
@@ -25,6 +26,7 @@ const createBodySchema = z.object({
                 coverUrl: z
                     .union([z.string().url(), z.literal(''), z.null()])
                     .optional(),
+                blurb: z.string().max(50000).nullable().optional(),
             }),
         )
         .min(2)
@@ -108,6 +110,10 @@ export async function POST(request: Request) {
         const bookRows = selectedBookIds.map((externalId, i) => {
             const d = details.find((b) => b.externalId === externalId);
             const override = booksInput[i];
+            const overrideBlurb =
+                override?.blurb != null && override.blurb.trim() !== ''
+                    ? sanitiseBlurb(override.blurb)
+                    : null;
             return {
                 voteRoundId: round.id,
                 externalId,
@@ -120,7 +126,7 @@ export async function POST(request: Request) {
                     d?.author ??
                     'Unknown author',
                 coverUrl: coverUrls[i] ?? null,
-                blurb: d?.blurb ?? null,
+                blurb: overrideBlurb ?? d?.blurb ?? null,
                 link: d?.link ?? null,
             };
         });
