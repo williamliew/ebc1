@@ -14,6 +14,8 @@ export type TopSuggestionBook = {
     coverOptions: string[];
     blurb: string | null;
     link: string | null;
+    /** Number of times this book was suggested in the round */
+    suggestionCount: number;
 };
 
 /**
@@ -93,7 +95,7 @@ export async function GET(request: Request) {
             .slice(0, TOP_N);
 
         const books: TopSuggestionBook[] = sorted.map(
-            ([externalId, { title, author, coverUrl, blurb, link }]) => ({
+            ([externalId, { title, author, coverUrl, blurb, link, count }]) => ({
                 externalId,
                 title: title ?? 'Unknown title',
                 author: author ?? 'Unknown author',
@@ -101,6 +103,7 @@ export async function GET(request: Request) {
                 coverOptions: coverUrl ? [coverUrl] : [],
                 blurb,
                 link,
+                suggestionCount: count,
             }),
         );
 

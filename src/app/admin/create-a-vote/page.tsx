@@ -109,23 +109,28 @@ export default function VotingBuilderPage() {
 
     const PAGE_SIZE = 10;
 
-    type LatestVoteBook = BookSearchResult & { voteCount: number };
+    type LatestSuggestionBook = BookSearchResult & {
+        suggestionCount: number;
+    };
 
-    const { data: latestVoteData } = useQuery({
-        queryKey: ['admin', 'latest-vote-books'],
+    const { data: latestSuggestionData } = useQuery({
+        queryKey: ['admin', 'latest-suggestion-top-books'],
         queryFn: async () => {
-            const res = await fetch('/api/admin/latest-vote-books', {
+            const res = await fetch('/api/admin/latest-suggestion-top-books', {
                 credentials: 'include',
             });
             if (!res.ok) return { round: null, books: [] };
             return res.json() as Promise<{
-                round: { id: number; meetingDate: string } | null;
-                books: LatestVoteBook[];
+                round: {
+                    id: number;
+                    suggestionsForDate: string | null;
+                } | null;
+                books: LatestSuggestionBook[];
             }>;
         },
     });
 
-    const latestVoteBooks = latestVoteData?.books ?? [];
+    const latestSuggestionBooks = latestSuggestionData?.books ?? [];
 
     const searchMutation = useMutation({
         mutationFn: async ({
@@ -447,14 +452,14 @@ export default function VotingBuilderPage() {
             <main
                 className={`w-full max-w-2xl mx-auto p-4 space-y-6 ${selected.length >= 1 ? 'pb-80' : ''}`}
             >
-                {/* Latest suggestion round */}
-                {latestVoteBooks.length > 0 && (
+                {/* Top suggestions from latest round */}
+                {latestSuggestionBooks.length > 0 && (
                     <section>
-                        <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
-                            Latest suggestion round
+                        <h2 className="text-sm font-semibold text-muted dark:text-muted mb-2">
+                            Top suggestions from latest round
                         </h2>
                         <ul className="space-y-3">
-                            {latestVoteBooks.map((book) => {
+                            {latestSuggestionBooks.map((book) => {
                                 const alreadySelected = selectedIds.has(
                                     book.externalId,
                                 );
@@ -479,10 +484,10 @@ export default function VotingBuilderPage() {
                                                 {book.author}
                                             </p>
                                             <p className="text-xs text-muted">
-                                                {book.voteCount}{' '}
-                                                {book.voteCount === 1
-                                                    ? 'vote'
-                                                    : 'votes'}
+                                                {book.suggestionCount}{' '}
+                                                {book.suggestionCount === 1
+                                                    ? 'suggestion'
+                                                    : 'suggestions'}
                                             </p>
                                             <button
                                                 type="button"
@@ -517,6 +522,12 @@ export default function VotingBuilderPage() {
                             })}
                         </ul>
                     </section>
+                )}
+
+                {latestSuggestionBooks.length > 0 && (
+                    <h2 className="text-sm font-semibold text-muted dark:text-muted">
+                        Or find a book
+                    </h2>
                 )}
 
                 {/* Search */}
@@ -911,7 +922,8 @@ export default function VotingBuilderPage() {
                                                                 src={
                                                                     getEffectiveCoverUrl(
                                                                         book,
-                                                                    ) ?? undefined
+                                                                    ) ??
+                                                                    undefined
                                                                 }
                                                                 containerClassName="absolute inset-0"
                                                                 sizes="(max-width: 512px) 100vw, 512px"
