@@ -2,6 +2,7 @@ import { isAdminAuthenticated } from '@/lib/admin-auth-server';
 import { EbcLogo } from '@/components/ebc-logo';
 import { AdminPanel } from '@/components/admin-panel';
 import { HomeStatus } from '@/components/home-status';
+import { InstagramIcon } from '@/components/instagram-icon';
 
 export default async function Home() {
     const showAdmin = await isAdminAuthenticated();
@@ -47,6 +48,17 @@ export default async function Home() {
                 </div>
 
                 <HomeStatus />
+
+                <a
+                    href="https://www.instagram.com/elwoodbookclub/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Visit our Instagram page"
+                    className="inline-flex items-center justify-center text-muted-foreground rounded-full p-2 transition-colors transition-transform hover:text-foreground hover:bg-[var(--surface-hover)] hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2"
+                    aria-label="Elwood Book Club on Instagram"
+                >
+                    <InstagramIcon className="w-6 h-6" />
+                </a>
             </main>
         </div>
     );

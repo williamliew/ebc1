@@ -21,9 +21,10 @@ export const metadata: Metadata = {
     },
     manifest: '/manifest.json',
     description:
-        'Monthly book club in Elwood and St Kilda, Melbourne. Social meet-ups at local bars – members choose the book each month. Relaxed, low-key and welcoming. Find your local book club in Melbourne.',
+        'Monthly book club in Elwood and St Kilda, Melbourne (Naarm). Social meet-ups at local bars – members choose the book each month. Relaxed, low-key and welcoming. Find your local book club in Melbourne.',
     keywords: [
         'book club Melbourne',
+        'book club Naarm',
         'book club Elwood',
         'book club St Kilda',
         'book club St Kilda East',
@@ -49,9 +50,9 @@ export const metadata: Metadata = {
         'St Kilda book club',
     ],
     openGraph: {
-        title: 'Elwood Book Club – Melbourne',
+        title: 'Elwood Book Club – Melbourne (Naarm)',
         description:
-            "Monthly social book club in Elwood and St Kilda, Melbourne. Meet at local bars, vote for the book, keep it relaxed. No pressure if you haven't finished – come along anyway.",
+            "Monthly social book club in Elwood and St Kilda, Melbourne (Naarm). Meet at local bars, vote for the book, keep it relaxed. No pressure if you haven't finished – come along anyway.",
         locale: 'en_AU',
     },
 };
