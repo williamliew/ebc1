@@ -4,6 +4,10 @@ import { AdminPanel } from '@/components/admin-panel';
 import { HomeStatus } from '@/components/home-status';
 import { InstagramIcon } from '@/components/instagram-icon';
 
+/** Force per-request render so admin visibility is never served from cache. */
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function Home() {
     const showAdmin = await isAdminAuthenticated();
     const isLocal = process.env.NODE_ENV === 'development';
