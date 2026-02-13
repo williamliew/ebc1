@@ -347,3 +347,27 @@ h1,
   /* Slightly warmer/darker "other side of paper" */
   background: color-mix(in srgb, var(--surface) 92%, var(--muted)) !important;
 }
+
+.demo-page-first {
+  position: relative;
+}
+
+.demo-page-back::after {
+  content: '';
+  height: 5px;
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  background: color-mix(in srgb, var(--surface) 92%, var(--muted)) !important;
+}
+
+.demo-page-first::after {
+  content: '';
+  height: 5px;
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(90deg, var(--surface-hover) 0%, var(--surface) 20%);
+}

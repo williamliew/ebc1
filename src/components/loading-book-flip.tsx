@@ -9,7 +9,7 @@ const PAGE_TEXT = Array.from({ length: 23 }, (_, i) => (
     <div key={i}>All work and no play makes Jack a dull boy.</div>
 ));
 /** Extra 3 lines shown only on mobile (more vertical room on device) */
-const PAGE_TEXT_MOBILE = Array.from({ length: 3 }, (_, i) => (
+const PAGE_TEXT_MOBILE = Array.from({ length: 5 }, (_, i) => (
     <div key={`mobile-${i}`}>All work and no play makes Jack a dull boy.</div>
 ));
 
@@ -56,7 +56,7 @@ export function LoadingBookFlip({
                             }}
                         />
                         <div
-                            className="flex-1 overflow-hidden px-1 pt-1.5"
+                            className="flex-1 overflow-hidden px-1 pt-1.5 demo-page-first"
                             style={{
                                 background: `linear-gradient(90deg, var(--surface-hover) 0%, var(--surface) 20%)`,
                                 boxShadow: 'inset 1px 0 0 rgba(0,0,0,0.06)',
@@ -70,7 +70,9 @@ export function LoadingBookFlip({
                                 aria-hidden
                             >
                                 {PAGE_TEXT}
-                                <span className="hidden show-page-text-mobile-only">{PAGE_TEXT_MOBILE}</span>
+                                <span className="hidden show-page-text-mobile-only">
+                                    {PAGE_TEXT_MOBILE}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -123,7 +125,9 @@ export function LoadingBookFlip({
                                 aria-hidden
                             >
                                 {PAGE_TEXT}
-                                <span className="hidden show-page-text-mobile-only">{PAGE_TEXT_MOBILE}</span>
+                                <span className="hidden show-page-text-mobile-only">
+                                    {PAGE_TEXT_MOBILE}
+                                </span>
                             </div>
                         </div>
                     </div>
