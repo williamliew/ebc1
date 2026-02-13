@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { isAdminAuthenticated } from '@/lib/admin-auth-server';
 import { EbcLogo } from '@/components/ebc-logo';
 import { AdminPanel } from '@/components/admin-panel';
@@ -10,10 +11,14 @@ export const revalidate = 0;
 
 export default async function Home() {
     const showAdmin = await isAdminAuthenticated();
+    const headersList = await headers();
+    const host = headersList.get('host') ?? '';
+    const isLocal =
+        host.startsWith('localhost') || host.startsWith('127.0.0.1');
 
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground">
-            <AdminPanel showAdmin={showAdmin} />
+            <AdminPanel showAdmin={showAdmin} isLocal={isLocal} />
 
             <main className="max-w-md w-full text-center space-y-6">
                 <div className="overflow-hidden w-[300px] h-[300px] inline-block text-inherit">
