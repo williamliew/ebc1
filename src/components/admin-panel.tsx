@@ -24,15 +24,9 @@ function PenWritingIcon({ className }: { className?: string }) {
     );
 }
 
-export function AdminPanel({
-    showAdmin,
-    isLocal,
-}: {
-    showAdmin: boolean;
-    isLocal: boolean;
-}) {
+export function AdminPanel({ showAdmin }: { showAdmin: boolean }) {
     const [open, setOpen] = useState(false);
-    const showButton = showAdmin || isLocal;
+    const showButton = showAdmin;
 
     const close = useCallback(() => setOpen(false), []);
     const toggle = useCallback(() => setOpen((prev) => !prev), []);
