@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
+import { BlurbEditor } from '@/components/blurb-editor';
 import { BookCoverImage } from '@/components/book-cover-image';
 import { EventbriteForm } from '@/components/eventbrite-form';
 
@@ -289,10 +290,10 @@ export default function BookOfTheMonthPage() {
                             <p className="text-sm text-muted">Loading…</p>
                         )}
 
-                        {/* Or set manually */}
+                        {/* Search for a book */}
                         <section>
                             <h2 className="text-lg font-semibold text-foreground mb-3">
-                                Or set manually
+                                Search for a book
                             </h2>
                             <form
                                 onSubmit={handleSearch}
@@ -458,6 +459,22 @@ export default function BookOfTheMonthPage() {
                                     updateReviewBook('author', e.target.value)
                                 }
                                 className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-medium text-muted block mb-1">
+                                Description
+                            </label>
+                            <BlurbEditor
+                                initialContent={selectedBook.blurb}
+                                onUpdate={(html) =>
+                                    updateReviewBook(
+                                        'blurb',
+                                        html?.trim() || null,
+                                    )
+                                }
+                                placeholder="Add or edit description…"
                             />
                         </div>
 

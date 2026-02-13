@@ -217,7 +217,7 @@ export default function QuestionBuilderPage() {
                             onUpdate={setAdditionalText}
                             placeholder="Extra text for the spread (supports bold, italic, lists)"
                             className="w-full"
-                            minHeight="80px"
+                            minHeight="100px"
                         />
                     </div>
 
@@ -457,8 +457,13 @@ export default function QuestionBuilderPage() {
                                     className="font-medium opacity-90"
                                     style={{ fontSize: '0.875em' }}
                                 >
-                                    {bookTitle || latestBook?.title || 'Book title'} by{' '}
-                                    {bookAuthor || latestBook?.author || 'Author'}
+                                    {bookTitle ||
+                                        latestBook?.title ||
+                                        'Book title'}{' '}
+                                    by{' '}
+                                    {bookAuthor ||
+                                        latestBook?.author ||
+                                        'Author'}
                                 </p>
                                 {hasAdditionalText && (
                                     <div
@@ -590,8 +595,13 @@ export default function QuestionBuilderPage() {
                                     className="font-medium opacity-90"
                                     style={{ fontSize: '1em' }}
                                 >
-                                    {bookTitle || latestBook?.title || 'Book title'} by{' '}
-                                    {bookAuthor || latestBook?.author || 'Author'}
+                                    {bookTitle ||
+                                        latestBook?.title ||
+                                        'Book title'}{' '}
+                                    by{' '}
+                                    {bookAuthor ||
+                                        latestBook?.author ||
+                                        'Author'}
                                 </p>
                                 {hasAdditionalText && (
                                     <div
