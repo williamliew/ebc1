@@ -209,10 +209,12 @@ export default function ViewSuggestionsPage() {
                                                 selectedRound,
                                             )}
                                         </h2>
-                                        <div className="h-[320px] w-full">
+                                        <div className="h-[320px] min-h-[320px] w-full min-w-0">
                                             <ResponsiveContainer
                                                 width="100%"
                                                 height="100%"
+                                                minHeight={320}
+                                                minWidth={1}
                                             >
                                                 <PieChart>
                                                     <defs>
