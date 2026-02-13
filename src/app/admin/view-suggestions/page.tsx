@@ -315,8 +315,7 @@ export default function ViewSuggestionsPage() {
                                             Each suggestion
                                         </h2>
                                         <ul className="space-y-4 list-none">
-                                            {selectedRound.items.map(
-                                                (item, idx) => (
+                                            {selectedRound.items.map((item) => (
                                                     <li
                                                         key={item.id}
                                                         className="rounded-lg border border-border bg-background p-4 text-sm"

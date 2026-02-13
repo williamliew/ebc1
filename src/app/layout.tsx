@@ -70,6 +70,7 @@ export default function RootLayout({
                     href="https://fonts.gstatic.com"
                     crossOrigin="anonymous"
                 />
+                {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router: layout applies to all pages; no _document.js */}
                 <link
                     href="https://fonts.googleapis.com/css2?family=Courgette&family=Great+Vibes&family=Playwrite+NZ:wght@100..400&display=swap"
                     rel="stylesheet"

@@ -30,17 +30,19 @@ export function LoadingMinDuration({
 }) {
     const [phase, setPhase] = useState<Phase>(isLoading ? 'loading' : 'done');
     const [fadeOpacity, setFadeOpacity] = useState(1);
-    const loadStartRef = useRef<number>(Date.now());
+    const loadStartRef = useRef<number>(0);
     const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
     useEffect(() => {
         if (isLoading) {
             loadStartRef.current = Date.now();
-            setPhase('loading');
-            setFadeOpacity(1);
             timeoutRefs.current.forEach(clearTimeout);
             timeoutRefs.current = [];
-            return;
+            const id = setTimeout(() => {
+                setPhase('loading');
+                setFadeOpacity(1);
+            }, 0);
+            return () => clearTimeout(id);
         }
 
         // Loading just finished: enforce minimum time, then fade, then show content

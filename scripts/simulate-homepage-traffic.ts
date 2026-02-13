@@ -44,7 +44,7 @@ function runSimulation() {
     );
 
     // --- Scenario A: Click-through (current) ---
-    let aHomeRequests = NUM_USERS;
+    const aHomeRequests = NUM_USERS;
     let aVoteClicks = 0;
     let aSuggestClicks = 0;
     let aNextbookClicks = 0;
@@ -75,8 +75,8 @@ function runSimulation() {
 
     console.log('--- Scenario A: Click-through (current) ---');
     console.log(`  Home page loads:     ${aHomeRequests}`);
-    console.log(`  Vote clicks:         ${aVoteClicks} → ${aVoteClicks * (VOTE_PAGE_REQUESTS + VOTE_API_CALLS)} requests`);
-    console.log(`  Suggest clicks:      ${aSuggestClicks} → ${aSuggestClicks * (SUGGEST_PAGE_REQUESTS + SUGGEST_API_CALLS)} requests`);
+    console.log(`  Vote clicks:         ${aVoteClicks} → ${aVoteRequests} requests`);
+    console.log(`  Suggest clicks:      ${aSuggestClicks} → ${aSuggestRequests} requests`);
     console.log(`  Our current book:    ${aNextbookClicks} → ${aNextbookRequests} requests`);
     console.log(`  Total page loads:    ${aTotalPageLoads}`);
     console.log(`  Total invocations:   ${aTotalInvocations} (page + API)`);

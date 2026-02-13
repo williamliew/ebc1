@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
 import { getOrCreateVisitorKeyHash } from '@/lib/visitor-key';
-import { LoadingBookFlip } from '@/components/loading-book-flip';
 import { LoadingDots } from '@/components/loading-dots';
 import { LoadingMinDuration } from '@/components/loading-min-duration';
 import {
@@ -130,7 +129,7 @@ export default function SuggestNextBookPage() {
     const [searchError, setSearchError] = useState<string | null>(null);
     const [selectedBook, setSelectedBook] = useState<ReviewBook | null>(null);
     const [suggestPending, setSuggestPending] = useState(false);
-    const [suggestSuccess, setSuggestSuccess] = useState(false);
+    const [, setSuggestSuccess] = useState(false);
     const [suggestError, setSuggestError] = useState<string | null>(null);
     const [suggestionComment, setSuggestionComment] = useState('');
     const [suggestionCommenterName, setSuggestionCommenterName] = useState('');
@@ -161,7 +160,7 @@ export default function SuggestNextBookPage() {
         } catch {
             // ignore
         }
-    }, [round?.id, suggesterKeyHash]);
+    }, [round, suggesterKeyHash]);
 
     useEffect(() => {
         fetchRound();

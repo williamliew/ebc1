@@ -13,7 +13,10 @@ const ACTIVITY_THROTTLE_MS = 1000;
  */
 export function AdminIdleOverlay({ children }: { children: React.ReactNode }) {
     const [showOverlay, setShowOverlay] = useState(false);
-    const lastActivityRef = useRef(Date.now());
+    const lastActivityRef = useRef<number>(0);
+    useEffect(() => {
+        lastActivityRef.current = Date.now();
+    }, []);
     const idleCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const throttleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

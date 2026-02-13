@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from 'recharts';
 import type { PieSectorShapeProps } from 'recharts';
-import { LoadingBookFlip } from '@/components/loading-book-flip';
 import { LoadingMinDuration } from '@/components/loading-min-duration';
 
 type VoteResultItem = {

@@ -52,5 +52,5 @@ for (const [label, fg, bg] of pairs) {
   const large = passFail(ratio, 3, 4.5);
   console.log(`${label}: ${ratio.toFixed(2)}:1`);
   console.log(`  Normal text: ${normal}`);
-  console.log(`  Large text:  ${passFail(ratio, 3, 4.5)}\n`);
+  console.log(`  Large text:  ${large}\n`);
 }
