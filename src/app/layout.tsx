@@ -19,7 +19,6 @@ export const metadata: Metadata = {
         icon: '/favicon.ico',
         apple: '/favicon.ico',
     },
-    manifest: '/manifest.json',
     description:
         'Monthly book club in Elwood and St Kilda, Melbourne (Naarm). Social meet-ups at local bars – members choose the book each month. Relaxed, low-key and welcoming. Find your local book club in Melbourne.',
     keywords: [
