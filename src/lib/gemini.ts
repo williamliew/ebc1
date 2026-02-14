@@ -136,3 +136,49 @@ export async function getCanonicalBookForCover(
     if (!t || !a) return null;
     return { title: t, author: a };
 }
+
+const DISCUSSION_QUESTIONS_PROMPT = `For the book "{title}" by {author}, come up with exactly 4 short discussion questions that can stimulate conversation at a book club meet. Not too serious but great for a social gathering for book club friends and newcomers. Keep each question to one or two sentences.
+
+Reply with exactly 4 lines. Each line must be one question only. No preamble, no conclusion, no numbering (do not write "1." or "2." etc.), no bullet points. Output only the four question lines.`;
+
+/**
+ * Strip leading numbering/bullets from a line (e.g. "1. ", "2) ", "- ").
+ */
+function stripLeadingNumbering(line: string): string {
+    return line.replace(/^\s*(\d+[.)]\s*|[•\-*]\s+)/i, '').trim();
+}
+
+/**
+ * Get 4 book-club discussion questions from Gemini for the given book.
+ * Returns HTML for an ordered list (<ol><li>...</li></ol>) suitable for TipTap.
+ * Returns null if the API key is missing or the response is empty.
+ */
+export async function getDiscussionQuestionsFromGemini(
+    title: string,
+    author: string,
+): Promise<string | null> {
+    const prompt = DISCUSSION_QUESTIONS_PROMPT.replace('{title}', title).replace(
+        '{author}',
+        author,
+    );
+    const result = await generateContent(prompt);
+    if ('error' in result || !result.text) return null;
+    const raw = result.text.trim();
+    if (raw.length === 0) return null;
+    const lines = raw
+        .split(/\n+/)
+        .map((s) => stripLeadingNumbering(s.trim()))
+        .filter(Boolean)
+        .slice(0, 4);
+    if (lines.length === 0) return null;
+    const listItems = lines.map((q) => `<li>${escapeHtml(q)}</li>`).join('');
+    return `<ol>${listItems}</ol>`;
+}
+
+function escapeHtml(s: string): string {
+    return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}

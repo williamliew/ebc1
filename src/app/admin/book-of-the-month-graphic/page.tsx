@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
-import { useRef, useState, useEffect, useMemo } from 'react';
+import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { CloseIcon } from '@/components/close-icon';
@@ -60,6 +60,10 @@ export default function QuestionBuilderPage() {
     );
     const [previewFont, setPreviewFont] = useState(PREVIEW_FONTS[0].fontFamily);
     const [previewFontSize, setPreviewFontSize] = useState(100); // scale 75–150%
+    const [discussionQuestionsPending, setDiscussionQuestionsPending] =
+        useState(false);
+    const [injectedAiKey, setInjectedAiKey] = useState(0);
+    const [injectedAiContent, setInjectedAiContent] = useState('');
 
     const { data: nominationData } = useQuery({
         queryKey: ['nomination'],
@@ -75,6 +79,45 @@ export default function QuestionBuilderPage() {
 
     const books = nominationData?.books ?? [];
     const latestBook = books[0];
+
+    const effectiveBookTitle = (
+        bookTitle || (latestBook?.title ?? '')
+    ).trim();
+    const effectiveBookAuthor = (
+        bookAuthor || (latestBook?.author ?? '')
+    ).trim();
+    const canFetchDiscussionQuestions =
+        effectiveBookTitle.length > 0 && effectiveBookAuthor.length > 0;
+
+    const fetchDiscussionQuestions = useCallback(async () => {
+        if (!canFetchDiscussionQuestions) return;
+        setDiscussionQuestionsPending(true);
+        try {
+            const res = await fetch(
+                '/api/books/discussion-questions-from-ai',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: effectiveBookTitle,
+                        author: effectiveBookAuthor,
+                    }),
+                },
+            );
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.questions) {
+                setAdditionalText(data.questions);
+                setInjectedAiContent(data.questions);
+                setInjectedAiKey((k) => k + 1);
+            }
+        } finally {
+            setDiscussionQuestionsPending(false);
+        }
+    }, [
+        canFetchDiscussionQuestions,
+        effectiveBookTitle,
+        effectiveBookAuthor,
+    ]);
 
     const hasAdditionalText =
         additionalText && additionalText.replace(/<[^>]+>/g, '').trim() !== '';
@@ -213,12 +256,31 @@ export default function QuestionBuilderPage() {
                             Body text
                         </label>
                         <HeadlessEditor
-                            initialContent=""
+                            key={`body-${injectedAiKey}`}
+                            initialContent={
+                                injectedAiKey > 0 ? injectedAiContent : ''
+                            }
                             onUpdate={setAdditionalText}
                             placeholder="Extra text for the spread (supports bold, italic, lists)"
                             className="w-full"
                             minHeight="100px"
                         />
+                        <p className="text-sm text-muted mt-2 mb-2">
+                            Tired? Been busy? Cat problems?
+                        </p>
+                        <button
+                            type="button"
+                            onClick={fetchDiscussionQuestions}
+                            disabled={
+                                !canFetchDiscussionQuestions ||
+                                discussionQuestionsPending
+                            }
+                            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {discussionQuestionsPending
+                                ? 'Getting help…'
+                                : 'Get some help from AI'}
+                        </button>
                     </div>
 
                     <div>
