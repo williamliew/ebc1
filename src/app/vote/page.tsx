@@ -88,7 +88,13 @@ export default function VotePage() {
             if (voterKeyHash) {
                 headers['X-Voter-Key-Hash'] = voterKeyHash;
             }
-            const res = await fetch('/api/votes', { headers });
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const res = await fetch('/api/votes', {
+                headers,
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data.error ?? 'Failed to load vote');
@@ -100,7 +106,13 @@ export default function VotePage() {
             setChosenBookExternalId(data.chosenBookExternalId ?? null);
             setCurrentIndex(0);
         } catch (e) {
-            setError(e instanceof Error ? e.message : 'Something went wrong');
+            const message =
+                e instanceof Error
+                    ? e.name === 'AbortError'
+                        ? 'Request took too long. Please try again.'
+                        : e.message
+                    : 'Something went wrong';
+            setError(message);
             setRound(null);
             setBooks([]);
             setAlreadyVoted(false);
