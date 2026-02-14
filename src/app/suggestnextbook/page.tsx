@@ -136,6 +136,7 @@ export default function SuggestNextBookPage() {
     const [blurbFromAi, setBlurbFromAi] = useState(false);
     const [blurbAiPending, setBlurbAiPending] = useState(false);
     const blurbAiFetchedForReviewRef = useRef(false);
+    const coverFallbackTriedForReviewRef = useRef(false);
 
     const fetchRound = useCallback(async () => {
         setLoading(true);
@@ -350,6 +351,7 @@ export default function SuggestNextBookPage() {
         });
         setBlurbFromAi(false);
         blurbAiFetchedForReviewRef.current = false;
+        coverFallbackTriedForReviewRef.current = false;
         setModalStep('review');
     }, []);
 
@@ -374,6 +376,7 @@ export default function SuggestNextBookPage() {
         setSuggestionCommenterName('');
         setBlurbFromAi(false);
         blurbAiFetchedForReviewRef.current = false;
+        coverFallbackTriedForReviewRef.current = false;
     }, []);
 
     const fetchBlurbFromAi = useCallback(async () => {
@@ -415,6 +418,21 @@ export default function SuggestNextBookPage() {
         },
         [],
     );
+
+    // When on review, if the book has no cover, try Longitood once and replace thumbnail if found
+    useEffect(() => {
+        if (
+            modalStep !== 'review' ||
+            !selectedBook ||
+            getEffectiveCoverUrl(selectedBook) ||
+            coverFallbackTriedForReviewRef.current
+        )
+            return;
+        coverFallbackTriedForReviewRef.current = true;
+        fetchCoverFallback(selectedBook.title, selectedBook.author, (url) =>
+            updateReviewBook('manualOverride', url),
+        );
+    }, [modalStep, selectedBook, fetchCoverFallback, updateReviewBook]);
 
     const handleSuggestNewBook = useCallback(async () => {
         if (!round || !suggesterKeyHash || !selectedBook) return;

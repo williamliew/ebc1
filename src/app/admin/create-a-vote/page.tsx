@@ -113,6 +113,7 @@ export default function VotingBuilderPage() {
         number | null
     >(null);
     const blurbAiFetchedForReviewRef = useRef<Set<number>>(new Set());
+    const coverFallbackTriedForReviewRef = useRef<Set<number>>(new Set());
     const queryClient = useQueryClient();
 
     const PAGE_SIZE = 10;
@@ -301,6 +302,7 @@ export default function VotingBuilderPage() {
         setReviewModalStep('books');
         setBlurbFromAiByIndex({});
         blurbAiFetchedForReviewRef.current = new Set();
+        coverFallbackTriedForReviewRef.current = new Set();
         setStep('review');
     }, [selected]);
 
@@ -422,6 +424,17 @@ export default function VotingBuilderPage() {
                 });
         });
     }, [step, reviewBooks, updateReviewBook]);
+
+    // When on review, if a book has no cover, try Longitood once and replace thumbnail if found
+    useEffect(() => {
+        if (step !== 'review' || reviewBooks.length === 0) return;
+        reviewBooks.forEach((book, i) => {
+            if (getEffectiveCoverUrl(book)) return;
+            if (coverFallbackTriedForReviewRef.current.has(i)) return;
+            coverFallbackTriedForReviewRef.current.add(i);
+            fetchCoverFallbackForBook(i);
+        });
+    }, [step, reviewBooks, fetchCoverFallbackForBook]);
 
     const reviewHandlePointerStart = useCallback(
         (clientX: number) => {

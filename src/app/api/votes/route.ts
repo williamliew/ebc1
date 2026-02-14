@@ -139,6 +139,20 @@ export async function GET(request: Request) {
         }
 
         const now = new Date();
+        const closeDateHasPassed =
+            latestRound.closeVoteAt != null &&
+            new Date(latestRound.closeVoteAt) <= now;
+
+        // Only show the latest round if voting is still open (close date in future or not set)
+        if (closeDateHasPassed) {
+            return NextResponse.json({
+                round: null,
+                books: [],
+                alreadyVoted: false,
+                chosenBookExternalId: null,
+            });
+        }
+
         const isOpen =
             !latestRound.closeVoteAt || new Date(latestRound.closeVoteAt) > now;
         const requiresPassword =
