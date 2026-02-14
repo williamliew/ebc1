@@ -106,6 +106,13 @@ export default function VotingBuilderPage() {
     const [reviewDragOffset, setReviewDragOffset] = useState(0);
     const [reviewIsDragging, setReviewIsDragging] = useState(false);
     const reviewPointerStartRef = useRef<number | null>(null);
+    const [blurbFromAiByIndex, setBlurbFromAiByIndex] = useState<
+        Record<number, boolean>
+    >({});
+    const [blurbAiPendingIndex, setBlurbAiPendingIndex] = useState<
+        number | null
+    >(null);
+    const blurbAiFetchedForReviewRef = useRef<Set<number>>(new Set());
     const queryClient = useQueryClient();
 
     const PAGE_SIZE = 10;
@@ -292,6 +299,8 @@ export default function VotingBuilderPage() {
         );
         setReviewIndex(0);
         setReviewModalStep('books');
+        setBlurbFromAiByIndex({});
+        blurbAiFetchedForReviewRef.current = new Set();
         setStep('review');
     }, [selected]);
 
@@ -339,6 +348,80 @@ export default function VotingBuilderPage() {
         },
         [reviewBooks.length],
     );
+
+    const fetchBlurbFromAiForBook = useCallback(
+        async (index: number) => {
+            const book = reviewBooks[index];
+            if (!book) return;
+            setBlurbAiPendingIndex(index);
+            try {
+                const res = await fetch('/api/books/blurb-from-ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: book.title,
+                        author: book.author,
+                    }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error ?? 'Failed to get description');
+                const blurb = data.blurb ?? null;
+                updateReviewBook(index, 'blurb', blurb);
+                setBlurbFromAiByIndex((prev) => ({ ...prev, [index]: true }));
+            } catch {
+                // leave existing
+            } finally {
+                setBlurbAiPendingIndex(null);
+            }
+        },
+        [reviewBooks, updateReviewBook],
+    );
+
+    const fetchCoverFallbackForBook = useCallback(
+        (index: number) => {
+            const book = reviewBooks[index];
+            if (!book) return;
+            fetch('/api/books/cover-fallback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: book.title,
+                    author: book.author,
+                }),
+            })
+                .then((r) => r.json().catch(() => ({})))
+                .then((data) => {
+                    if (data.coverUrl) {
+                        updateReviewBook(index, 'manualOverride', data.coverUrl);
+                    }
+                });
+        },
+        [reviewBooks, updateReviewBook],
+    );
+
+    useEffect(() => {
+        if (step !== 'review' || reviewBooks.length === 0) return;
+        reviewBooks.forEach((book, i) => {
+            if (book.blurb?.trim()) return;
+            if (blurbAiFetchedForReviewRef.current.has(i)) return;
+            blurbAiFetchedForReviewRef.current.add(i);
+            fetch('/api/books/blurb-from-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: book.title,
+                    author: book.author,
+                }),
+            })
+                .then((r) => r.json().catch(() => ({})))
+                .then((data) => {
+                    if (data.blurb) {
+                        updateReviewBook(i, 'blurb', data.blurb);
+                        setBlurbFromAiByIndex((prev) => ({ ...prev, [i]: true }));
+                    }
+                });
+        });
+    }, [step, reviewBooks, updateReviewBook]);
 
     const reviewHandlePointerStart = useCallback(
         (clientX: number) => {
@@ -658,6 +741,54 @@ export default function VotingBuilderPage() {
                                                 src={book.coverUrl}
                                                 containerClassName="w-full h-full"
                                                 sizes="48px"
+                                                onError={() => {
+                                                    fetch('/api/books/cover-fallback', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type':
+                                                                'application/json',
+                                                        },
+                                                        body: JSON.stringify({
+                                                            title: book.title,
+                                                            author: book.author,
+                                                        }),
+                                                    })
+                                                        .then((r) =>
+                                                            r.json().catch(
+                                                                () => ({}),
+                                                            ),
+                                                        )
+                                                        .then((data) => {
+                                                            if (data.coverUrl) {
+                                                                const updated = {
+                                                                    ...book,
+                                                                    coverUrl: data.coverUrl,
+                                                                    coverOptions: [
+                                                                        data.coverUrl,
+                                                                    ],
+                                                                };
+                                                                setSearchResults(
+                                                                    (prev) =>
+                                                                        prev.map(
+                                                                            (b) =>
+                                                                                b.externalId ===
+                                                                                book.externalId
+                                                                                    ? updated
+                                                                                    : b,
+                                                                        ),
+                                                                );
+                                                                setSelected((prev) =>
+                                                                    prev.map(
+                                                                        (b) =>
+                                                                            b.externalId ===
+                                                                            book.externalId
+                                                                                ? updated
+                                                                                : b,
+                                                                    ),
+                                                                );
+                                                            }
+                                                        });
+                                                }}
                                             />
                                         </div>
                                         <div className="min-w-0 flex-1">
@@ -928,9 +1059,9 @@ export default function VotingBuilderPage() {
                                                 }}
                                             >
                                                 <div className="flex flex-col border border-border bg-surface overflow-x-hidden">
-                                                    {getEffectiveCoverUrl(
-                                                        book,
-                                                    ) ? (
+                                                        {getEffectiveCoverUrl(
+                                                            book,
+                                                        ) ? (
                                                         <div className="relative w-full aspect-[3/4] max-h-[45vh] shrink-0 bg-[var(--border)]">
                                                             <BookCoverImage
                                                                 src={
@@ -957,12 +1088,16 @@ export default function VotingBuilderPage() {
                                                                             book.manualOverride.trim();
                                                                     if (
                                                                         isOverride
-                                                                    )
+                                                                    ) {
                                                                         updateReviewBook(
                                                                             i,
                                                                             'manualOverride',
                                                                             null,
                                                                         );
+                                                                    }
+                                                                    fetchCoverFallbackForBook(
+                                                                        i,
+                                                                    );
                                                                 }}
                                                             />
                                                         </div>
@@ -1091,10 +1226,12 @@ export default function VotingBuilderPage() {
                                                         </div>
                                                         <div className="select-text">
                                                             <label className="text-xs font-medium text-muted block mb-1">
-                                                                Description
+                                                                {blurbFromAiByIndex[i]
+                                                                    ? 'Description (No description on file. Found or generated by AI)'
+                                                                    : 'Description'}
                                                             </label>
                                                             <BlurbEditor
-                                                                key={`${book.externalId}-${i}`}
+                                                                key={`${book.externalId}-${i}-${(book.blurb?.length ?? 0)}`}
                                                                 initialContent={
                                                                     book.blurb
                                                                 }
@@ -1110,6 +1247,33 @@ export default function VotingBuilderPage() {
                                                                 }
                                                                 placeholder="Add or edit description (e.g. from search result)…"
                                                             />
+                                                            {!blurbFromAiByIndex[i] && (
+                                                                <div className="mt-3 rounded-lg border border-border bg-[var(--surface)] p-3 space-y-2">
+                                                                    <p className="text-sm text-muted">
+                                                                        Is the description on file
+                                                                        not correct? Try find a
+                                                                        better one with AI.
+                                                                    </p>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            fetchBlurbFromAiForBook(
+                                                                                i,
+                                                                            )
+                                                                        }
+                                                                        disabled={
+                                                                            blurbAiPendingIndex ===
+                                                                            i
+                                                                        }
+                                                                        className="text-sm text-primary hover:underline underline-offset-2 disabled:opacity-50"
+                                                                    >
+                                                                        {blurbAiPendingIndex ===
+                                                                        i
+                                                                            ? 'Finding…'
+                                                                            : "This description doesn't look right. Try find with AI"}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>

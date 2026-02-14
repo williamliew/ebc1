@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
@@ -133,6 +133,9 @@ export default function SuggestNextBookPage() {
     const [suggestError, setSuggestError] = useState<string | null>(null);
     const [suggestionComment, setSuggestionComment] = useState('');
     const [suggestionCommenterName, setSuggestionCommenterName] = useState('');
+    const [blurbFromAi, setBlurbFromAi] = useState(false);
+    const [blurbAiPending, setBlurbAiPending] = useState(false);
+    const blurbAiFetchedForReviewRef = useRef(false);
 
     const fetchRound = useCallback(async () => {
         setLoading(true);
@@ -188,6 +191,36 @@ export default function SuggestNextBookPage() {
             setConfirmSuggestName('');
         }
     }, [confirmSuggest]);
+
+    useEffect(() => {
+        if (
+            modalStep !== 'review' ||
+            !selectedBook ||
+            blurbAiFetchedForReviewRef.current
+        )
+            return;
+        if (selectedBook.blurb?.trim()) return;
+        blurbAiFetchedForReviewRef.current = true;
+        setBlurbAiPending(true);
+        fetch('/api/books/blurb-from-ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: selectedBook.title,
+                author: selectedBook.author,
+            }),
+        })
+            .then((r) => r.json().catch(() => ({})))
+            .then((data) => {
+                if (data.blurb) {
+                    setSelectedBook((b) =>
+                        b ? { ...b, blurb: data.blurb } : null,
+                    );
+                    setBlurbFromAi(true);
+                }
+            })
+            .finally(() => setBlurbAiPending(false));
+    }, [modalStep, selectedBook]);
 
     const handleVerifyPassword = useCallback(
         async (e: React.FormEvent) => {
@@ -315,6 +348,8 @@ export default function SuggestNextBookPage() {
             selectedCoverIndex,
             manualOverride: null,
         });
+        setBlurbFromAi(false);
+        blurbAiFetchedForReviewRef.current = false;
         setModalStep('review');
     }, []);
 
@@ -337,7 +372,49 @@ export default function SuggestNextBookPage() {
         setSuggestError(null);
         setSuggestionComment('');
         setSuggestionCommenterName('');
+        setBlurbFromAi(false);
+        blurbAiFetchedForReviewRef.current = false;
     }, []);
+
+    const fetchBlurbFromAi = useCallback(async () => {
+        if (!selectedBook) return;
+        setBlurbAiPending(true);
+        try {
+            const res = await fetch('/api/books/blurb-from-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: selectedBook.title,
+                    author: selectedBook.author,
+                }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error ?? 'Failed to get description');
+            updateReviewBook('blurb', data.blurb ?? null);
+            setBlurbFromAi(true);
+        } catch {
+            // Leave existing blurb; could show toast
+        } finally {
+            setBlurbAiPending(false);
+        }
+    }, [selectedBook, updateReviewBook]);
+
+    const fetchCoverFallback = useCallback(
+        async (title: string, author: string, onGotUrl: (url: string) => void) => {
+            try {
+                const res = await fetch('/api/books/cover-fallback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, author }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.coverUrl) onGotUrl(data.coverUrl);
+            } catch {
+                // leave as is
+            }
+        },
+        [],
+    );
 
     const handleSuggestNewBook = useCallback(async () => {
         if (!round || !suggesterKeyHash || !selectedBook) return;
@@ -973,6 +1050,30 @@ export default function SuggestNextBookPage() {
                                                                 src={book.coverUrl}
                                                                 containerClassName="w-full h-full"
                                                                 sizes="48px"
+                                                                onError={() => {
+                                                                    fetchCoverFallback(
+                                                                        book.title,
+                                                                        book.author,
+                                                                        (url) => {
+                                                                            setSearchResults(
+                                                                                (prev) =>
+                                                                                    prev.map(
+                                                                                        (b) =>
+                                                                                            b.externalId ===
+                                                                                            book.externalId
+                                                                                                ? {
+                                                                                                      ...b,
+                                                                                                      coverUrl: url,
+                                                                                                      coverOptions: [
+                                                                                                          url,
+                                                                                                      ],
+                                                                                                  }
+                                                                                                : b,
+                                                                                    ),
+                                                                            );
+                                                                        },
+                                                                    );
+                                                                }}
                                                             />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
@@ -1020,6 +1121,17 @@ export default function SuggestNextBookPage() {
                                                     }
                                                     containerClassName="absolute inset-0"
                                                     sizes="160px"
+                                                    onError={() => {
+                                                        fetchCoverFallback(
+                                                            selectedBook.title,
+                                                            selectedBook.author,
+                                                            (url) =>
+                                                                updateReviewBook(
+                                                                    'manualOverride',
+                                                                    url,
+                                                                ),
+                                                        );
+                                                    }}
                                                 />
                                             </div>
                                             {selectedBook.coverOptions &&
@@ -1090,15 +1202,46 @@ export default function SuggestNextBookPage() {
                                                     by {selectedBook.author}
                                                 </p>
                                             </div>
+                                            {blurbAiPending && !selectedBook.blurb && (
+                                                <p className="text-sm text-muted">
+                                                    Finding description…
+                                                </p>
+                                            )}
                                             {selectedBook.blurb && (
-                                                <div
-                                                    className="text-sm prose prose-sm dark:prose-invert max-w-none mt-2"
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: sanitiseBlurb(
-                                                            selectedBook.blurb,
-                                                        ),
-                                                    }}
-                                                />
+                                                <div>
+                                                    <p className="text-xs font-medium text-muted mb-1">
+                                                        {blurbFromAi
+                                                            ? 'Description (No description on file. Found or generated by AI)'
+                                                            : 'Description'}
+                                                    </p>
+                                                    <div
+                                                        className="text-sm prose prose-sm dark:prose-invert max-w-none"
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: sanitiseBlurb(
+                                                                selectedBook.blurb,
+                                                            ),
+                                                        }}
+                                                    />
+                                                    {!blurbFromAi && (
+                                                        <div className="mt-3 rounded-lg border border-border bg-[var(--surface)] p-3 space-y-2">
+                                                            <p className="text-sm text-muted">
+                                                                Is the description on file not
+                                                                correct? Try find a better one
+                                                                with AI.
+                                                            </p>
+                                                            <button
+                                                                type="button"
+                                                                onClick={fetchBlurbFromAi}
+                                                                disabled={blurbAiPending}
+                                                                className="text-sm text-primary hover:underline underline-offset-2 disabled:opacity-50"
+                                                            >
+                                                                {blurbAiPending
+                                                                    ? 'Finding…'
+                                                                    : "This description doesn't look right. Try find with AI"}
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
                                             <div>
                                                 <label className="text-xs font-medium text-muted block mb-1">

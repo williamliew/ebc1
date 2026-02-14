@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { BlurbEditor } from '@/components/blurb-editor';
@@ -70,6 +70,9 @@ export default function BookOfTheMonthPage() {
     const [meetingDate, setMeetingDate] = useState('');
     const [confirmPending, setConfirmPending] = useState(false);
     const [confirmError, setConfirmError] = useState<string | null>(null);
+    const [blurbFromAi, setBlurbFromAi] = useState(false);
+    const [blurbAiPending, setBlurbAiPending] = useState(false);
+    const blurbAiFetchedForReviewRef = useRef(false);
 
     function getDefaultMeetingDate(): string {
         const d = new Date();
@@ -150,6 +153,8 @@ export default function BookOfTheMonthPage() {
                 selectedCoverIndex,
                 blurb: book.blurb,
             });
+            setBlurbFromAi(false);
+            blurbAiFetchedForReviewRef.current = false;
             setMeetingDate(voteRound?.meetingDate ?? getDefaultMeetingDate());
             setStage('review');
         },
@@ -170,6 +175,8 @@ export default function BookOfTheMonthPage() {
             selectedCoverIndex,
             blurb: book.blurb,
         });
+        setBlurbFromAi(false);
+        blurbAiFetchedForReviewRef.current = false;
         setMeetingDate(getDefaultMeetingDate());
         setStage('review');
     }, []);
@@ -187,6 +194,52 @@ export default function BookOfTheMonthPage() {
         setStage('select');
         setSelectedBook(null);
     }, []);
+
+    const fetchBlurbFromAi = useCallback(async () => {
+        if (!selectedBook) return;
+        setBlurbAiPending(true);
+        try {
+            const res = await fetch('/api/books/blurb-from-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: selectedBook.title,
+                    author: selectedBook.author,
+                }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error ?? 'Failed to get description');
+            updateReviewBook('blurb', data.blurb ?? null);
+            setBlurbFromAi(true);
+        } catch {
+            // leave existing
+        } finally {
+            setBlurbAiPending(false);
+        }
+    }, [selectedBook, updateReviewBook]);
+
+    useEffect(() => {
+        if (stage !== 'review' || !selectedBook || blurbAiFetchedForReviewRef.current) return;
+        if (selectedBook.blurb?.trim()) return;
+        blurbAiFetchedForReviewRef.current = true;
+        setBlurbAiPending(true);
+        fetch('/api/books/blurb-from-ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: selectedBook.title,
+                author: selectedBook.author,
+            }),
+        })
+            .then((r) => r.json().catch(() => ({})))
+            .then((data) => {
+                if (data.blurb) {
+                    updateReviewBook('blurb', data.blurb);
+                    setBlurbFromAi(true);
+                }
+            })
+            .finally(() => setBlurbAiPending(false));
+    }, [stage, selectedBook, updateReviewBook]);
 
     const handleConfirm = useCallback(async () => {
         if (!selectedBook) return;
@@ -348,6 +401,44 @@ export default function BookOfTheMonthPage() {
                                                     src={book.coverUrl}
                                                     containerClassName="w-full h-full"
                                                     sizes="48px"
+                                                    onError={() => {
+                                                        fetch('/api/books/cover-fallback', {
+                                                            method: 'POST',
+                                                            headers: {
+                                                                'Content-Type':
+                                                                    'application/json',
+                                                            },
+                                                            body: JSON.stringify({
+                                                                title: book.title,
+                                                                author: book.author,
+                                                            }),
+                                                        })
+                                                            .then((r) =>
+                                                                r.json().catch(
+                                                                    () => ({}),
+                                                                ),
+                                                            )
+                                                            .then((data) => {
+                                                                if (data.coverUrl) {
+                                                                    setSearchResults(
+                                                                        (prev) =>
+                                                                            prev.map(
+                                                                                (b) =>
+                                                                                    b.externalId ===
+                                                                                    book.externalId
+                                                                                        ? {
+                                                                                              ...b,
+                                                                                              coverUrl: data.coverUrl,
+                                                                                              coverOptions: [
+                                                                                                  data.coverUrl,
+                                                                                              ],
+                                                                                          }
+                                                                                        : b,
+                                                                            ),
+                                                                    );
+                                                                }
+                                                            });
+                                                    }}
                                                 />
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -394,6 +485,30 @@ export default function BookOfTheMonthPage() {
                                     src={getEffectiveCoverUrl(selectedBook) ?? undefined}
                                     containerClassName="absolute inset-0"
                                     sizes="160px"
+                                    onError={() => {
+                                        fetch('/api/books/cover-fallback', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type':
+                                                    'application/json',
+                                            },
+                                            body: JSON.stringify({
+                                                title: selectedBook.title,
+                                                author: selectedBook.author,
+                                            }),
+                                        })
+                                            .then((r) =>
+                                                r.json().catch(() => ({})),
+                                            )
+                                            .then((data) => {
+                                                if (data.coverUrl) {
+                                                    updateReviewBook(
+                                                        'manualOverride',
+                                                        data.coverUrl,
+                                                    );
+                                                }
+                                            });
+                                    }}
                                 />
                             </div>
                             <label className="text-xs font-medium text-muted block mb-1">
@@ -464,9 +579,12 @@ export default function BookOfTheMonthPage() {
 
                         <div>
                             <label className="text-xs font-medium text-muted block mb-1">
-                                Description
+                                {blurbFromAi
+                                    ? 'Description (No description on file. Found or generated by AI)'
+                                    : 'Description'}
                             </label>
                             <BlurbEditor
+                                key={`blurb-${(selectedBook.blurb?.length ?? 0)}`}
                                 initialContent={selectedBook.blurb}
                                 onUpdate={(html) =>
                                     updateReviewBook(
@@ -476,6 +594,25 @@ export default function BookOfTheMonthPage() {
                                 }
                                 placeholder="Add or edit description…"
                             />
+                            {!blurbFromAi && (
+                                <div className="mt-3 rounded-lg border border-border bg-[var(--surface)] p-3 space-y-2">
+                                    <p className="text-sm text-muted">
+                                        Is the description on file not
+                                        correct? Try find a better one with
+                                        AI.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={fetchBlurbFromAi}
+                                        disabled={blurbAiPending}
+                                        className="text-sm text-primary hover:underline underline-offset-2 disabled:opacity-50"
+                                    >
+                                        {blurbAiPending
+                                            ? 'Finding…'
+                                            : "This description doesn't look right. Try find with AI"}
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <div>
