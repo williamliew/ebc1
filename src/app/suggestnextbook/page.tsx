@@ -127,6 +127,12 @@ export default function SuggestNextBookPage() {
     const [searchResults, setSearchResults] = useState<BookSearchResult[]>([]);
     const [searchPending, setSearchPending] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
+    const [searchPhase, setSearchPhase] = useState<
+        'idle' | 'openlibrary' | 'trying_google'
+    >('idle');
+    const [searchSource, setSearchSource] = useState<
+        'openlibrary' | 'google' | null
+    >(null);
     const [selectedBook, setSelectedBook] = useState<ReviewBook | null>(null);
     const [suggestPending, setSuggestPending] = useState(false);
     const [, setSuggestSuccess] = useState(false);
@@ -315,6 +321,7 @@ export default function SuggestNextBookPage() {
             if (!title && !author) return;
             setSearchPending(true);
             setSearchError(null);
+            setSearchPhase('openlibrary');
             try {
                 const res = await fetch('/api/books/search', {
                     method: 'POST',
@@ -323,14 +330,38 @@ export default function SuggestNextBookPage() {
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error ?? 'Search failed');
-                setSearchResults(data.results ?? []);
-                setModalStep('results');
+                const results = data.results ?? [];
+                if (results.length > 0) {
+                    setSearchResults(results);
+                    setSearchSource('openlibrary');
+                    setModalStep('results');
+                    setSearchPhase('idle');
+                    return;
+                }
+                setSearchPhase('trying_google');
+                const googleRes = await fetch('/api/books/search-google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, author, page: 1 }),
+                });
+                const googleData = await googleRes.json();
+                if (!googleRes.ok) {
+                    setSearchError(
+                        googleData.error ?? 'Google Books search failed',
+                    );
+                    setSearchResults([]);
+                } else {
+                    setSearchResults(googleData.results ?? []);
+                    setSearchSource('google');
+                    setModalStep('results');
+                }
             } catch (err) {
                 setSearchError(
                     err instanceof Error ? err.message : 'Search failed',
                 );
             } finally {
                 setSearchPending(false);
+                setSearchPhase('idle');
             }
         },
         [titleSearch, authorSearch],
@@ -362,6 +393,39 @@ export default function SuggestNextBookPage() {
         [],
     );
 
+    const tryGoogleBooksSearch = useCallback(async () => {
+        const title = titleSearch.trim();
+        const author = authorSearch.trim();
+        if (!title && !author) return;
+        setSearchResults([]);
+        setSearchError(null);
+        setSearchPhase('trying_google');
+        setSearchPending(true);
+        try {
+            const googleRes = await fetch('/api/books/search-google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, author, page: 1 }),
+            });
+            const googleData = await googleRes.json();
+            if (!googleRes.ok) {
+                setSearchError(
+                    googleData.error ?? 'Google Books search failed',
+                );
+                setSearchResults([]);
+            } else {
+                setSearchResults(googleData.results ?? []);
+                setSearchSource('google');
+            }
+        } catch {
+            setSearchError('Google Books search failed');
+            setSearchResults([]);
+        } finally {
+            setSearchPending(false);
+            setSearchPhase('idle');
+        }
+    }, [titleSearch, authorSearch]);
+
     const closeModal = useCallback(() => {
         setModalOpen(false);
         setModalStep('search');
@@ -370,6 +434,7 @@ export default function SuggestNextBookPage() {
         setTitleSearch('');
         setAuthorSearch('');
         setSearchError(null);
+        setSearchSource(null);
         setSuggestSuccess(false);
         setSuggestError(null);
         setSuggestionComment('');
@@ -1039,7 +1104,16 @@ export default function SuggestNextBookPage() {
                                                     : 'Search'}
                                             </button>
                                             {searchPending && (
-                                                <div className="flex justify-center pt-4 min-h-[2rem]">
+                                                <div className="flex flex-col items-center justify-center pt-4 min-h-[2rem] gap-2">
+                                                    <p className="text-sm text-muted text-center">
+                                                        {searchPhase ===
+                                                        'openlibrary'
+                                                            ? 'Searching Open Library'
+                                                            : searchPhase ===
+                                                                'trying_google'
+                                                              ? "Didn't find anything. Trying Google Books"
+                                                              : 'Searching…'}
+                                                    </p>
                                                     <LoadingDots className="text-muted" />
                                                 </div>
                                             )}
@@ -1047,16 +1121,34 @@ export default function SuggestNextBookPage() {
                                     )}
                                     {modalStep === 'results' && (
                                         <div className="space-y-2">
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setModalStep('search')
-                                                }
-                                                className="inline-flex items-center gap-1.5 text-sm text-muted underline hover:no-underline mb-2"
-                                            >
-                                                <BackArrowIcon className="size-4 shrink-0" />
-                                                Back to search
-                                            </button>
+                                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setModalStep('search')
+                                                    }
+                                                    className="inline-flex items-center gap-1.5 text-sm text-muted underline hover:no-underline"
+                                                >
+                                                    <BackArrowIcon className="size-4 shrink-0" />
+                                                    Back to search
+                                                </button>
+                                                {searchSource ===
+                                                    'openlibrary' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={
+                                                            tryGoogleBooksSearch
+                                                        }
+                                                        disabled={
+                                                            searchPending
+                                                        }
+                                                        className="text-sm text-primary hover:underline underline-offset-2 disabled:opacity-50"
+                                                    >
+                                                        Didn&apos;t find it? Try
+                                                        looking in Google Books
+                                                    </button>
+                                                )}
+                                            </div>
                                             <ul className="space-y-2 max-h-60 overflow-y-auto">
                                                 {searchResults.map((book) => (
                                                     <li
@@ -1255,7 +1347,7 @@ export default function SuggestNextBookPage() {
                                                             >
                                                                 {blurbAiPending
                                                                     ? 'Finding…'
-                                                                    : "This description doesn't look right. Try find with AI"}
+                                                                    : "This description doesn't look right? Try find with AI"}
                                                             </button>
                                                         </div>
                                                     )}

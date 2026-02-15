@@ -66,6 +66,12 @@ export default function BookOfTheMonthPage() {
     const [searchResults, setSearchResults] = useState<SearchBook[]>([]);
     const [searchPending, setSearchPending] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
+    const [searchPhase, setSearchPhase] = useState<
+        'idle' | 'openlibrary' | 'trying_google'
+    >('idle');
+    const [searchSource, setSearchSource] = useState<
+        'openlibrary' | 'google' | null
+    >(null);
     const [selectedBook, setSelectedBook] = useState<ReviewBook | null>(null);
     const [meetingDate, setMeetingDate] = useState('');
     const [confirmPending, setConfirmPending] = useState(false);
@@ -117,6 +123,7 @@ export default function BookOfTheMonthPage() {
             if (!title && !author) return;
             setSearchPending(true);
             setSearchError(null);
+            setSearchPhase('openlibrary');
             try {
                 const res = await fetch('/api/books/search', {
                     method: 'POST',
@@ -125,17 +132,73 @@ export default function BookOfTheMonthPage() {
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error ?? 'Search failed');
-                setSearchResults(data.results ?? []);
+                const results = data.results ?? [];
+                if (results.length > 0) {
+                    setSearchResults(results);
+                    setSearchSource('openlibrary');
+                    setSearchPhase('idle');
+                    return;
+                }
+                setSearchPhase('trying_google');
+                const googleRes = await fetch('/api/books/search-google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, author, page: 1 }),
+                });
+                const googleData = await googleRes.json();
+                if (!googleRes.ok) {
+                    setSearchError(
+                        googleData.error ?? 'Google Books search failed',
+                    );
+                    setSearchResults([]);
+                } else {
+                    setSearchResults(googleData.results ?? []);
+                    setSearchSource('google');
+                }
             } catch (err) {
                 setSearchError(
                     err instanceof Error ? err.message : 'Search failed',
                 );
             } finally {
                 setSearchPending(false);
+                setSearchPhase('idle');
             }
         },
         [titleSearch, authorSearch],
     );
+
+    const tryGoogleBooksSearch = useCallback(async () => {
+        const title = titleSearch.trim();
+        const author = authorSearch.trim();
+        if (!title && !author) return;
+        setSearchResults([]);
+        setSearchError(null);
+        setSearchPhase('trying_google');
+        setSearchPending(true);
+        try {
+            const googleRes = await fetch('/api/books/search-google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, author, page: 1 }),
+            });
+            const googleData = await googleRes.json();
+            if (!googleRes.ok) {
+                setSearchError(
+                    googleData.error ?? 'Google Books search failed',
+                );
+                setSearchResults([]);
+            } else {
+                setSearchResults(googleData.results ?? []);
+                setSearchSource('google');
+            }
+        } catch {
+            setSearchError('Google Books search failed');
+            setSearchResults([]);
+        } finally {
+            setSearchPending(false);
+            setSearchPhase('idle');
+        }
+    }, [titleSearch, authorSearch]);
 
     const selectVoteBook = useCallback(
         (book: VoteBook) => {
@@ -389,8 +452,33 @@ export default function BookOfTheMonthPage() {
                                     {searchPending ? 'Searching…' : 'Search'}
                                 </button>
                             </form>
+                            {searchPending && (
+                                <p className="text-sm text-muted mt-2 text-center">
+                                    {searchPhase === 'openlibrary'
+                                        ? 'Searching Open Library'
+                                        : searchPhase === 'trying_google'
+                                          ? "Didn't find anything. Trying Google Books"
+                                          : 'Searching…'}
+                                </p>
+                            )}
                             {searchResults.length > 0 && (
-                                <ul className="space-y-2">
+                                <>
+                                    {searchSource === 'openlibrary' && (
+                                        <div className="mb-2">
+                                            <button
+                                                type="button"
+                                                onClick={
+                                                    tryGoogleBooksSearch
+                                                }
+                                                disabled={searchPending}
+                                                className="text-sm text-primary hover:underline underline-offset-2 disabled:opacity-50"
+                                            >
+                                                Didn&apos;t find it? Try looking
+                                                in Google Books
+                                            </button>
+                                        </div>
+                                    )}
+                                    <ul className="space-y-2">
                                     {searchResults.map((book) => (
                                         <li
                                             key={book.externalId}
@@ -461,6 +549,7 @@ export default function BookOfTheMonthPage() {
                                         </li>
                                     ))}
                                 </ul>
+                                </>
                             )}
                         </section>
                     </div>
@@ -609,7 +698,7 @@ export default function BookOfTheMonthPage() {
                                     >
                                         {blurbAiPending
                                             ? 'Finding…'
-                                            : "This description doesn't look right. Try find with AI"}
+                                            : "This description doesn't look right? Try find with AI"}
                                     </button>
                                 </div>
                             )}
