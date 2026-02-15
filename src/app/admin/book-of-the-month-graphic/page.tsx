@@ -80,11 +80,10 @@ export default function QuestionBuilderPage() {
     const books = nominationData?.books ?? [];
     const latestBook = books[0];
 
-    const effectiveBookTitle = (
-        bookTitle || (latestBook?.title ?? '')
-    ).trim();
+    const effectiveBookTitle = (bookTitle || (latestBook?.title ?? '')).trim();
     const effectiveBookAuthor = (
-        bookAuthor || (latestBook?.author ?? '')
+        bookAuthor ||
+        (latestBook?.author ?? '')
     ).trim();
     const canFetchDiscussionQuestions =
         effectiveBookTitle.length > 0 && effectiveBookAuthor.length > 0;
@@ -93,17 +92,14 @@ export default function QuestionBuilderPage() {
         if (!canFetchDiscussionQuestions) return;
         setDiscussionQuestionsPending(true);
         try {
-            const res = await fetch(
-                '/api/books/discussion-questions-from-ai',
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: effectiveBookTitle,
-                        author: effectiveBookAuthor,
-                    }),
-                },
-            );
+            const res = await fetch('/api/books/discussion-questions-from-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: effectiveBookTitle,
+                    author: effectiveBookAuthor,
+                }),
+            });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.questions) {
                 setAdditionalText(data.questions);
@@ -113,11 +109,7 @@ export default function QuestionBuilderPage() {
         } finally {
             setDiscussionQuestionsPending(false);
         }
-    }, [
-        canFetchDiscussionQuestions,
-        effectiveBookTitle,
-        effectiveBookAuthor,
-    ]);
+    }, [canFetchDiscussionQuestions, effectiveBookTitle, effectiveBookAuthor]);
 
     const hasAdditionalText =
         additionalText && additionalText.replace(/<[^>]+>/g, '').trim() !== '';
@@ -266,7 +258,8 @@ export default function QuestionBuilderPage() {
                             minHeight="100px"
                         />
                         <p className="text-sm text-muted mt-2 mb-2">
-                            Tired? Been busy? Cat problems?
+                            Tired? Busy? Can&apos;t think? Get some help from
+                            AI.
                         </p>
                         <button
                             type="button"
