@@ -2,7 +2,6 @@
 
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useEffect } from 'react';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
@@ -37,7 +36,6 @@ export function BlurbEditor({
                     heading: false,
                     horizontalRule: false,
                 }),
-                Underline,
                 Placeholder.configure({ placeholder }),
             ],
             content:

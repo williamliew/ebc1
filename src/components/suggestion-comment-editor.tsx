@@ -5,7 +5,6 @@ import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -99,7 +98,6 @@ export function SuggestionCommentEditor({
                     heading: false,
                     horizontalRule: false,
                 }),
-                Underline,
                 Placeholder.configure({ placeholder }),
                 CommentCharLimit.configure({ limit: MAX_COMMENT_CHARS }),
             ],
