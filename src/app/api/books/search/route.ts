@@ -84,6 +84,7 @@ export async function POST(request: Request) {
     const params = new URLSearchParams();
     if (title) params.set('title', title);
     if (author) params.set('author', author);
+    params.set('subject', 'fiction');
     const page = parsed.data.page;
     const offset = (page - 1) * PAGE_SIZE;
     params.set('limit', String(PAGE_SIZE));
