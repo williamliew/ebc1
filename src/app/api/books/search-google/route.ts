@@ -24,6 +24,14 @@ type GoogleVolumeItem = {
     };
 };
 
+/** Force HTTPS to avoid mixed-content on HTTPS pages (Google Books often returns http). */
+function toHttps(url: string | null | undefined): string | null {
+    if (url == null || url === '') return null;
+    const trimmed = url.trim();
+    if (trimmed.startsWith('http://')) return 'https://' + trimmed.slice(7);
+    return trimmed;
+}
+
 function toBookSearchResult(item: GoogleVolumeItem): BookSearchResult {
     const vi = item.volumeInfo ?? {};
     const title = vi.title?.trim() ?? 'Unknown title';
@@ -32,8 +40,9 @@ function toBookSearchResult(item: GoogleVolumeItem): BookSearchResult {
             ? vi.authors.join(', ')
             : 'Unknown author';
     const imageLinks = vi.imageLinks;
-    const coverUrl =
+    const rawCover =
         imageLinks?.thumbnail ?? imageLinks?.small ?? imageLinks?.smallThumbnail ?? null;
+    const coverUrl = toHttps(rawCover);
     const coverOptions = coverUrl ? [coverUrl] : [];
     const blurb =
         typeof vi.description === 'string' && vi.description.trim()
