@@ -828,15 +828,21 @@ export default function VotingBuilderPage() {
                     )}
                 </section>
 
-                {/* Searching: show phase message and dots while search is in progress */}
-                {(searchMutation.isPending || googleSearchPending) && (
+                {/* Searching: show phase message and dots while initial (OL) search is in progress */}
+                {searchMutation.isPending && (
                     <section className="flex flex-col items-center justify-center py-8 gap-3">
                         <p className="text-sm text-muted text-center">
-                            {searchPhase === 'openlibrary'
-                                ? 'Searching Open Library'
-                                : searchPhase === 'trying_google'
-                                  ? "Didn't find anything. Trying Google Books"
-                                  : 'Searching…'}
+                            Searching Open Library
+                        </p>
+                        <LoadingDots className="text-muted" />
+                    </section>
+                )}
+
+                {/* Try Google in progress: show dots where the result list was */}
+                {googleSearchPending && searchResults.length === 0 && (
+                    <section className="flex flex-col items-center justify-center py-8 gap-3">
+                        <p className="text-sm text-muted text-center">
+                            Trying Google Books
                         </p>
                         <LoadingDots className="text-muted" />
                     </section>

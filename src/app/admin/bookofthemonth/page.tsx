@@ -6,6 +6,7 @@ import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { BlurbEditor } from '@/components/blurb-editor';
 import { BookCoverImage } from '@/components/book-cover-image';
 import { EventbriteForm } from '@/components/eventbrite-form';
+import { LoadingDots } from '@/components/loading-dots';
 
 type VoteBook = {
     externalId: string;
@@ -452,15 +453,17 @@ export default function BookOfTheMonthPage() {
                                     {searchPending ? 'Searching…' : 'Search'}
                                 </button>
                             </form>
-                            {searchPending && (
-                                <p className="text-sm text-muted mt-2 text-center">
-                                    {searchPhase === 'openlibrary'
-                                        ? 'Searching Open Library'
-                                        : searchPhase === 'trying_google'
-                                          ? "Didn't find anything. Trying Google Books"
-                                          : 'Searching…'}
-                                </p>
-                            )}
+                            {searchPending &&
+                                searchResults.length === 0 && (
+                                    <div className="flex flex-col items-center justify-center py-8 gap-2 mt-2">
+                                        <p className="text-sm text-muted text-center">
+                                            {searchPhase === 'openlibrary'
+                                                ? 'Searching Open Library'
+                                                : 'Trying Google Books'}
+                                        </p>
+                                        <LoadingDots className="text-muted" />
+                                    </div>
+                                )}
                             {searchResults.length > 0 && (
                                 <>
                                     {searchSource === 'openlibrary' && (

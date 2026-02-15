@@ -1149,6 +1149,15 @@ export default function SuggestNextBookPage() {
                                                     </button>
                                                 )}
                                             </div>
+                                            {searchPending &&
+                                            searchResults.length === 0 ? (
+                                                <div className="flex flex-col items-center justify-center py-6 gap-2">
+                                                    <p className="text-sm text-muted text-center">
+                                                        Trying Google Books
+                                                    </p>
+                                                    <LoadingDots className="text-muted" />
+                                                </div>
+                                            ) : (
                                             <ul className="space-y-2 max-h-60 overflow-y-auto">
                                                 {searchResults.map((book) => (
                                                     <li
@@ -1208,6 +1217,7 @@ export default function SuggestNextBookPage() {
                                                     </li>
                                                 ))}
                                             </ul>
+                                            )}
                                         </div>
                                     )}
                                     {modalStep === 'review' && selectedBook && (
