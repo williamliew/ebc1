@@ -64,6 +64,12 @@ export default function VoteResultsPage() {
             fill: PIE_COLOURS[i % PIE_COLOURS.length],
         })) ?? [];
 
+    const totalVotes =
+        selectedRound?.results.reduce(
+            (sum, r) => sum + r.voteCount,
+            0,
+        ) ?? 0;
+
     const winnerIndex =
         selectedRound?.results.findIndex((r) => r.isWinner) ?? -1;
 
@@ -242,41 +248,52 @@ export default function VoteResultsPage() {
                                         </div>
                                         <ul className="mt-4 space-y-2 list-none">
                                             {selectedRound.results.map(
-                                                (item, i) => (
-                                                    <li
-                                                        key={item.externalId}
-                                                        className="flex items-center gap-2 text-sm"
-                                                    >
-                                                        <span
-                                                            className="shrink-0 w-3 h-3 rounded-full"
-                                                            style={{
-                                                                backgroundColor:
-                                                                    PIE_COLOURS[
-                                                                        i %
-                                                                            PIE_COLOURS.length
-                                                                    ],
-                                                            }}
-                                                            aria-hidden
-                                                        />
-                                                        <span
-                                                            className={
-                                                                item.isWinner
-                                                                    ? 'font-semibold'
-                                                                    : ''
-                                                            }
+                                                (item, i) => {
+                                                    const pct =
+                                                        totalVotes > 0
+                                                            ? (item.voteCount /
+                                                                  totalVotes) *
+                                                              100
+                                                            : 0;
+                                                    return (
+                                                        <li
+                                                            key={item.externalId}
+                                                            className="flex items-center gap-2 text-sm"
                                                         >
-                                                            {item.title}
-                                                        </span>
-                                                        <span className="text-muted ml-auto">
-                                                            {item.voteCount}{' '}
-                                                            vote
-                                                            {item.voteCount !==
-                                                            1
-                                                                ? 's'
-                                                                : ''}
-                                                        </span>
-                                                    </li>
-                                                ),
+                                                            <span
+                                                                className="shrink-0 w-3 h-3 rounded-full"
+                                                                style={{
+                                                                    backgroundColor:
+                                                                        PIE_COLOURS[
+                                                                            i %
+                                                                                PIE_COLOURS.length
+                                                                        ],
+                                                                }}
+                                                                aria-hidden
+                                                            />
+                                                            <span
+                                                                className={
+                                                                    item.isWinner
+                                                                        ? 'font-semibold'
+                                                                        : ''
+                                                                }
+                                                            >
+                                                                {item.title}
+                                                            </span>
+                                                            <span className="text-muted ml-auto shrink-0">
+                                                                {item.voteCount}{' '}
+                                                                vote
+                                                                {item.voteCount !==
+                                                                1
+                                                                    ? 's'
+                                                                    : ''}{' '}
+                                                                (
+                                                                {pct.toFixed(1)}
+                                                                %)
+                                                            </span>
+                                                        </li>
+                                                    );
+                                                },
                                             )}
                                         </ul>
                                     </section>

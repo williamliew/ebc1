@@ -52,6 +52,8 @@ const postBodySchema = z.object({
         .max(512)
         .transform((s) => s.trim() || 'Unknown author'),
     coverUrl: optionalUrl,
+    /** When true, the submitted coverUrl is a user override (custom URL). It will be stored but not shown publicly until approved. */
+    coverUrlIsOverride: z.boolean().optional(),
     blurb: z.string().nullable().optional(),
     link: optionalUrl,
     comment: optionalComment,
@@ -114,6 +116,7 @@ export async function GET(request: Request) {
                 title: suggestions.title,
                 author: suggestions.author,
                 coverUrl: suggestions.coverUrl,
+                coverUrlOverrideApproved: suggestions.coverUrlOverrideApproved,
                 blurb: suggestions.blurb,
                 link: suggestions.link,
                 comment: suggestions.comment,
@@ -152,6 +155,7 @@ export async function GET(request: Request) {
             title: s.title,
             author: s.author,
             coverUrl: s.coverUrl,
+            coverUrlOverrideApproved: s.coverUrlOverrideApproved,
             blurb: s.blurb,
             link: s.link,
             comment: s.comment ?? null,
@@ -280,6 +284,9 @@ export async function POST(request: Request) {
                       .trim()
                       .slice(0, MAX_COMMENTER_NAME_LENGTH) || null;
 
+        const coverUrlOverrideApproved =
+            parsed.data.coverUrlIsOverride === true ? false : true;
+
         const [row] = await db
             .insert(suggestions)
             .values({
@@ -289,6 +296,7 @@ export async function POST(request: Request) {
                 title: parsed.data.title,
                 author: parsed.data.author,
                 coverUrl: parsed.data.coverUrl ?? null,
+                coverUrlOverrideApproved,
                 blurb: parsed.data.blurb ?? null,
                 link: parsed.data.link ?? null,
                 comment: commentValue,

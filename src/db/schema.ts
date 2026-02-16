@@ -1,4 +1,5 @@
 import {
+    boolean,
     date,
     integer,
     pgTable,
@@ -41,6 +42,10 @@ export const suggestions = pgTable('suggestions', {
     title: varchar('title', { length: 512 }),
     author: varchar('author', { length: 512 }),
     coverUrl: text('cover_url'),
+    /** When the user submitted a custom thumbnail URL (override), it is not shown publicly until approved. Default true so existing rows keep showing their cover. */
+    coverUrlOverrideApproved: boolean('cover_url_override_approved')
+        .default(true)
+        .notNull(),
     blurb: text('blurb'),
     link: text('link'),
     /** Optional comment with the suggestion (rich text, sanitised; max 350 characters enforced in API). */

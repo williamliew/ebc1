@@ -19,7 +19,11 @@ type GoogleVolumeItem = {
         title?: string;
         authors?: string[];
         description?: string;
-        imageLinks?: { thumbnail?: string; small?: string; smallThumbnail?: string };
+        imageLinks?: {
+            thumbnail?: string;
+            small?: string;
+            smallThumbnail?: string;
+        };
         infoLink?: string;
     };
 };
@@ -41,7 +45,10 @@ function toBookSearchResult(item: GoogleVolumeItem): BookSearchResult {
             : 'Unknown author';
     const imageLinks = vi.imageLinks;
     const rawCover =
-        imageLinks?.thumbnail ?? imageLinks?.small ?? imageLinks?.smallThumbnail ?? null;
+        imageLinks?.thumbnail ??
+        imageLinks?.small ??
+        imageLinks?.smallThumbnail ??
+        null;
     const coverUrl = toHttps(rawCover);
     const coverOptions = coverUrl ? [coverUrl] : [];
     const blurb =

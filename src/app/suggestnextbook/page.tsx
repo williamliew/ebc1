@@ -16,6 +16,7 @@ import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { BookCoverImage } from '@/components/book-cover-image';
 import { CloseIcon } from '@/components/close-icon';
 import { StackOfBooks } from '@/components/stack-of-books';
+import { useAutoRequestWhenVisible } from '@/hooks/use-auto-request-when-visible';
 
 const MAX_SUGGESTIONS_PER_PERSON = 2;
 
@@ -33,6 +34,8 @@ type SuggestionItem = {
     title: string | null;
     author: string | null;
     coverUrl: string | null;
+    /** When false, the cover is a user override not yet approved; show placeholder on public round view. */
+    coverUrlOverrideApproved?: boolean;
     blurb: string | null;
     link: string | null;
     comment: string | null;
@@ -41,6 +44,15 @@ type SuggestionItem = {
     /** ISO date string from API; used for ordering comments in read-more lightbox. */
     createdAt?: string;
 };
+
+/** True when the suggestion has a cover URL that is a user override not yet approved for public display. */
+function suggestionCoverAwaitingApproval(item: SuggestionItem): boolean {
+    return (
+        item.coverUrl != null &&
+        item.coverUrl.trim() !== '' &&
+        item.coverUrlOverrideApproved === false
+    );
+}
 
 type BookSearchResult = {
     externalId: string;
@@ -143,6 +155,7 @@ export default function SuggestNextBookPage() {
     const [blurbAiPending, setBlurbAiPending] = useState(false);
     const blurbAiFetchedForReviewRef = useRef(false);
     const coverFallbackTriedForReviewRef = useRef(false);
+    const reviewSectionRef = useRef<HTMLDivElement>(null);
 
     const fetchRound = useCallback(async () => {
         setLoading(true);
@@ -199,35 +212,6 @@ export default function SuggestNextBookPage() {
         }
     }, [confirmSuggest]);
 
-    useEffect(() => {
-        if (
-            modalStep !== 'review' ||
-            !selectedBook ||
-            blurbAiFetchedForReviewRef.current
-        )
-            return;
-        if (selectedBook.blurb?.trim()) return;
-        blurbAiFetchedForReviewRef.current = true;
-        setBlurbAiPending(true);
-        fetch('/api/books/blurb-from-ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title: selectedBook.title,
-                author: selectedBook.author,
-            }),
-        })
-            .then((r) => r.json().catch(() => ({})))
-            .then((data) => {
-                if (data.blurb) {
-                    setSelectedBook((b) =>
-                        b ? { ...b, blurb: data.blurb } : null,
-                    );
-                    setBlurbFromAi(true);
-                }
-            })
-            .finally(() => setBlurbAiPending(false));
-    }, [modalStep, selectedBook]);
 
     const handleVerifyPassword = useCallback(
         async (e: React.FormEvent) => {
@@ -484,20 +468,48 @@ export default function SuggestNextBookPage() {
         [],
     );
 
-    // When on review, if the book has no cover, try Longitood once and replace thumbnail if found
-    useEffect(() => {
+    // Run auto blurb and cover fallback only when review section has been in view for ~1.5s
+    const runAutoBlurbAndCoverWhenReady = useCallback(() => {
+        if (!selectedBook) return;
+        if (!selectedBook.blurb?.trim() && !blurbAiFetchedForReviewRef.current) {
+            blurbAiFetchedForReviewRef.current = true;
+            setBlurbAiPending(true);
+            fetch('/api/books/blurb-from-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: selectedBook.title,
+                    author: selectedBook.author,
+                }),
+            })
+                .then((r) => r.json().catch(() => ({})))
+                .then((data) => {
+                    if (data.blurb) {
+                        setSelectedBook((b) =>
+                            b ? { ...b, blurb: data.blurb } : null,
+                        );
+                        setBlurbFromAi(true);
+                    }
+                })
+                .finally(() => setBlurbAiPending(false));
+        }
         if (
-            modalStep !== 'review' ||
-            !selectedBook ||
-            getEffectiveCoverUrl(selectedBook) ||
-            coverFallbackTriedForReviewRef.current
-        )
-            return;
-        coverFallbackTriedForReviewRef.current = true;
-        fetchCoverFallback(selectedBook.title, selectedBook.author, (url) =>
-            updateReviewBook('manualOverride', url),
-        );
-    }, [modalStep, selectedBook, fetchCoverFallback, updateReviewBook]);
+            !getEffectiveCoverUrl(selectedBook) &&
+            !coverFallbackTriedForReviewRef.current
+        ) {
+            coverFallbackTriedForReviewRef.current = true;
+            fetchCoverFallback(selectedBook.title, selectedBook.author, (url) =>
+                updateReviewBook('manualOverride', url),
+            );
+        }
+    }, [selectedBook, fetchCoverFallback, updateReviewBook]);
+
+    useAutoRequestWhenVisible(
+        reviewSectionRef,
+        modalStep === 'review' && !!selectedBook,
+        runAutoBlurbAndCoverWhenReady,
+        { delayMs: 1500 },
+    );
 
     const handleSuggestNewBook = useCallback(async () => {
         if (!round || !suggesterKeyHash || !selectedBook) return;
@@ -511,6 +523,9 @@ export default function SuggestNextBookPage() {
         setSuggestPending(true);
         try {
             const coverUrl = getEffectiveCoverUrl(selectedBook);
+            const coverUrlIsOverride = Boolean(
+                selectedBook.manualOverride?.trim(),
+            );
             const res = await fetch('/api/suggestions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -521,6 +536,7 @@ export default function SuggestNextBookPage() {
                     title: selectedBook.title,
                     author: selectedBook.author,
                     coverUrl,
+                    coverUrlIsOverride,
                     blurb: selectedBook.blurb,
                     link: selectedBook.link,
                     comment:
@@ -749,12 +765,21 @@ export default function SuggestNextBookPage() {
                                                     </svg>
                                                 </span>
                                             )}
-                                            <div className="w-16 h-[96px] shrink-0 rounded overflow-hidden">
-                                                <BookCoverImage
-                                                    src={item.coverUrl}
-                                                    containerClassName="w-full h-full"
-                                                    sizes="64px"
-                                                />
+                                            <div className="w-16 h-[96px] shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center">
+                                                {suggestionCoverAwaitingApproval(
+                                                    item,
+                                                ) ? (
+                                                    <span className="text-[10px] text-white text-center px-1 leading-tight">
+                                                        Thumbnail awaiting
+                                                        approval
+                                                    </span>
+                                                ) : (
+                                                    <BookCoverImage
+                                                        src={item.coverUrl}
+                                                        containerClassName="w-full h-full"
+                                                        sizes="64px"
+                                                    />
+                                                )}
                                             </div>
                                             <div className="flex-1 min-w-0 flex flex-col">
                                                 <p className="font-medium">
@@ -847,12 +872,20 @@ export default function SuggestNextBookPage() {
                                     </button>
                                 </div>
                                 <div className="p-4 overflow-y-auto flex-1">
-                                    <div className="relative w-full aspect-[3/4] max-w-[200px] mx-auto mb-4 rounded overflow-hidden">
-                                        <BookCoverImage
-                                            src={readMoreBook.coverUrl}
-                                            containerClassName="absolute inset-0"
-                                            sizes="200px"
-                                        />
+                                    <div className="relative w-full aspect-[3/4] max-w-[200px] mx-auto mb-4 rounded overflow-hidden bg-muted flex items-center justify-center">
+                                        {suggestionCoverAwaitingApproval(
+                                            readMoreBook,
+                                        ) ? (
+                                            <span className="text-sm text-white text-center px-4">
+                                                Thumbnail awaiting approval
+                                            </span>
+                                        ) : (
+                                            <BookCoverImage
+                                                src={readMoreBook.coverUrl}
+                                                containerClassName="absolute inset-0"
+                                                sizes="200px"
+                                            />
+                                        )}
                                     </div>
                                     <p className="text-sm text-muted mb-4">
                                         by{' '}
@@ -1221,7 +1254,10 @@ export default function SuggestNextBookPage() {
                                         </div>
                                     )}
                                     {modalStep === 'review' && selectedBook && (
-                                        <div className="space-y-4">
+                                        <div
+                                            ref={reviewSectionRef}
+                                            className="space-y-4"
+                                        >
                                             <button
                                                 type="button"
                                                 onClick={() =>
@@ -1294,8 +1330,8 @@ export default function SuggestNextBookPage() {
                                                 )}
                                             <div>
                                                 <label className="text-xs font-medium text-muted block mb-1">
-                                                    Manual thumbnail URL
-                                                    override
+                                                    Custom thumbnail URL
+                                                    (subject to approval)
                                                 </label>
                                                 <input
                                                     type="url"

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
+import { BookCoverImage } from '@/components/book-cover-image';
+import { CloseIcon } from '@/components/close-icon';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { LoadingMinDuration } from '@/components/loading-min-duration';
 import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
@@ -20,6 +22,8 @@ type SuggestionListItem = {
     createdAt: string;
     title: string | null;
     author: string | null;
+    coverUrl: string | null;
+    coverUrlOverrideApproved: boolean;
     comment: string | null;
     commenterName: string | null;
 };
@@ -100,6 +104,10 @@ export default function ViewSuggestionsPage() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [itemToRemove, setItemToRemove] =
         useState<SuggestionListItem | null>(null);
+    const [itemToApprove, setItemToApprove] = useState<{
+        item: SuggestionListItem;
+        roundLabel: string;
+    } | null>(null);
     const rounds = data?.rounds ?? [];
     const selectedRound = rounds[selectedIndex] ?? null;
 
@@ -122,12 +130,63 @@ export default function ViewSuggestionsPage() {
         },
     });
 
+    const approveMutation = useMutation({
+        mutationFn: async (suggestionId: number) => {
+            const res = await fetch(
+                `/api/admin/suggestions/${suggestionId}`,
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        coverUrlOverrideApproved: true,
+                    }),
+                },
+            );
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(
+                    data.error ?? 'Failed to approve thumbnail',
+                );
+            }
+        },
+        onSuccess: () => {
+            setItemToApprove(null);
+            queryClient.invalidateQueries({
+                queryKey: ['admin', 'suggestion-results'],
+            });
+        },
+    });
+
     const pieData =
         selectedRound?.results.map((r, i) => ({
             name: r.title ?? 'Unknown',
             value: r.suggestionCount > 0 ? r.suggestionCount : 0.01,
             fill: PIE_COLOURS[i % PIE_COLOURS.length],
         })) ?? [];
+
+    const totalSuggestions =
+        selectedRound?.results.reduce(
+            (sum, r) => sum + r.suggestionCount,
+            0,
+        ) ?? 0;
+
+    const awaitingApproval = (() => {
+        const list: { item: SuggestionListItem; roundLabel: string }[] = [];
+        for (const round of rounds) {
+            const label = formatRoundLabel(round);
+            for (const item of round.items) {
+                if (
+                    item.coverUrl != null &&
+                    item.coverUrl.trim() !== '' &&
+                    item.coverUrlOverrideApproved === false
+                ) {
+                    list.push({ item, roundLabel: label });
+                }
+            }
+        }
+        return list;
+    })();
 
     return (
         <LoadingMinDuration
@@ -198,6 +257,76 @@ export default function ViewSuggestionsPage() {
                                         ))}
                                     </div>
                                 </section>
+
+                                {awaitingApproval.length > 0 && (
+                                    <section
+                                        className="rounded-xl border border-border bg-surface p-4 mb-6"
+                                        aria-label="Thumbnails awaiting approval"
+                                    >
+                                        <h2 className="text-lg font-semibold text-foreground mb-3">
+                                            Awaiting approval
+                                        </h2>
+                                        <p className="text-sm text-muted mb-4">
+                                            Custom thumbnails that need
+                                            approving before they appear on the
+                                            public suggest-next-book page.
+                                        </p>
+                                        <ul className="space-y-4 list-none">
+                                            {awaitingApproval.map(
+                                                ({ item, roundLabel }) => (
+                                                    <li
+                                                        key={item.id}
+                                                        className="flex gap-4 rounded-lg border border-border bg-surface text-foreground p-4 items-center"
+                                                    >
+                                                        <div className="w-16 h-24 shrink-0 rounded overflow-hidden bg-muted/50">
+                                                            <BookCoverImage
+                                                                src={item.coverUrl}
+                                                                containerClassName="w-full h-full"
+                                                                sizes="64px"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-medium text-foreground">
+                                                                {item.title ??
+                                                                    'Unknown title'}{' '}
+                                                                by{' '}
+                                                                {item.author ??
+                                                                    'Unknown author'}
+                                                            </p>
+                                                            <p className="text-xs text-muted mt-0.5">
+                                                                Added{' '}
+                                                                {new Date(
+                                                                    item.createdAt,
+                                                                ).toLocaleDateString(
+                                                                    'en-GB',
+                                                                    {
+                                                                        day: 'numeric',
+                                                                        month: 'short',
+                                                                        year: 'numeric',
+                                                                    },
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setItemToApprove(
+                                                                    {
+                                                                        item,
+                                                                        roundLabel,
+                                                                    },
+                                                                )
+                                                            }
+                                                            className="shrink-0 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2"
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                    </li>
+                                                ),
+                                            )}
+                                        </ul>
+                                    </section>
+                                )}
 
                                 {selectedRound && (
                                     <section
@@ -274,42 +403,51 @@ export default function ViewSuggestionsPage() {
                                             </ResponsiveContainer>
                                         </div>
                                         <h2 className="text-sm font-medium text-foreground mt-4 mb-2">
-                                            By book (count):
+                                            By book (count and %):
                                         </h2>
                                         <ul className="space-y-2 list-none">
                                             {selectedRound.results.map(
-                                                (item, i) => (
-                                                    <li
-                                                        key={
-                                                            item.bookExternalId
-                                                        }
-                                                        className="flex items-center gap-2 text-sm"
-                                                    >
-                                                        <span
-                                                            className="shrink-0 w-3 h-3 rounded-full"
-                                                            style={{
-                                                                backgroundColor:
-                                                                    PIE_COLOURS[
-                                                                        i %
-                                                                            PIE_COLOURS.length
-                                                                    ],
-                                                            }}
-                                                            aria-hidden
-                                                        />
-                                                        <span>
-                                                            {item.title ??
-                                                                'Unknown title'}{' '}
-                                                            by{' '}
-                                                            {item.author ??
-                                                                'Unknown author'}{' '}
-                                                            (
-                                                            {
-                                                                item.suggestionCount
+                                                (item, i) => {
+                                                    const pct =
+                                                        totalSuggestions > 0
+                                                            ? (item.suggestionCount /
+                                                                  totalSuggestions) *
+                                                              100
+                                                            : 0;
+                                                    return (
+                                                        <li
+                                                            key={
+                                                                item.bookExternalId
                                                             }
-                                                            )
-                                                        </span>
-                                                    </li>
-                                                ),
+                                                            className="flex items-center gap-2 text-sm"
+                                                        >
+                                                            <span
+                                                                className="shrink-0 w-3 h-3 rounded-full"
+                                                                style={{
+                                                                    backgroundColor:
+                                                                        PIE_COLOURS[
+                                                                            i %
+                                                                                PIE_COLOURS.length
+                                                                        ],
+                                                                }}
+                                                                aria-hidden
+                                                            />
+                                                            <span>
+                                                                {item.title ??
+                                                                    'Unknown title'}{' '}
+                                                                by{' '}
+                                                                {item.author ??
+                                                                    'Unknown author'}
+                                                            </span>
+                                                            <span className="text-muted ml-auto shrink-0">
+                                                                {item.suggestionCount}{' '}
+                                                                (
+                                                                {pct.toFixed(1)}
+                                                                %)
+                                                            </span>
+                                                        </li>
+                                                    );
+                                                },
                                             )}
                                         </ul>
 
@@ -489,6 +627,92 @@ export default function ViewSuggestionsPage() {
                                     >
                                         {deleteMutation.isPending
                                             ? 'Deleting…'
+                                            : 'Confirm'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                                    )}
+
+                    {itemToApprove && (
+                        <div
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="approve-confirm-title"
+                        >
+                            <div className="relative rounded-xl border border-border bg-surface shadow-xl max-w-md w-full p-4">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setItemToApprove(null)
+                                    }
+                                    className="absolute right-3 top-3 rounded p-1 -m-1 hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    aria-label="Close"
+                                >
+                                    <CloseIcon className="h-5 w-5" />
+                                </button>
+                                <h2
+                                    id="approve-confirm-title"
+                                    className="text-lg font-semibold text-foreground mb-3 pr-8"
+                                >
+                                    Approve this thumbnail?
+                                </h2>
+                                <div className="flex gap-4 rounded-lg border border-border bg-surface text-foreground p-4 text-sm mb-4">
+                                    <div className="w-14 h-[72px] shrink-0 rounded overflow-hidden bg-muted/50">
+                                        <BookCoverImage
+                                            src={itemToApprove.item.coverUrl}
+                                            containerClassName="w-full h-full"
+                                            sizes="56px"
+                                        />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="font-medium text-foreground">
+                                            {itemToApprove.item.title ??
+                                                'Unknown title'}{' '}
+                                            by{' '}
+                                            {itemToApprove.item.author ??
+                                                'Unknown author'}
+                                        </p>
+                                        <p className="text-xs text-muted mt-0.5">
+                                            Added{' '}
+                                            {new Date(
+                                                itemToApprove.item.createdAt,
+                                            ).toLocaleDateString('en-GB', {
+                                                day: 'numeric',
+                                                month: 'short',
+                                                year: 'numeric',
+                                            })}
+                                        </p>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-muted mb-4">
+                                    The thumbnail will then be visible on the
+                                    public suggest-next-book page for this
+                                    suggestion.
+                                </p>
+                                <div className="flex gap-3 justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setItemToApprove(null)
+                                        }
+                                        className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            approveMutation.mutate(
+                                                itemToApprove.item.id,
+                                            )
+                                        }
+                                        disabled={approveMutation.isPending}
+                                        className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2"
+                                    >
+                                        {approveMutation.isPending
+                                            ? 'Approving…'
                                             : 'Confirm'}
                                     </button>
                                 </div>

@@ -16,6 +16,8 @@ export type SuggestionListItem = {
     createdAt: string;
     title: string | null;
     author: string | null;
+    coverUrl: string | null;
+    coverUrlOverrideApproved: boolean;
     comment: string | null;
     commenterName: string | null;
 };
@@ -62,6 +64,8 @@ export async function GET(request: Request) {
                     bookExternalId: suggestions.bookExternalId,
                     title: suggestions.title,
                     author: suggestions.author,
+                    coverUrl: suggestions.coverUrl,
+                    coverUrlOverrideApproved: suggestions.coverUrlOverrideApproved,
                     comment: suggestions.comment,
                     commenterName: suggestions.commenterName,
                     createdAt: suggestions.createdAt,
@@ -104,6 +108,8 @@ export async function GET(request: Request) {
                         : String(r.createdAt),
                 title: r.title ?? null,
                 author: r.author ?? null,
+                coverUrl: r.coverUrl ?? null,
+                coverUrlOverrideApproved: r.coverUrlOverrideApproved,
                 comment: r.comment ?? null,
                 commenterName: r.commenterName ?? null,
             }));

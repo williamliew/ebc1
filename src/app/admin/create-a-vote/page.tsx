@@ -5,7 +5,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
-import { LoadingDots } from '@/components/loading-dots';
+import { LoadingBookFlip } from '@/components/loading-book-flip';
 import { BookCoverImage } from '@/components/book-cover-image';
 import { BlurbEditor } from '@/components/blurb-editor';
 import { CloseIcon } from '@/components/close-icon';
@@ -89,13 +89,6 @@ export default function VotingBuilderPage() {
     const [totalSearchItems, setTotalSearchItems] = useState(0);
     const [selected, setSelected] = useState<BookSearchResult[]>([]);
     const [searchError, setSearchError] = useState<string | null>(null);
-    const [searchPhase, setSearchPhase] = useState<
-        'idle' | 'openlibrary' | 'trying_google'
-    >('idle');
-    const [googleSearchPending, setGoogleSearchPending] = useState(false);
-    const [searchSource, setSearchSource] = useState<
-        'openlibrary' | 'google' | null
-    >(null);
     const [createMessage, setCreateMessage] = useState<{
         type: 'success' | 'error';
         text: string;
@@ -149,10 +142,6 @@ export default function VotingBuilderPage() {
     const latestSuggestionBooks = latestSuggestionData?.books ?? [];
 
     const searchMutation = useMutation({
-        onMutate: () => {
-            setSearchPhase('openlibrary');
-            setSearchSource(null);
-        },
         mutationFn: async ({
             title,
             author,
@@ -178,107 +167,19 @@ export default function VotingBuilderPage() {
                 pageSize: number;
             }>;
         },
-        onSuccess: (data, variables) => {
-            if (data.results.length > 0) {
-                setSearchResults(data.results);
-                setSearchPage(data.page);
-                setTotalSearchItems(data.totalItems);
-                setSearchError(null);
-                setSearchPhase('idle');
-                setSearchSource('openlibrary');
-                return;
-            }
-            setSearchPhase('trying_google');
-            setGoogleSearchPending(true);
+        onSuccess: (data) => {
+            setSearchResults(data.results);
+            setSearchPage(data.page);
+            setTotalSearchItems(data.totalItems);
             setSearchError(null);
-            fetch('/api/books/search-google', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: variables.title,
-                    author: variables.author,
-                    page: variables.page ?? 1,
-                }),
-            })
-                .then((r) => r.json())
-                .then((googleData: {
-                    results?: BookSearchResult[];
-                    totalItems?: number;
-                    page?: number;
-                    error?: string;
-                }) => {
-                    if (googleData.error || !googleData.results) {
-                        setSearchError(
-                            googleData.error ?? 'Google Books search failed',
-                        );
-                        setSearchResults([]);
-                    } else {
-                        setSearchResults(googleData.results);
-                        setSearchPage(googleData.page ?? 1);
-                        setTotalSearchItems(googleData.totalItems ?? 0);
-                        setSearchSource('google');
-                    }
-                })
-                .catch(() => {
-                    setSearchError('Google Books search failed');
-                    setSearchResults([]);
-                })
-                .finally(() => {
-                    setGoogleSearchPending(false);
-                    setSearchPhase('idle');
-                });
         },
         onError: (err) => {
             setSearchError(
                 err instanceof Error ? err.message : 'Search failed',
             );
             setSearchResults([]);
-            setSearchPhase('idle');
-            setSearchSource(null);
         },
     });
-
-    const tryGoogleBooksSearch = useCallback(() => {
-        const title = titleSearch.trim();
-        const author = authorSearch.trim();
-        if (!title && !author) return;
-        setSearchResults([]);
-        setSearchError(null);
-        setSearchPhase('trying_google');
-        setGoogleSearchPending(true);
-        fetch('/api/books/search-google', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, author, page: 1 }),
-        })
-            .then((r) => r.json())
-            .then((googleData: {
-                results?: BookSearchResult[];
-                totalItems?: number;
-                page?: number;
-                error?: string;
-            }) => {
-                if (googleData.error || !googleData.results) {
-                    setSearchError(
-                        googleData.error ?? 'Google Books search failed',
-                    );
-                    setSearchResults([]);
-                } else {
-                    setSearchResults(googleData.results);
-                    setSearchPage(googleData.page ?? 1);
-                    setTotalSearchItems(googleData.totalItems ?? 0);
-                    setSearchSource('google');
-                }
-            })
-            .catch(() => {
-                setSearchError('Google Books search failed');
-                setSearchResults([]);
-            })
-            .finally(() => {
-                setGoogleSearchPending(false);
-                setSearchPhase('idle');
-            });
-    }, [titleSearch, authorSearch]);
 
     const createMutation = useMutation({
         mutationFn: async ({
@@ -344,7 +245,6 @@ export default function VotingBuilderPage() {
             const title = titleSearch.trim();
             const author = authorSearch.trim();
             if (!title && !author) return;
-            setSearchPhase('openlibrary');
             searchMutation.mutate({ title, author, page: 1 });
         },
         [titleSearch, authorSearch, searchMutation],
@@ -807,15 +707,12 @@ export default function VotingBuilderPage() {
                         <button
                             type="submit"
                             disabled={
-                                (searchMutation.isPending ||
-                                    googleSearchPending) ||
+                                searchMutation.isPending ||
                                 (!titleSearch.trim() && !authorSearch.trim())
                             }
                             className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 shrink-0"
                         >
-                            {(searchMutation.isPending || googleSearchPending)
-                                ? 'Searching…'
-                                : 'Search'}
+                            {searchMutation.isPending ? 'Searching…' : 'Search'}
                         </button>
                     </form>
                     {searchError && (
@@ -828,45 +725,19 @@ export default function VotingBuilderPage() {
                     )}
                 </section>
 
-                {/* Searching: show phase message and dots while initial (OL) search is in progress */}
+                {/* Searching: show book flip while search is in progress */}
                 {searchMutation.isPending && (
-                    <section className="flex flex-col items-center justify-center py-8 gap-3">
-                        <p className="text-sm text-muted text-center">
-                            Searching Open Library
-                        </p>
-                        <LoadingDots className="text-muted" />
-                    </section>
-                )}
-
-                {/* Try Google in progress: show dots where the result list was */}
-                {googleSearchPending && searchResults.length === 0 && (
-                    <section className="flex flex-col items-center justify-center py-8 gap-3">
-                        <p className="text-sm text-muted text-center">
-                            Trying Google Books
-                        </p>
-                        <LoadingDots className="text-muted" />
+                    <section className="flex justify-center py-8">
+                        <LoadingBookFlip size="sm" />
                     </section>
                 )}
 
                 {/* Search results */}
                 {searchResults.length > 0 && (
                     <section>
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <h2 className="text-sm font-medium text-muted dark:text-muted">
-                                Results
-                            </h2>
-                            {searchSource === 'openlibrary' && (
-                                <button
-                                    type="button"
-                                    onClick={tryGoogleBooksSearch}
-                                    disabled={googleSearchPending}
-                                    className="text-sm text-primary hover:underline underline-offset-2 disabled:opacity-50"
-                                >
-                                    Didn&apos;t find it? Try looking in Google
-                                    Books
-                                </button>
-                            )}
-                        </div>
+                        <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
+                            Results
+                        </h2>
                         <ul className="space-y-3">
                             {searchResults.map((book) => {
                                 const alreadySelected = selectedIds.has(
@@ -1412,7 +1283,7 @@ export default function VotingBuilderPage() {
                                                                         {blurbAiPendingIndex ===
                                                                         i
                                                                             ? 'Finding…'
-                                                                            : "This description doesn't look right? Try find with AI"}
+                                                                            : "This description doesn't look right. Try find with AI"}
                                                                     </button>
                                                                 </div>
                                                             )}

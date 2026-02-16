@@ -7,6 +7,7 @@ import { BlurbEditor } from '@/components/blurb-editor';
 import { BookCoverImage } from '@/components/book-cover-image';
 import { EventbriteForm } from '@/components/eventbrite-form';
 import { LoadingDots } from '@/components/loading-dots';
+import { useAutoRequestWhenVisible } from '@/hooks/use-auto-request-when-visible';
 
 type VoteBook = {
     externalId: string;
@@ -80,6 +81,7 @@ export default function BookOfTheMonthPage() {
     const [blurbFromAi, setBlurbFromAi] = useState(false);
     const [blurbAiPending, setBlurbAiPending] = useState(false);
     const blurbAiFetchedForReviewRef = useRef(false);
+    const reviewSectionRef = useRef<HTMLDivElement>(null);
 
     function getDefaultMeetingDate(): string {
         const d = new Date();
@@ -282,9 +284,8 @@ export default function BookOfTheMonthPage() {
         }
     }, [selectedBook, updateReviewBook]);
 
-    useEffect(() => {
-        if (stage !== 'review' || !selectedBook || blurbAiFetchedForReviewRef.current) return;
-        if (selectedBook.blurb?.trim()) return;
+    const runAutoBlurbWhenReady = useCallback(() => {
+        if (!selectedBook || selectedBook.blurb?.trim() || blurbAiFetchedForReviewRef.current) return;
         blurbAiFetchedForReviewRef.current = true;
         setBlurbAiPending(true);
         fetch('/api/books/blurb-from-ai', {
@@ -303,7 +304,14 @@ export default function BookOfTheMonthPage() {
                 }
             })
             .finally(() => setBlurbAiPending(false));
-    }, [stage, selectedBook, updateReviewBook]);
+    }, [selectedBook, updateReviewBook]);
+
+    useAutoRequestWhenVisible(
+        reviewSectionRef,
+        stage === 'review' && !!selectedBook,
+        runAutoBlurbWhenReady,
+        { delayMs: 1500 },
+    );
 
     const handleConfirm = useCallback(async () => {
         if (!selectedBook) return;
@@ -559,7 +567,7 @@ export default function BookOfTheMonthPage() {
                 )}
 
                 {stage === 'review' && selectedBook && (
-                    <div className="space-y-4">
+                    <div ref={reviewSectionRef} className="space-y-4">
                         <button
                             type="button"
                             onClick={backToSelect}
@@ -628,6 +636,9 @@ export default function BookOfTheMonthPage() {
                                     </select>
                                 </div>
                             )}
+                            <label className="text-xs font-medium text-muted block mb-1 mt-2">
+                                Custom thumbnail URL
+                            </label>
                             <input
                                 type="url"
                                 value={selectedBook.manualOverride ?? ''}
