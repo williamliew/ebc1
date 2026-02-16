@@ -94,6 +94,7 @@ The builder panel and review panel are each full viewport width (100vw); the sli
 - **Open Library** for book search and details (no API key)
 - **Rate limiting** (in-memory per IP) on login, vote verify, book search, vote submit
 - **Security**: See `SECURITY.md`; headers in `next.config.ts`
+- **Email (potential)**: **Resend** – free tier, simple API; suitable for transactional email (e.g. notifications). [resend.com](https://resend.com)
 
 ---
 

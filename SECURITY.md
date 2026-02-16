@@ -36,6 +36,7 @@ Applied to:
 - **Vote access password** – 10 attempts per minute per IP.
 - **Book search** – 60 requests per minute per IP (admin and public use).
 - **POST /api/votes** – 30 submissions per minute per IP.
+- **POST /api/suggestions** – 20 submissions per minute per IP.
 
 ---
 
@@ -63,6 +64,14 @@ Set in `next.config.ts`:
 | Rate limiting     | Best-effort | In-memory; use external store for strict limits.         |
 | CSRF              | Partial     | SameSite cookies help; no CSRF tokens.                   |
 | Brute force       | Reduced     | Rate limit on login and vote password.                   |
+
+---
+
+## Ideas for later (reminders)
+
+- **Gemini / AI endpoints:** Tighter rate limits, or only allow blurb/cover/discussion-questions AI calls for authenticated users or specific flows, to reduce token burn from distributed abuse.
+- **Rate limiting:** Use **Upstash** (or similar) for a shared rate-limit store so limits apply across all serverless instances, not just per instance.
+- **CSRF:** Add CSRF tokens (or double-submit cookie) for mutating API routes; risk is currently moderate; adding auth and SameSite cookies later will help further.
 
 ---
 

@@ -4,10 +4,13 @@ import { db } from '@/db';
 import { suggestions } from '@/db/schema';
 import { eq, sql, and } from 'drizzle-orm';
 import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
+import { checkRateLimit } from '@/lib/rate-limit';
 import {
     containsBlocklistedWord,
     stripHtmlForCheck,
 } from '@/lib/sfw-blocklist';
+
+const SUGGESTIONS_POST_RATE_LIMIT_PER_MINUTE = 20;
 
 const MAX_SUGGESTIONS_PER_PERSON = 2;
 /** Max plain-text character count for suggestion comment (after stripping HTML). */
@@ -179,6 +182,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+    const rateLimitRes = checkRateLimit(
+        request,
+        'suggestions-post',
+        SUGGESTIONS_POST_RATE_LIMIT_PER_MINUTE,
+    );
+    if (rateLimitRes) return rateLimitRes;
+
     if (!db) {
         return NextResponse.json(
             { error: 'Database not configured' },
