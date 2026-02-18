@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { randomBytes } from 'crypto';
 import { db } from '@/db';
 import { suggestions } from '@/db/schema';
 import { eq, sql, and } from 'drizzle-orm';
 import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
+import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { checkRateLimit } from '@/lib/rate-limit';
 import {
     containsBlocklistedWord,
@@ -63,6 +65,18 @@ const postBodySchema = z.object({
     commenterName: optionalCommenterName,
 });
 
+const manualEntryBodySchema = z.object({
+    manualEntry: z.literal(true),
+    suggestionRoundId: z.number().int().positive(),
+    suggesterKeyHash: keyHashSchema,
+    title: z.string().min(1, 'Title is required').max(512).transform((s) => s.trim()),
+    author: z.string().min(1, 'Author is required').max(512).transform((s) => s.trim()),
+    coverUrl: optionalUrl,
+    blurb: z.string().nullable().optional(),
+    comment: optionalComment,
+    commenterName: optionalCommenterName,
+});
+
 export async function GET(request: Request) {
     if (!db) {
         return NextResponse.json(
@@ -98,7 +112,12 @@ export async function GET(request: Request) {
                     count: sql<number>`count(*)::int`,
                 })
                 .from(suggestions)
-                .where(eq(suggestions.suggestionRoundId, roundIdNum))
+                .where(
+                    and(
+                        eq(suggestions.suggestionRoundId, roundIdNum),
+                        eq(suggestions.manualPendingApproval, false),
+                    ),
+                )
                 .groupBy(suggestions.bookExternalId);
 
             return NextResponse.json({
@@ -124,10 +143,16 @@ export async function GET(request: Request) {
                 link: suggestions.link,
                 comment: suggestions.comment,
                 commenterName: suggestions.commenterName,
+                manualPendingApproval: suggestions.manualPendingApproval,
                 createdAt: suggestions.createdAt,
             })
             .from(suggestions)
-            .where(eq(suggestions.suggestionRoundId, roundIdNum));
+            .where(
+                and(
+                    eq(suggestions.suggestionRoundId, roundIdNum),
+                    eq(suggestions.manualPendingApproval, false),
+                ),
+            );
 
         const suggesterKeyHash = request.headers.get(SUGGESTER_KEY_HASH_HEADER);
         const myHash =
@@ -151,6 +176,24 @@ export async function GET(request: Request) {
                   )[0]?.count ?? 0)
                 : 0;
 
+        const hasPendingManualEntry =
+            myHash !== null
+                ? ((
+                      await db
+                          .select({
+                              count: sql<number>`count(*)::int`,
+                          })
+                          .from(suggestions)
+                          .where(
+                              and(
+                                  eq(suggestions.suggestionRoundId, roundIdNum),
+                                  eq(suggestions.suggesterKeyHash, myHash),
+                                  eq(suggestions.manualPendingApproval, true),
+                              ),
+                          )
+                  )[0]?.count ?? 0) > 0
+                : false;
+
         const suggestionsWithMe = list.map((s) => ({
             id: s.id,
             suggestionRoundId: s.suggestionRoundId,
@@ -171,11 +214,126 @@ export async function GET(request: Request) {
             roundId: roundIdNum,
             suggestions: suggestionsWithMe,
             userSuggestionCount: userCount,
+            hasPendingManualEntry,
         });
     } catch (err) {
         console.error('Fetch suggestions error:', err);
         return NextResponse.json(
             { error: 'Failed to fetch suggestions' },
+            { status: 500 },
+        );
+    }
+}
+
+type ManualEntryData = z.infer<typeof manualEntryBodySchema>;
+
+async function handleManualEntry(
+    data: ManualEntryData,
+): Promise<NextResponse> {
+    if (!db) {
+        return NextResponse.json(
+            { error: 'Database not configured' },
+            { status: 503 },
+        );
+    }
+    try {
+        const count = await db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(suggestions)
+            .where(
+                and(
+                    eq(suggestions.suggestionRoundId, data.suggestionRoundId),
+                    eq(suggestions.suggesterKeyHash, data.suggesterKeyHash),
+                ),
+            );
+        const current = count[0]?.count ?? 0;
+        if (current >= MAX_SUGGESTIONS_PER_PERSON) {
+            return NextResponse.json(
+                {
+                    error: `Maximum ${MAX_SUGGESTIONS_PER_PERSON} suggestions per person per round`,
+                },
+                { status: 400 },
+            );
+        }
+
+        let commentValue: string | null = null;
+        if (data.comment != null && data.comment !== '') {
+            const plainForCount = data.comment
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\r\n|\r|\n/g, ' ')
+                .trim();
+            const charCount = plainForCount.length;
+            if (charCount > MAX_COMMENT_CHARS) {
+                return NextResponse.json(
+                    {
+                        error: `Comment must be ${MAX_COMMENT_CHARS} characters or fewer (you have ${charCount})`,
+                    },
+                    { status: 400 },
+                );
+            }
+            const plain = stripHtmlForCheck(data.comment);
+            if (containsBlocklistedWord(plain)) {
+                return NextResponse.json(
+                    {
+                        error: 'Comment contains language that isn’t allowed. Please keep it safe for work.',
+                    },
+                    { status: 400 },
+                );
+            }
+            commentValue = sanitiseSuggestionComment(data.comment);
+            if (commentValue === '') commentValue = null;
+        }
+
+        const commenterNameValue =
+            data.commenterName == null || data.commenterName === ''
+                ? null
+                : data.commenterName
+                      .replace(/<[^>]*>/g, '')
+                      .trim()
+                      .slice(0, MAX_COMMENTER_NAME_LENGTH) || null;
+
+        const bookExternalId = `manual-${data.suggestionRoundId}-${Date.now()}-${randomBytes(4).toString('hex')}`;
+        const coverUrlOverrideApproved = data.coverUrl?.trim() ? false : true;
+        const blurbValue =
+            data.blurb != null && data.blurb.trim() !== ''
+                ? sanitiseBlurb(data.blurb.trim())
+                : null;
+
+        const [row] = await db
+            .insert(suggestions)
+            .values({
+                suggestionRoundId: data.suggestionRoundId,
+                bookExternalId,
+                suggesterKeyHash: data.suggesterKeyHash,
+                title: data.title,
+                author: data.author,
+                coverUrl: data.coverUrl ?? null,
+                coverUrlOverrideApproved,
+                blurb: blurbValue,
+                link: null,
+                comment: commentValue,
+                commenterName: commenterNameValue,
+                manualPendingApproval: true,
+            })
+            .returning({
+                id: suggestions.id,
+                suggestionRoundId: suggestions.suggestionRoundId,
+                bookExternalId: suggestions.bookExternalId,
+                createdAt: suggestions.createdAt,
+            });
+
+        if (!row) {
+            return NextResponse.json(
+                { error: 'Failed to add suggestion' },
+                { status: 500 },
+            );
+        }
+
+        return NextResponse.json({ suggestion: row });
+    } catch (err) {
+        console.error('Manual entry error:', err);
+        return NextResponse.json(
+            { error: 'Failed to add manual entry' },
             { status: 500 },
         );
     }
@@ -196,7 +354,12 @@ export async function POST(request: Request) {
         );
     }
 
-    const parsed = postBodySchema.safeParse(await request.json());
+    const raw = await request.json();
+    const manualParsed = manualEntryBodySchema.safeParse(raw);
+    if (manualParsed.success) {
+        return handleManualEntry(manualParsed.data);
+    }
+    const parsed = postBodySchema.safeParse(raw);
     if (!parsed.success) {
         const first = parsed.error.errors[0];
         const message = first?.message ?? 'Invalid request';

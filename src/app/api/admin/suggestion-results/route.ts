@@ -13,6 +13,7 @@ export type SuggestionResultItem = {
 
 export type SuggestionListItem = {
     id: number;
+    bookExternalId: string;
     createdAt: string;
     title: string | null;
     author: string | null;
@@ -20,6 +21,9 @@ export type SuggestionListItem = {
     coverUrlOverrideApproved: boolean;
     comment: string | null;
     commenterName: string | null;
+    blurb: string | null;
+    /** True when this is a manual entry not yet approved; it will not appear on the public list until approved. */
+    manualPendingApproval: boolean;
 };
 
 export type SuggestionResultsRound = {
@@ -68,6 +72,8 @@ export async function GET(request: Request) {
                     coverUrlOverrideApproved: suggestions.coverUrlOverrideApproved,
                     comment: suggestions.comment,
                     commenterName: suggestions.commenterName,
+                    blurb: suggestions.blurb,
+                    manualPendingApproval: suggestions.manualPendingApproval,
                     createdAt: suggestions.createdAt,
                 })
                 .from(suggestions)
@@ -79,6 +85,7 @@ export async function GET(request: Request) {
                 { title: string | null; author: string | null; count: number }
             >();
             for (const r of rows) {
+                if (r.manualPendingApproval) continue;
                 const existing = byBook.get(r.bookExternalId);
                 if (!existing) {
                     byBook.set(r.bookExternalId, {
@@ -102,6 +109,7 @@ export async function GET(request: Request) {
 
             const items: SuggestionListItem[] = rows.map((r) => ({
                 id: r.id,
+                bookExternalId: r.bookExternalId,
                 createdAt:
                     r.createdAt instanceof Date
                         ? r.createdAt.toISOString()
@@ -112,6 +120,8 @@ export async function GET(request: Request) {
                 coverUrlOverrideApproved: r.coverUrlOverrideApproved,
                 comment: r.comment ?? null,
                 commenterName: r.commenterName ?? null,
+                blurb: r.blurb ?? null,
+                manualPendingApproval: r.manualPendingApproval,
             }));
 
             result.push({

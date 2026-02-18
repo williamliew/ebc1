@@ -5,8 +5,8 @@ import { suggestions } from '@/db/schema';
 import { requireAdmin } from '@/lib/admin-auth';
 
 /**
- * PATCH: Admin only. Update a suggestion (e.g. approve thumbnail override).
- * Body: { coverUrlOverrideApproved?: boolean }
+ * PATCH: Admin only. Update a suggestion (e.g. approve thumbnail override or approve manual entry).
+ * Body: { coverUrlOverrideApproved?: boolean, manualPendingApproval?: boolean }
  */
 export async function PATCH(
     request: Request,
@@ -31,7 +31,10 @@ export async function PATCH(
         );
     }
 
-    let body: { coverUrlOverrideApproved?: boolean };
+    let body: {
+        coverUrlOverrideApproved?: boolean;
+        manualPendingApproval?: boolean;
+    };
     try {
         body = await request.json();
     } catch {
@@ -41,9 +44,22 @@ export async function PATCH(
         );
     }
 
-    if (typeof body.coverUrlOverrideApproved !== 'boolean') {
+    const updates: Partial<{
+        coverUrlOverrideApproved: boolean;
+        manualPendingApproval: boolean;
+    }> = {};
+    if (typeof body.coverUrlOverrideApproved === 'boolean') {
+        updates.coverUrlOverrideApproved = body.coverUrlOverrideApproved;
+    }
+    if (typeof body.manualPendingApproval === 'boolean') {
+        updates.manualPendingApproval = body.manualPendingApproval;
+        if (body.manualPendingApproval === false) {
+            updates.coverUrlOverrideApproved = true;
+        }
+    }
+    if (Object.keys(updates).length === 0) {
         return NextResponse.json(
-            { error: 'coverUrlOverrideApproved must be a boolean' },
+            { error: 'Provide coverUrlOverrideApproved and/or manualPendingApproval' },
             { status: 400 },
         );
     }
@@ -51,7 +67,7 @@ export async function PATCH(
     try {
         const [updated] = await db
             .update(suggestions)
-            .set({ coverUrlOverrideApproved: body.coverUrlOverrideApproved })
+            .set(updates)
             .where(eq(suggestions.id, id))
             .returning({ id: suggestions.id });
 

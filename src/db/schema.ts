@@ -52,6 +52,10 @@ export const suggestions = pgTable('suggestions', {
     comment: text('comment'),
     /** Optional name shown with the comment; null/blank is displayed as "Anonymous". */
     commenterName: varchar('commenter_name', { length: 128 }),
+    /** When true, this is a manual entry that does not appear on the public list until an admin approves it. */
+    manualPendingApproval: boolean('manual_pending_approval')
+        .default(false)
+        .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

@@ -131,9 +131,21 @@ export default function SuggestNextBookPage() {
     const [confirmSuggestName, setConfirmSuggestName] = useState('');
     const [confirmPending, setConfirmPending] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
+    const [modalTab, setModalTab] = useState<'search' | 'manual'>('search');
     const [modalStep, setModalStep] = useState<
         'search' | 'results' | 'review' | 'success'
     >('search');
+    const [hasPendingManualEntry, setHasPendingManualEntry] = useState(false);
+    const [manualTitle, setManualTitle] = useState('');
+    const [manualAuthor, setManualAuthor] = useState('');
+    const [manualCoverUrl, setManualCoverUrl] = useState('');
+    const [manualBlurb, setManualBlurb] = useState('');
+    const [manualComment, setManualComment] = useState('');
+    const [manualCommenterName, setManualCommenterName] = useState('');
+    const [manualSubmitPending, setManualSubmitPending] = useState(false);
+    const [manualSubmitError, setManualSubmitError] = useState<string | null>(
+        null,
+    );
     const [titleSearch, setTitleSearch] = useState('');
     const [authorSearch, setAuthorSearch] = useState('');
     const [searchResults, setSearchResults] = useState<BookSearchResult[]>([]);
@@ -180,6 +192,7 @@ export default function SuggestNextBookPage() {
             const data = await res.json();
             setSuggestions(data.suggestions ?? []);
             setUserSuggestionCount(data.userSuggestionCount ?? 0);
+            setHasPendingManualEntry(data.hasPendingManualEntry ?? false);
         } catch {
             // ignore
         }
@@ -442,6 +455,7 @@ export default function SuggestNextBookPage() {
 
     const closeModal = useCallback(() => {
         setModalOpen(false);
+        setModalTab('search');
         setModalStep('search');
         setSelectedBook(null);
         setSearchResults([]);
@@ -453,10 +467,90 @@ export default function SuggestNextBookPage() {
         setSuggestError(null);
         setSuggestionComment('');
         setSuggestionCommenterName('');
+        setManualTitle('');
+        setManualAuthor('');
+        setManualCoverUrl('');
+        setManualBlurb('');
+        setManualComment('');
+        setManualCommenterName('');
+        setManualSubmitError(null);
         setBlurbFromAi(false);
         blurbAiFetchedForReviewRef.current = false;
         coverFallbackTriedForReviewRef.current = false;
     }, []);
+
+    const handleManualSubmit = useCallback(
+        async (e: React.FormEvent) => {
+            e.preventDefault();
+            if (!round || !suggesterKeyHash) return;
+            const title = manualTitle.trim();
+            const author = manualAuthor.trim();
+            if (!title || !author) {
+                setManualSubmitError('Title and author are required.');
+                return;
+            }
+            if (countCommentChars(manualComment) > MAX_COMMENT_CHARS) {
+                setManualSubmitError(
+                    `Comment must be ${MAX_COMMENT_CHARS} characters or fewer.`,
+                );
+                return;
+            }
+            setManualSubmitPending(true);
+            setManualSubmitError(null);
+            try {
+                const res = await fetch('/api/suggestions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        manualEntry: true,
+                        suggestionRoundId: round.id,
+                        suggesterKeyHash,
+                        title,
+                        author,
+                        coverUrl:
+                            manualCoverUrl.trim() === ''
+                                ? undefined
+                                : manualCoverUrl.trim(),
+                        blurb:
+                            manualBlurb.trim() === ''
+                                ? undefined
+                                : manualBlurb.trim(),
+                        comment:
+                            manualComment.trim() === ''
+                                ? undefined
+                                : manualComment.trim(),
+                        commenterName:
+                            manualCommenterName.trim() === ''
+                                ? null
+                                : manualCommenterName.trim(),
+                    }),
+                    credentials: 'include',
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error ?? 'Failed to submit');
+                closeModal();
+                await fetchSuggestions();
+            } catch (err) {
+                setManualSubmitError(
+                    err instanceof Error ? err.message : 'Failed to submit',
+                );
+            } finally {
+                setManualSubmitPending(false);
+            }
+        },
+        [
+            round,
+            suggesterKeyHash,
+            manualTitle,
+            manualAuthor,
+            manualCoverUrl,
+            manualBlurb,
+            manualComment,
+            manualCommenterName,
+            closeModal,
+            fetchSuggestions,
+        ],
+    );
 
     const fetchBlurbFromAi = useCallback(async () => {
         if (!selectedBook) return;
@@ -757,15 +851,54 @@ export default function SuggestNextBookPage() {
 
                     <main className="max-w-lg mx-auto w-full p-4 flex-1">
                         <section>
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                                <h2 className="text-sm font-medium text-muted">
-                                    Current suggestions
-                                </h2>
-                            </div>
-                            {uniqueSuggestions.length === 0 ? (
-                                <p className="text-muted text-sm">
-                                    No books suggested yet. Be the first!
+                            {hasPendingManualEntry && (
+                                <p className="text-sm text-muted mb-3 rounded-lg border border-border bg-[var(--surface-hover)] px-3 py-2">
+                                    Manual entry pending approval
                                 </p>
+                            )}
+                            <div className="mb-3">
+                                <h2 className="text-base font-semibold text-foreground">
+                                    What everyone&apos;s suggesting
+                                </h2>
+                                <p className="text-sm text-muted mt-0.5">
+                                    The list so far—add yours below!
+                                </p>
+                            </div>
+                            <div>
+                            {uniqueSuggestions.length === 0 &&
+                            !hasPendingManualEntry ? (
+                                <div className="rounded-xl bg-gradient-to-br from-primary/8 to-primary/4 dark:from-primary/12 dark:to-primary/6 border border-primary/20 p-6 text-center">
+                                    <StackOfBooks
+                                        className="mx-auto mb-3 text-primary/70"
+                                        width={72}
+                                        height={52}
+                                    />
+                                    <p className="text-foreground font-medium mb-1">
+                                        The floor is yours!
+                                    </p>
+                                    <p className="text-sm text-muted max-w-xs mx-auto">
+                                        No one&apos;s suggested anything yet—add
+                                        the first book and get the ball
+                                        rolling. Your pick could be our next
+                                        read.
+                                    </p>
+                                </div>
+                            ) : uniqueSuggestions.length === 0 ? (
+                                <div className="rounded-xl bg-gradient-to-br from-primary/8 to-primary/4 dark:from-primary/12 dark:to-primary/6 border border-primary/20 p-6 text-center">
+                                    <StackOfBooks
+                                        className="mx-auto mb-3 text-primary/70"
+                                        width={72}
+                                        height={52}
+                                    />
+                                    <p className="text-foreground font-medium mb-1">
+                                        Your manual entry is in the queue
+                                    </p>
+                                    <p className="text-sm text-muted max-w-xs mx-auto">
+                                        No books in the list yet. Yours will
+                                        appear here once an admin has approved
+                                        it—won&apos;t be long!
+                                    </p>
+                                </div>
                             ) : (
                                 <ul className="space-y-4">
                                     {uniqueSuggestions.map((item) => (
@@ -855,6 +988,7 @@ export default function SuggestNextBookPage() {
                                     ))}
                                 </ul>
                             )}
+                            </div>
                         </section>
                     </main>
 
@@ -1087,7 +1221,7 @@ export default function SuggestNextBookPage() {
                         </div>
                     )}
 
-                    {/* Modal: Suggest a new book (search -> results -> review -> success) */}
+                    {/* Modal: Suggest a new book (Search tab | Manual entry tab) */}
                     {modalOpen && (
                         <div
                             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -1098,16 +1232,11 @@ export default function SuggestNextBookPage() {
                             <div className="bg-surface rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
                                 <div className="p-4 border-b border-border flex justify-between items-center shrink-0">
                                     <h2 className="text-lg font-semibold">
-                                        {modalStep === 'search' &&
-                                            'Search for a book'}
-                                        {modalStep === 'results' &&
-                                            'Select a book'}
-                                        {modalStep === 'review' &&
-                                            'Review your suggestion'}
-                                        {modalStep === 'success' &&
-                                            'Suggestion received!'}
+                                        Suggest a new book
                                     </h2>
-                                    {modalStep !== 'success' && (
+                                    {(modalTab === 'search'
+                                        ? modalStep !== 'success'
+                                        : true) && (
                                         <button
                                             type="button"
                                             onClick={closeModal}
@@ -1118,8 +1247,181 @@ export default function SuggestNextBookPage() {
                                         </button>
                                     )}
                                 </div>
+                                {modalStep !== 'success' && (
+                                    <div className="border-b border-border flex w-full shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setModalTab('search')
+                                            }
+                                            className={`flex-1 py-2.5 text-sm font-medium -mb-px border-b-2 text-center ${
+                                                modalTab === 'search'
+                                                    ? 'border-primary text-primary'
+                                                    : 'border-transparent text-muted hover:text-foreground'
+                                            }`}
+                                        >
+                                            Search
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setModalTab('manual')
+                                            }
+                                            className={`flex-1 py-2.5 text-sm font-medium -mb-px border-b-2 text-center ${
+                                                modalTab === 'manual'
+                                                    ? 'border-primary text-primary'
+                                                    : 'border-transparent text-muted hover:text-foreground'
+                                            }`}
+                                        >
+                                            Manual entry
+                                        </button>
+                                    </div>
+                                )}
                                 <div className="p-4 overflow-y-auto flex-1 min-h-0">
-                                    {modalStep === 'search' && (
+                                    {modalTab === 'manual' ? (
+                                        <form
+                                            onSubmit={handleManualSubmit}
+                                            className="space-y-4"
+                                        >
+                                            <div>
+                                                <label className="text-xs font-medium text-muted block mb-1">
+                                                    Title
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={manualTitle}
+                                                    onChange={(e) =>
+                                                        setManualTitle(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Book title"
+                                                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-medium text-muted block mb-1">
+                                                    Author
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={manualAuthor}
+                                                    onChange={(e) =>
+                                                        setManualAuthor(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Author name"
+                                                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-medium text-muted block mb-1">
+                                                    Thumbnail URL (optional)
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    value={manualCoverUrl}
+                                                    onChange={(e) =>
+                                                        setManualCoverUrl(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="https://…"
+                                                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-medium text-muted block mb-1">
+                                                    Description (optional)
+                                                </label>
+                                                <SuggestionCommentEditor
+                                                    initialContent={
+                                                        manualBlurb
+                                                    }
+                                                    onUpdate={setManualBlurb}
+                                                    placeholder="Brief description of the book…"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-medium text-muted block mb-1">
+                                                    Leave optional comment
+                                                </label>
+                                                <SuggestionCommentEditor
+                                                    initialContent={
+                                                        manualComment
+                                                    }
+                                                    onUpdate={setManualComment}
+                                                    placeholder="e.g. Why you suggest this book…"
+                                                />
+                                                {countCommentChars(
+                                                    manualComment,
+                                                ) > 0 && (
+                                                    <div className="mt-3">
+                                                        <label className="text-xs font-medium text-muted block mb-1">
+                                                            Your name (optional)
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={
+                                                                manualCommenterName
+                                                            }
+                                                            onChange={(e) =>
+                                                                setManualCommenterName(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="Leave blank to show as Anonymous"
+                                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                                            maxLength={128}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-muted rounded-lg border border-border bg-[var(--surface-hover)] p-3">
+                                                Manual entries are reviewed by
+                                                an admin and will only appear in
+                                                the list once approved.
+                                            </p>
+                                            <p className="text-sm font-semibold text-red-600 dark:text-red-400 pt-2">
+                                                Suggesting a book can&apos;t be
+                                                changed.
+                                            </p>
+                                            {manualSubmitError && (
+                                                <p
+                                                    className="text-sm text-red-600 dark:text-red-400"
+                                                    role="alert"
+                                                >
+                                                    {manualSubmitError}
+                                                </p>
+                                            )}
+                                            <div className="flex gap-3 pt-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setModalTab('search')
+                                                    }
+                                                    className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-[var(--surface-hover)]"
+                                                >
+                                                    Back
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={
+                                                        manualSubmitPending
+                                                    }
+                                                    className="flex-1 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium disabled:opacity-50"
+                                                >
+                                                    {manualSubmitPending
+                                                        ? 'Submitting…'
+                                                        : 'Submit manual entry'}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    ) : modalStep === 'search' ? (
                                         <form
                                             onSubmit={handleSearch}
                                             className="space-y-3"
@@ -1180,8 +1482,22 @@ export default function SuggestNextBookPage() {
                                                     <LoadingDots className="text-muted" />
                                                 </div>
                                             )}
+                                            <p className="text-sm text-muted pt-2">
+                                                Still can&apos;t find it using
+                                                the search?{' '}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setModalTab('manual')
+                                                    }
+                                                    className="text-primary hover:underline underline-offset-2"
+                                                >
+                                                    Submit a manual entry
+                                                </button>
+                                            </p>
                                         </form>
-                                    )}
+                                    ) : (
+                                        <>
                                     {modalStep === 'results' && (
                                         <div className="space-y-2">
                                             <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -1236,65 +1552,80 @@ export default function SuggestNextBookPage() {
                                                     <LoadingDots className="text-muted" />
                                                 </div>
                                             ) : (
-                                            <ul className="space-y-2 max-h-60 overflow-y-auto">
-                                                {searchResults.map((book) => (
-                                                    <li
-                                                        key={book.externalId}
-                                                        className="flex gap-3 rounded-lg border border-border p-3 items-center"
-                                                    >
-                                                        <div className="w-12 h-[72px] shrink-0 rounded overflow-hidden">
-                                                            <BookCoverImage
-                                                                src={book.coverUrl}
-                                                                containerClassName="w-full h-full"
-                                                                sizes="48px"
-                                                                onError={() => {
-                                                                    fetchCoverFallback(
-                                                                        book.title,
-                                                                        book.author,
-                                                                        (url) => {
-                                                                            setSearchResults(
-                                                                                (prev) =>
-                                                                                    prev.map(
-                                                                                        (b) =>
-                                                                                            b.externalId ===
-                                                                                            book.externalId
-                                                                                                ? {
-                                                                                                      ...b,
-                                                                                                      coverUrl: url,
-                                                                                                      coverOptions: [
-                                                                                                          url,
-                                                                                                      ],
-                                                                                                  }
-                                                                                                : b,
-                                                                                    ),
-                                                                            );
-                                                                        },
-                                                                    );
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-medium text-sm truncate">
-                                                                {book.title}
-                                                            </p>
-                                                            <p className="text-xs text-muted truncate">
-                                                                by {book.author}
-                                                            </p>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleSelectBook(
-                                                                    book,
-                                                                )
-                                                            }
-                                                            className="shrink-0 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium"
+                                            <div className="max-h-60 overflow-y-auto space-y-2">
+                                                <ul className="space-y-2">
+                                                    {searchResults.map((book) => (
+                                                        <li
+                                                            key={book.externalId}
+                                                            className="flex gap-3 rounded-lg border border-border p-3 items-center"
                                                         >
-                                                            Select book
-                                                        </button>
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                                            <div className="w-12 h-[72px] shrink-0 rounded overflow-hidden">
+                                                                <BookCoverImage
+                                                                    src={book.coverUrl}
+                                                                    containerClassName="w-full h-full"
+                                                                    sizes="48px"
+                                                                    onError={() => {
+                                                                        fetchCoverFallback(
+                                                                            book.title,
+                                                                            book.author,
+                                                                            (url) => {
+                                                                                setSearchResults(
+                                                                                    (prev) =>
+                                                                                        prev.map(
+                                                                                            (b) =>
+                                                                                                b.externalId ===
+                                                                                                book.externalId
+                                                                                                    ? {
+                                                                                                          ...b,
+                                                                                                          coverUrl: url,
+                                                                                                          coverOptions: [
+                                                                                                              url,
+                                                                                                          ],
+                                                                                                      }
+                                                                                                    : b,
+                                                                                        ),
+                                                                                );
+                                                                            },
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-medium text-sm truncate">
+                                                                    {book.title}
+                                                                </p>
+                                                                <p className="text-xs text-muted truncate">
+                                                                    by {book.author}
+                                                                </p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleSelectBook(
+                                                                        book,
+                                                                    )
+                                                                }
+                                                                className="shrink-0 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium"
+                                                            >
+                                                                Select book
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                                <p className="text-sm text-muted pt-2 pb-1 border-t border-border">
+                                                    Still can&apos;t find it
+                                                    using the search?{' '}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setModalTab('manual')
+                                                        }
+                                                        className="text-primary hover:underline underline-offset-2"
+                                                    >
+                                                        Submit a manual entry
+                                                    </button>
+                                                </p>
+                                            </div>
                                             )}
                                         </div>
                                     )}
@@ -1554,6 +1885,8 @@ export default function SuggestNextBookPage() {
                                                 </button>
                                             </div>
                                         </div>
+                                    )}
+                                        </>
                                     )}
                                 </div>
                             </div>
