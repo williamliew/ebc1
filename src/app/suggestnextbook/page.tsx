@@ -140,7 +140,7 @@ export default function SuggestNextBookPage() {
     const [searchPending, setSearchPending] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
     const [searchPhase, setSearchPhase] = useState<
-        'idle' | 'openlibrary' | 'trying_google'
+        'idle' | 'google' | 'trying_openlibrary'
     >('idle');
     const [searchSource, setSearchSource] = useState<
         'openlibrary' | 'google' | null
@@ -305,8 +305,24 @@ export default function SuggestNextBookPage() {
             if (!title && !author) return;
             setSearchPending(true);
             setSearchError(null);
-            setSearchPhase('openlibrary');
+            setSearchPhase('google');
             try {
+                const googleRes = await fetch('/api/books/search-google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, author, page: 1 }),
+                });
+                const googleData = await googleRes.json();
+                if (!googleRes.ok) throw new Error(googleData.error ?? 'Google Books search failed');
+                const googleResults = googleData.results ?? [];
+                if (googleResults.length > 0) {
+                    setSearchResults(googleResults);
+                    setSearchSource('google');
+                    setModalStep('results');
+                    setSearchPhase('idle');
+                    return;
+                }
+                setSearchPhase('trying_openlibrary');
                 const res = await fetch('/api/books/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -319,25 +335,8 @@ export default function SuggestNextBookPage() {
                     setSearchResults(results);
                     setSearchSource('openlibrary');
                     setModalStep('results');
-                    setSearchPhase('idle');
-                    return;
-                }
-                setSearchPhase('trying_google');
-                const googleRes = await fetch('/api/books/search-google', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, author, page: 1 }),
-                });
-                const googleData = await googleRes.json();
-                if (!googleRes.ok) {
-                    setSearchError(
-                        googleData.error ?? 'Google Books search failed',
-                    );
-                    setSearchResults([]);
                 } else {
-                    setSearchResults(googleData.results ?? []);
-                    setSearchSource('google');
-                    setModalStep('results');
+                    setSearchResults([]);
                 }
             } catch (err) {
                 setSearchError(
@@ -377,13 +376,44 @@ export default function SuggestNextBookPage() {
         [],
     );
 
+    const tryOpenLibrarySearch = useCallback(async () => {
+        const title = titleSearch.trim();
+        const author = authorSearch.trim();
+        if (!title && !author) return;
+        setSearchResults([]);
+        setSearchError(null);
+        setSearchPhase('trying_openlibrary');
+        setSearchPending(true);
+        try {
+            const res = await fetch('/api/books/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, author, page: 1 }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setSearchError(data.error ?? 'Open Library search failed');
+                setSearchResults([]);
+            } else {
+                setSearchResults(data.results ?? []);
+                setSearchSource('openlibrary');
+            }
+        } catch {
+            setSearchError('Open Library search failed');
+            setSearchResults([]);
+        } finally {
+            setSearchPending(false);
+            setSearchPhase('idle');
+        }
+    }, [titleSearch, authorSearch]);
+
     const tryGoogleBooksSearch = useCallback(async () => {
         const title = titleSearch.trim();
         const author = authorSearch.trim();
         if (!title && !author) return;
         setSearchResults([]);
         setSearchError(null);
-        setSearchPhase('trying_google');
+        setSearchPhase('google');
         setSearchPending(true);
         try {
             const googleRes = await fetch('/api/books/search-google', {
@@ -1140,11 +1170,11 @@ export default function SuggestNextBookPage() {
                                                 <div className="flex flex-col items-center justify-center pt-4 min-h-[2rem] gap-2">
                                                     <p className="text-sm text-muted text-center">
                                                         {searchPhase ===
-                                                        'openlibrary'
-                                                            ? 'Searching Open Library'
+                                                        'google'
+                                                            ? 'Searching Google Books'
                                                             : searchPhase ===
-                                                                'trying_google'
-                                                              ? "Didn't find anything. Trying Google Books"
+                                                                'trying_openlibrary'
+                                                              ? "Didn't find anything. Trying Open Library"
                                                               : 'Searching…'}
                                                     </p>
                                                     <LoadingDots className="text-muted" />
@@ -1165,6 +1195,21 @@ export default function SuggestNextBookPage() {
                                                     <BackArrowIcon className="size-4 shrink-0" />
                                                     Back to search
                                                 </button>
+                                                {searchSource === 'google' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={
+                                                            tryOpenLibrarySearch
+                                                        }
+                                                        disabled={
+                                                            searchPending
+                                                        }
+                                                        className="text-sm text-primary hover:underline underline-offset-2 disabled:opacity-50"
+                                                    >
+                                                        Didn&apos;t find it? Try
+                                                        looking in Open Library
+                                                    </button>
+                                                )}
                                                 {searchSource ===
                                                     'openlibrary' && (
                                                     <button
@@ -1186,7 +1231,7 @@ export default function SuggestNextBookPage() {
                                             searchResults.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center py-6 gap-2">
                                                     <p className="text-sm text-muted text-center">
-                                                        Trying Google Books
+                                                        Trying Open Library
                                                     </p>
                                                     <LoadingDots className="text-muted" />
                                                 </div>

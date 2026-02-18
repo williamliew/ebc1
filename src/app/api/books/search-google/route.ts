@@ -105,6 +105,8 @@ export async function POST(request: Request) {
     params.set('maxResults', String(PAGE_SIZE));
     params.set('startIndex', String(startIndex));
     params.set('printType', 'books');
+    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+    if (apiKey) params.set('key', apiKey);
 
     const url = `${GOOGLE_BOOKS_BASE}?${params.toString()}`;
 
@@ -119,9 +121,18 @@ export async function POST(request: Request) {
             console.error(
                 'Google Books search error:',
                 res.status,
-                url,
+                url.replace(/key=[^&]+/, 'key=…'),
                 text.slice(0, 200),
             );
+            if (res.status === 429) {
+                return NextResponse.json(
+                    {
+                        error:
+                            'Google Books daily limit reached. Try again tomorrow or use Open Library results.',
+                    },
+                    { status: 502 },
+                );
+            }
             return NextResponse.json(
                 { error: 'Google Books search failed' },
                 { status: 502 },

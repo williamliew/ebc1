@@ -89,6 +89,13 @@ export default function VotingBuilderPage() {
     const [totalSearchItems, setTotalSearchItems] = useState(0);
     const [selected, setSelected] = useState<BookSearchResult[]>([]);
     const [searchError, setSearchError] = useState<string | null>(null);
+    const [searchSource, setSearchSource] = useState<
+        'openlibrary' | 'google' | null
+    >(null);
+    const [googleSearchPending, setGoogleSearchPending] = useState(false);
+    const [openLibrarySearchPending, setOpenLibrarySearchPending] =
+        useState(false);
+    const [initialSearchPending, setInitialSearchPending] = useState(false);
     const [createMessage, setCreateMessage] = useState<{
         type: 'success' | 'error';
         text: string;
@@ -172,6 +179,7 @@ export default function VotingBuilderPage() {
             setSearchPage(data.page);
             setTotalSearchItems(data.totalItems);
             setSearchError(null);
+            setSearchSource('openlibrary');
         },
         onError: (err) => {
             setSearchError(
@@ -180,6 +188,70 @@ export default function VotingBuilderPage() {
             setSearchResults([]);
         },
     });
+
+    const tryGoogleBooksSearch = useCallback(async () => {
+        const title = titleSearch.trim();
+        const author = authorSearch.trim();
+        if (!title && !author) return;
+        setSearchResults([]);
+        setSearchError(null);
+        setGoogleSearchPending(true);
+        try {
+            const res = await fetch('/api/books/search-google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, author, page: 1 }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setSearchError(
+                    data.error ?? 'Google Books search failed',
+                );
+                setSearchResults([]);
+            } else {
+                setSearchResults(data.results ?? []);
+                setSearchPage(data.page ?? 1);
+                setTotalSearchItems(data.totalItems ?? 0);
+                setSearchSource('google');
+            }
+        } catch {
+            setSearchError('Google Books search failed');
+            setSearchResults([]);
+        } finally {
+            setGoogleSearchPending(false);
+        }
+    }, [titleSearch, authorSearch]);
+
+    const tryOpenLibrarySearch = useCallback(async () => {
+        const title = titleSearch.trim();
+        const author = authorSearch.trim();
+        if (!title && !author) return;
+        setSearchResults([]);
+        setSearchError(null);
+        setOpenLibrarySearchPending(true);
+        try {
+            const res = await fetch('/api/books/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, author, page: 1 }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setSearchError(data.error ?? 'Open Library search failed');
+                setSearchResults([]);
+            } else {
+                setSearchResults(data.results ?? []);
+                setSearchPage(data.page ?? 1);
+                setTotalSearchItems(data.totalItems ?? 0);
+                setSearchSource('openlibrary');
+            }
+        } catch {
+            setSearchError('Open Library search failed');
+            setSearchResults([]);
+        } finally {
+            setOpenLibrarySearchPending(false);
+        }
+    }, [titleSearch, authorSearch]);
 
     const createMutation = useMutation({
         mutationFn: async ({
@@ -240,17 +312,48 @@ export default function VotingBuilderPage() {
     });
 
     const handleSearch = useCallback(
-        (e: React.FormEvent) => {
+        async (e: React.FormEvent) => {
             e.preventDefault();
             const title = titleSearch.trim();
             const author = authorSearch.trim();
             if (!title && !author) return;
-            searchMutation.mutate({ title, author, page: 1 });
+            setInitialSearchPending(true);
+            setSearchError(null);
+            try {
+                const res = await fetch('/api/books/search-google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, author, page: 1 }),
+                });
+                const data = await res.json();
+                if (res.ok && (data.results?.length ?? 0) > 0) {
+                    setSearchResults(data.results ?? []);
+                    setSearchPage(data.page ?? 1);
+                    setTotalSearchItems(data.totalItems ?? 0);
+                    setSearchSource('google');
+                    setInitialSearchPending(false);
+                    return;
+                }
+                searchMutation.mutate(
+                    { title, author, page: 1 },
+                    {
+                        onSettled: () => setInitialSearchPending(false),
+                    },
+                );
+            } catch {
+                setInitialSearchPending(false);
+                searchMutation.mutate(
+                    { title, author, page: 1 },
+                    {
+                        onSettled: () => setInitialSearchPending(false),
+                    },
+                );
+            }
         },
         [titleSearch, authorSearch, searchMutation],
     );
 
-    const MAX_PAGES = 10;
+    const MAX_PAGES = 3;
     const effectiveTotal = Math.min(totalSearchItems, MAX_PAGES * PAGE_SIZE);
     const totalSearchPages = Math.max(1, Math.ceil(effectiveTotal / PAGE_SIZE));
     const showPagination = searchResults.length > 0 && totalSearchPages > 1;
@@ -707,12 +810,15 @@ export default function VotingBuilderPage() {
                         <button
                             type="submit"
                             disabled={
+                                initialSearchPending ||
                                 searchMutation.isPending ||
                                 (!titleSearch.trim() && !authorSearch.trim())
                             }
                             className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 shrink-0"
                         >
-                            {searchMutation.isPending ? 'Searching…' : 'Search'}
+                            {initialSearchPending || searchMutation.isPending
+                                ? 'Searching…'
+                                : 'Search'}
                         </button>
                     </form>
                     {searchError && (
@@ -726,7 +832,10 @@ export default function VotingBuilderPage() {
                 </section>
 
                 {/* Searching: show book flip while search is in progress */}
-                {searchMutation.isPending && (
+                {(initialSearchPending ||
+                    searchMutation.isPending ||
+                    googleSearchPending ||
+                    openLibrarySearchPending) && (
                     <section className="flex justify-center py-8">
                         <LoadingBookFlip size="sm" />
                     </section>
@@ -738,6 +847,42 @@ export default function VotingBuilderPage() {
                         <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
                             Results
                         </h2>
+                        {searchSource === 'google' && (
+                            <div className="mb-2">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        void tryOpenLibrarySearch()
+                                    }
+                                    disabled={
+                                        searchMutation.isPending ||
+                                        googleSearchPending ||
+                                        openLibrarySearchPending
+                                    }
+                                    className="text-sm text-primary hover:underline underline-offset-2 disabled:opacity-50"
+                                >
+                                    Didn&apos;t find it? Try looking in Open
+                                    Library
+                                </button>
+                            </div>
+                        )}
+                        {searchSource === 'openlibrary' && (
+                            <div className="mb-2">
+                                <button
+                                    type="button"
+                                    onClick={() => void tryGoogleBooksSearch()}
+                                    disabled={
+                                        searchMutation.isPending ||
+                                        googleSearchPending ||
+                                        openLibrarySearchPending
+                                    }
+                                    className="text-sm text-primary hover:underline underline-offset-2 disabled:opacity-50"
+                                >
+                                    Didn&apos;t find it? Try looking in Google
+                                    Books
+                                </button>
+                            </div>
+                        )}
                         <ul className="space-y-3">
                             {searchResults.map((book) => {
                                 const alreadySelected = selectedIds.has(
