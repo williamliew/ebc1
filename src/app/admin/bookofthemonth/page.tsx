@@ -74,6 +74,11 @@ export default function BookOfTheMonthPage() {
     const [searchSource, setSearchSource] = useState<
         'openlibrary' | 'google' | null
     >(null);
+    const [addBookTab, setAddBookTab] = useState<'search' | 'manual'>('search');
+    const [manualTitle, setManualTitle] = useState('');
+    const [manualAuthor, setManualAuthor] = useState('');
+    const [manualCoverUrl, setManualCoverUrl] = useState('');
+    const [manualBlurb, setManualBlurb] = useState('');
     const [selectedBook, setSelectedBook] = useState<ReviewBook | null>(null);
     const [meetingDate, setMeetingDate] = useState('');
     const [confirmPending, setConfirmPending] = useState(false);
@@ -277,6 +282,42 @@ export default function BookOfTheMonthPage() {
         setStage('review');
     }, []);
 
+    const handleAddManualBook = useCallback(
+        (e: React.FormEvent) => {
+            e.preventDefault();
+            const title = manualTitle.trim();
+            const author = manualAuthor.trim();
+            if (!title || !author) return;
+            const externalId = `manual-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+            const coverUrl =
+                manualCoverUrl.trim() === '' ? null : manualCoverUrl.trim();
+            const book: SearchBook = {
+                externalId,
+                title,
+                author,
+                coverUrl,
+                coverOptions: coverUrl ? [coverUrl] : [],
+                blurb:
+                    manualBlurb.trim() === ''
+                        ? null
+                        : manualBlurb.trim(),
+                link: null,
+            };
+            selectSearchBook(book);
+            setManualTitle('');
+            setManualAuthor('');
+            setManualCoverUrl('');
+            setManualBlurb('');
+        },
+        [
+            manualTitle,
+            manualAuthor,
+            manualCoverUrl,
+            manualBlurb,
+            selectSearchBook,
+        ],
+    );
+
     const updateReviewBook = useCallback(
         <K extends keyof ReviewBook>(field: K, value: ReviewBook[K]) => {
             setSelectedBook((prev) =>
@@ -445,11 +486,34 @@ export default function BookOfTheMonthPage() {
                             <p className="text-sm text-muted">Loading…</p>
                         )}
 
-                        {/* Search for a book */}
-                        <section>
-                            <h2 className="text-lg font-semibold text-foreground mb-3">
+                        {/* Search for a book or Manual entry */}
+                        <div className="border-b border-border mb-3 flex">
+                            <button
+                                type="button"
+                                onClick={() => setAddBookTab('search')}
+                                className={`flex-1 py-2.5 text-sm font-medium border-b-2 text-center -mb-px ${
+                                    addBookTab === 'search'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted hover:text-foreground'
+                                }`}
+                            >
                                 Search for a book
-                            </h2>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setAddBookTab('manual')}
+                                className={`flex-1 py-2.5 text-sm font-medium border-b-2 text-center -mb-px ${
+                                    addBookTab === 'manual'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted hover:text-foreground'
+                                }`}
+                            >
+                                Manual entry
+                            </button>
+                        </div>
+
+                        {addBookTab === 'search' && (
+                        <section>
                             <form
                                 onSubmit={handleSearch}
                                 className="space-y-3 mb-4"
@@ -608,6 +672,86 @@ export default function BookOfTheMonthPage() {
                                 </>
                             )}
                         </section>
+                        )}
+
+                        {addBookTab === 'manual' && (
+                            <section>
+                                <form
+                                    onSubmit={handleAddManualBook}
+                                    className="space-y-4"
+                                >
+                                    <div>
+                                        <label className="text-xs font-medium text-muted block mb-1">
+                                            Title
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={manualTitle}
+                                            onChange={(e) =>
+                                                setManualTitle(e.target.value)
+                                            }
+                                            placeholder="Book title"
+                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-muted block mb-1">
+                                            Author
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={manualAuthor}
+                                            onChange={(e) =>
+                                                setManualAuthor(e.target.value)
+                                            }
+                                            placeholder="Author name"
+                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-muted block mb-1">
+                                            Thumbnail URL (optional)
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={manualCoverUrl}
+                                            onChange={(e) =>
+                                                setManualCoverUrl(e.target.value)
+                                            }
+                                            placeholder="https://…"
+                                            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                        />
+                                        {manualCoverUrl.trim() !== '' && (
+                                            <div className="mt-2 relative w-full max-w-[120px] aspect-[3/4] rounded overflow-hidden border border-border">
+                                                <BookCoverImage
+                                                    src={manualCoverUrl.trim()}
+                                                    containerClassName="absolute inset-0"
+                                                    sizes="120px"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-muted block mb-1">
+                                            Description (optional)
+                                        </label>
+                                        <BlurbEditor
+                                            initialContent={manualBlurb}
+                                            onUpdate={setManualBlurb}
+                                            placeholder="Brief description of the book…"
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)]"
+                                    >
+                                        Select book
+                                    </button>
+                                </form>
+                            </section>
+                        )}
                     </div>
                 )}
 

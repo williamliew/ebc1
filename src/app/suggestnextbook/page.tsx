@@ -1332,6 +1332,15 @@ export default function SuggestNextBookPage() {
                                                     placeholder="https://…"
                                                     className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
                                                 />
+                                                {manualCoverUrl.trim() !== '' && (
+                                                    <div className="mt-2 relative w-full max-w-[120px] aspect-[3/4] rounded overflow-hidden border border-border">
+                                                        <BookCoverImage
+                                                            src={manualCoverUrl.trim()}
+                                                            containerClassName="absolute inset-0"
+                                                            sizes="120px"
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                             <div>
                                                 <label className="text-xs font-medium text-muted block mb-1">

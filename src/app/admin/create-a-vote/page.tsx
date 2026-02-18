@@ -96,6 +96,11 @@ export default function VotingBuilderPage() {
     const [openLibrarySearchPending, setOpenLibrarySearchPending] =
         useState(false);
     const [initialSearchPending, setInitialSearchPending] = useState(false);
+    const [addBookTab, setAddBookTab] = useState<'search' | 'manual'>('search');
+    const [manualTitle, setManualTitle] = useState('');
+    const [manualAuthor, setManualAuthor] = useState('');
+    const [manualCoverUrl, setManualCoverUrl] = useState('');
+    const [manualBlurb, setManualBlurb] = useState('');
     const [createMessage, setCreateMessage] = useState<{
         type: 'success' | 'error';
         text: string;
@@ -386,6 +391,44 @@ export default function VotingBuilderPage() {
     const removeSelected = useCallback((externalId: string) => {
         setSelected((prev) => prev.filter((b) => b.externalId !== externalId));
     }, []);
+
+    const handleAddManualBook = useCallback(
+        (e: React.FormEvent) => {
+            e.preventDefault();
+            const title = manualTitle.trim();
+            const author = manualAuthor.trim();
+            if (!title || !author) return;
+            if (selected.length >= MAX_SELECTED) return;
+            const externalId = `manual-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+            const coverUrl =
+                manualCoverUrl.trim() === '' ? null : manualCoverUrl.trim();
+            const book: BookSearchResult = {
+                externalId,
+                title,
+                author,
+                coverUrl,
+                coverOptions: coverUrl ? [coverUrl] : [],
+                blurb:
+                    manualBlurb.trim() === ''
+                        ? null
+                        : manualBlurb.trim(),
+                link: null,
+            };
+            addSelected(book);
+            setManualTitle('');
+            setManualAuthor('');
+            setManualCoverUrl('');
+            setManualBlurb('');
+        },
+        [
+            manualTitle,
+            manualAuthor,
+            manualCoverUrl,
+            manualBlurb,
+            selected.length,
+            addSelected,
+        ],
+    );
 
     const reset = useCallback(() => {
         setSelected([]);
@@ -747,12 +790,34 @@ export default function VotingBuilderPage() {
                     </section>
                 )}
 
-                {latestSuggestionBooks.length > 0 && (
-                    <h2 className="text-sm font-semibold text-muted dark:text-muted">
-                        Or find a book
-                    </h2>
-                )}
+                {/* Search for a book or Manual entry */}
+                <div className="w-full border-b border-border mb-3 flex">
+                    <button
+                        type="button"
+                        onClick={() => setAddBookTab('search')}
+                        className={`flex-1 py-2.5 text-sm font-medium border-b-2 text-center -mb-px ${
+                            addBookTab === 'search'
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-muted hover:text-foreground'
+                        }`}
+                    >
+                        Search
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setAddBookTab('manual')}
+                        className={`flex-1 py-2.5 text-sm font-medium border-b-2 text-center -mb-px ${
+                            addBookTab === 'manual'
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-muted hover:text-foreground'
+                        }`}
+                    >
+                        Manual entry
+                    </button>
+                </div>
 
+                {addBookTab === 'search' && (
+                <>
                 {/* Search */}
                 <section className="w-full">
                     <form
@@ -1037,6 +1102,101 @@ export default function VotingBuilderPage() {
                                 </button>
                             </div>
                         )}
+                    </section>
+                )}
+                <p className="text-sm text-muted mt-3 pt-2 border-t border-border">
+                    Still can&apos;t find it using the search?{' '}
+                    <button
+                        type="button"
+                        onClick={() => setAddBookTab('manual')}
+                        className="text-primary hover:underline underline-offset-2"
+                    >
+                        Add a manual entry
+                    </button>
+                </p>
+
+                </>
+                )}
+
+                {addBookTab === 'manual' && (
+                    <section className="w-full">
+                        <form
+                            onSubmit={handleAddManualBook}
+                            className="space-y-4"
+                        >
+                            <div>
+                                <label className="text-xs font-medium text-muted block mb-1">
+                                    Title
+                                </label>
+                                <input
+                                    type="text"
+                                    value={manualTitle}
+                                    onChange={(e) =>
+                                        setManualTitle(e.target.value)
+                                    }
+                                    placeholder="Book title"
+                                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-muted block mb-1">
+                                    Author
+                                </label>
+                                <input
+                                    type="text"
+                                    value={manualAuthor}
+                                    onChange={(e) =>
+                                        setManualAuthor(e.target.value)
+                                    }
+                                    placeholder="Author name"
+                                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-muted block mb-1">
+                                    Thumbnail URL (optional)
+                                </label>
+                                <input
+                                    type="url"
+                                    value={manualCoverUrl}
+                                    onChange={(e) =>
+                                        setManualCoverUrl(e.target.value)
+                                    }
+                                    placeholder="https://…"
+                                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                                />
+                                {manualCoverUrl.trim() !== '' && (
+                                    <div className="mt-2 relative w-full max-w-[120px] aspect-[3/4] rounded overflow-hidden border border-border">
+                                        <BookCoverImage
+                                            src={manualCoverUrl.trim()}
+                                            containerClassName="absolute inset-0"
+                                            sizes="120px"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-muted block mb-1">
+                                    Description (optional)
+                                </label>
+                                <BlurbEditor
+                                    initialContent={manualBlurb}
+                                    onUpdate={setManualBlurb}
+                                    placeholder="Brief description of the book…"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={selected.length >= MAX_SELECTED}
+                                className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50"
+                            >
+                                {selected.length >= MAX_SELECTED
+                                    ? 'List full'
+                                    : 'Add to list'}
+                            </button>
+                        </form>
                     </section>
                 )}
 
