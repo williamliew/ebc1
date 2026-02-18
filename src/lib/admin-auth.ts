@@ -1,6 +1,6 @@
 /**
  * Light admin auth: signed cookie verified with ADMIN_PASSWORD.
- * Works in Edge (middleware) and Node (API routes) via Web Crypto.
+ * Works in Edge (proxy) and Node (API routes) via Web Crypto.
  */
 
 import { env } from '@/lib/env';

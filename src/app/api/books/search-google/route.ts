@@ -19,6 +19,7 @@ type GoogleVolumeItem = {
         title?: string;
         authors?: string[];
         description?: string;
+        categories?: string[];
         imageLinks?: {
             thumbnail?: string;
             small?: string;
@@ -27,6 +28,20 @@ type GoogleVolumeItem = {
         infoLink?: string;
     };
 };
+
+/** True if the volume's categories look fiction-related (for "fiction first" sorting). */
+function isFictionCategory(item: GoogleVolumeItem): boolean {
+    const categories = item.volumeInfo?.categories;
+    if (!Array.isArray(categories) || categories.length === 0) return false;
+    const joined = categories.join(' ').toLowerCase();
+    return (
+        /\bfiction\b/.test(joined) ||
+        /\bnovel\b/.test(joined) ||
+        /\bromance\b/.test(joined) ||
+        /\bliterary\b/.test(joined) ||
+        /\bgeneral\b/.test(joined)
+    );
+}
 
 /** Force HTTPS to avoid mixed-content on HTTPS pages (Google Books often returns http). */
 function toHttps(url: string | null | undefined): string | null {
@@ -145,7 +160,15 @@ export async function POST(request: Request) {
         };
         const totalItems = data.totalItems ?? 0;
         const items = data.items ?? [];
-        const results: BookSearchResult[] = items.map(toBookSearchResult);
+        // Fiction first for book club: sort so fiction-related categories appear at top
+        const sorted = [...items].sort((a, b) => {
+            const aFiction = isFictionCategory(a);
+            const bFiction = isFictionCategory(b);
+            if (aFiction && !bFiction) return -1;
+            if (!aFiction && bFiction) return 1;
+            return 0;
+        });
+        const results: BookSearchResult[] = sorted.map(toBookSearchResult);
 
         return NextResponse.json({
             results,

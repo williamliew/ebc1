@@ -1,6 +1,6 @@
 /**
  * Server-only admin auth helpers (use cookies from next/headers).
- * Do not import this from middleware — middleware imports admin-auth.ts only.
+ * Do not import this from proxy — proxy imports admin-auth.ts only.
  */
 
 import { cookies } from 'next/headers';

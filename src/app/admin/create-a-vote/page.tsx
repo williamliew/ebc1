@@ -121,7 +121,17 @@ export default function VotingBuilderPage() {
     >(null);
     const blurbAiFetchedForReviewRef = useRef<Set<number>>(new Set());
     const coverFallbackTriedForReviewRef = useRef<Set<number>>(new Set());
+    const searchResultsRef = useRef<HTMLElement | null>(null);
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        if (searchResults.length > 0) {
+            searchResultsRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }
+    }, [searchResults.length]);
 
     const PAGE_SIZE = 10;
 
@@ -843,7 +853,7 @@ export default function VotingBuilderPage() {
 
                 {/* Search results */}
                 {searchResults.length > 0 && (
-                    <section>
+                    <section ref={searchResultsRef}>
                         <h2 className="text-sm font-medium text-muted dark:text-muted mb-2">
                             Results
                         </h2>

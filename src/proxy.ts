@@ -6,7 +6,7 @@ import { requireAdmin } from '@/lib/admin-auth';
  * Protect /admin routes (except /admin/login): redirect to login when
  * ADMIN_PASSWORD is set and the request has no valid admin cookie.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
     if (!pathname.startsWith('/admin')) {
