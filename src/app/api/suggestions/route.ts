@@ -7,10 +7,7 @@ import { eq, sql, and } from 'drizzle-orm';
 import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
 import { checkRateLimit } from '@/lib/rate-limit';
-import {
-    containsBlocklistedWord,
-    stripHtmlForCheck,
-} from '@/lib/sfw-blocklist';
+import { censorProfanity } from '@/lib/censor-profanity';
 
 const SUGGESTIONS_POST_RATE_LIMIT_PER_MINUTE = 20;
 
@@ -271,17 +268,13 @@ async function handleManualEntry(
                     { status: 400 },
                 );
             }
-            const plain = stripHtmlForCheck(data.comment);
-            if (containsBlocklistedWord(plain)) {
-                return NextResponse.json(
-                    {
-                        error: 'Comment contains language that isn’t allowed. Please keep it safe for work.',
-                    },
-                    { status: 400 },
-                );
-            }
             commentValue = sanitiseSuggestionComment(data.comment);
-            if (commentValue === '') commentValue = null;
+            if (commentValue !== '') {
+                commentValue = censorProfanity(commentValue);
+                if (commentValue === '') commentValue = null;
+            } else {
+                commentValue = null;
+            }
         }
 
         const commenterNameValue =
@@ -435,17 +428,13 @@ export async function POST(request: Request) {
                     { status: 400 },
                 );
             }
-            const plain = stripHtmlForCheck(parsed.data.comment);
-            if (containsBlocklistedWord(plain)) {
-                return NextResponse.json(
-                    {
-                        error: 'Comment contains language that isn’t allowed. Please keep it safe for work.',
-                    },
-                    { status: 400 },
-                );
-            }
             commentValue = sanitiseSuggestionComment(parsed.data.comment);
-            if (commentValue === '') commentValue = null;
+            if (commentValue !== '') {
+                commentValue = censorProfanity(commentValue);
+                if (commentValue === '') commentValue = null;
+            } else {
+                commentValue = null;
+            }
         }
 
         const rawName = parsed.data.commenterName;
