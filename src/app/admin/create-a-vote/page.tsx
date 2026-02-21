@@ -117,6 +117,7 @@ export default function VotingBuilderPage() {
     const [reviewIndex, setReviewIndex] = useState(0);
     const [reviewDragOffset, setReviewDragOffset] = useState(0);
     const [reviewIsDragging, setReviewIsDragging] = useState(false);
+    const [loadMorePending, setLoadMorePending] = useState(false);
     const reviewPointerStartRef = useRef<number | null>(null);
     const [blurbFromAiByIndex, setBlurbFromAiByIndex] = useState<
         Record<number, boolean>
@@ -190,7 +191,11 @@ export default function VotingBuilderPage() {
             }>;
         },
         onSuccess: (data) => {
-            setSearchResults(data.results);
+            if (data.page === 1) {
+                setSearchResults(data.results);
+            } else {
+                setSearchResults((prev) => [...prev, ...data.results]);
+            }
             setSearchPage(data.page);
             setTotalSearchItems(data.totalItems);
             setSearchError(null);
@@ -369,11 +374,13 @@ export default function VotingBuilderPage() {
     );
 
     const MAX_PAGES = 3;
-    const effectiveTotal = Math.min(totalSearchItems, MAX_PAGES * PAGE_SIZE);
-    const totalSearchPages = Math.max(1, Math.ceil(effectiveTotal / PAGE_SIZE));
-    const showPagination = searchResults.length > 0 && totalSearchPages > 1;
-    const canPrev = showPagination && searchPage > 1;
-    const canNext = showPagination && searchPage < totalSearchPages;
+    const canLoadMoreSearch =
+        searchResults.length > 0 &&
+        searchPage < MAX_PAGES &&
+        (totalSearchItems === 0
+            ? searchResults.length >= PAGE_SIZE
+            : searchResults.length <
+              Math.min(totalSearchItems, MAX_PAGES * PAGE_SIZE));
 
     const selectedIds = useMemo(
         () => new Set(selected.map((b) => b.externalId)),
@@ -1063,42 +1070,78 @@ export default function VotingBuilderPage() {
                                 );
                             })}
                         </ul>
-                        {showPagination && (
-                            <div className="mt-3 flex items-center justify-between gap-2">
+                        {canLoadMoreSearch && (
+                            <div className="mt-3">
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        searchMutation.mutate({
-                                            title: titleSearch.trim(),
-                                            author: authorSearch.trim(),
-                                            page: searchPage - 1,
-                                        })
-                                    }
+                                    onClick={async () => {
+                                        const title = titleSearch.trim();
+                                        const author = authorSearch.trim();
+                                        if (!title && !author) return;
+                                        const nextPage = searchPage + 1;
+                                        if (searchSource === 'google') {
+                                            setLoadMorePending(true);
+                                            try {
+                                                const res = await fetch(
+                                                    '/api/books/search-google',
+                                                    {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type':
+                                                                'application/json',
+                                                        },
+                                                        body: JSON.stringify({
+                                                            title,
+                                                            author,
+                                                            page: nextPage,
+                                                        }),
+                                                    },
+                                                );
+                                                const data = await res.json();
+                                                if (
+                                                    res.ok &&
+                                                    data.results?.length
+                                                ) {
+                                                    setSearchResults((prev) => [
+                                                        ...prev,
+                                                        ...(data.results ?? []),
+                                                    ]);
+                                                    setSearchPage(nextPage);
+                                                    setTotalSearchItems(
+                                                        data.totalItems ??
+                                                            totalSearchItems,
+                                                    );
+                                                }
+                                            } finally {
+                                                setLoadMorePending(false);
+                                            }
+                                        } else {
+                                            setLoadMorePending(true);
+                                            searchMutation.mutate(
+                                                {
+                                                    title,
+                                                    author,
+                                                    page: nextPage,
+                                                },
+                                                {
+                                                    onSettled: () =>
+                                                        setLoadMorePending(
+                                                            false,
+                                                        ),
+                                                },
+                                            );
+                                        }
+                                    }}
                                     disabled={
-                                        !canPrev || searchMutation.isPending
+                                        loadMorePending ||
+                                        searchMutation.isPending
                                     }
                                     className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Previous
-                                </button>
-                                <span className="text-sm text-muted dark:text-muted">
-                                    Page {searchPage} of {totalSearchPages}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        searchMutation.mutate({
-                                            title: titleSearch.trim(),
-                                            author: authorSearch.trim(),
-                                            page: searchPage + 1,
-                                        })
-                                    }
-                                    disabled={
-                                        !canNext || searchMutation.isPending
-                                    }
-                                    className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Next
+                                    {loadMorePending ||
+                                    searchMutation.isPending
+                                        ? 'Loading…'
+                                        : 'Load more'}
                                 </button>
                             </div>
                         )}

@@ -157,6 +157,9 @@ export default function SuggestNextBookPage() {
     const [searchSource, setSearchSource] = useState<
         'openlibrary' | 'google' | null
     >(null);
+    const [searchPage, setSearchPage] = useState(1);
+    const [totalSearchItems, setTotalSearchItems] = useState(0);
+    const [searchLoadMorePending, setSearchLoadMorePending] = useState(false);
     const [selectedBook, setSelectedBook] = useState<ReviewBook | null>(null);
     const [suggestPending, setSuggestPending] = useState(false);
     const [, setSuggestSuccess] = useState(false);
@@ -331,6 +334,8 @@ export default function SuggestNextBookPage() {
                 if (googleResults.length > 0) {
                     setSearchResults(googleResults);
                     setSearchSource('google');
+                    setSearchPage(1);
+                    setTotalSearchItems(googleData.totalItems ?? 0);
                     setModalStep('results');
                     setSearchPhase('idle');
                     return;
@@ -347,6 +352,8 @@ export default function SuggestNextBookPage() {
                 if (results.length > 0) {
                     setSearchResults(results);
                     setSearchSource('openlibrary');
+                    setSearchPage(1);
+                    setTotalSearchItems(data.totalItems ?? 0);
                     setModalStep('results');
                 } else {
                     setSearchResults([]);
@@ -410,6 +417,8 @@ export default function SuggestNextBookPage() {
             } else {
                 setSearchResults(data.results ?? []);
                 setSearchSource('openlibrary');
+                setSearchPage(1);
+                setTotalSearchItems(data.totalItems ?? 0);
             }
         } catch {
             setSearchError('Open Library search failed');
@@ -443,6 +452,8 @@ export default function SuggestNextBookPage() {
             } else {
                 setSearchResults(googleData.results ?? []);
                 setSearchSource('google');
+                setSearchPage(1);
+                setTotalSearchItems(googleData.totalItems ?? 0);
             }
         } catch {
             setSearchError('Google Books search failed');
@@ -452,6 +463,52 @@ export default function SuggestNextBookPage() {
             setSearchPhase('idle');
         }
     }, [titleSearch, authorSearch]);
+
+    const SEARCH_PAGE_SIZE = 10;
+    const MAX_SEARCH_PAGES = 3;
+    const canLoadMoreSearch =
+        searchPage < MAX_SEARCH_PAGES &&
+        (totalSearchItems === 0
+            ? searchResults.length >= SEARCH_PAGE_SIZE
+            : searchResults.length <
+              Math.min(totalSearchItems, MAX_SEARCH_PAGES * SEARCH_PAGE_SIZE));
+
+    const loadMoreSearchResults = useCallback(async () => {
+        const title = titleSearch.trim();
+        const author = authorSearch.trim();
+        if ((!title && !author) || searchLoadMorePending) return;
+        const nextPage = searchPage + 1;
+        setSearchLoadMorePending(true);
+        try {
+            if (searchSource === 'google') {
+                const res = await fetch('/api/books/search-google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, author, page: nextPage }),
+                });
+                const data = await res.json();
+                if (res.ok && data.results?.length) {
+                    setSearchResults((prev) => [...prev, ...(data.results ?? [])]);
+                    setSearchPage(nextPage);
+                    setTotalSearchItems(data.totalItems ?? totalSearchItems);
+                }
+            } else {
+                const res = await fetch('/api/books/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, author, page: nextPage }),
+                });
+                const data = await res.json();
+                if (res.ok && data.results?.length) {
+                    setSearchResults((prev) => [...prev, ...(data.results ?? [])]);
+                    setSearchPage(nextPage);
+                    setTotalSearchItems(data.totalItems ?? totalSearchItems);
+                }
+            }
+        } finally {
+            setSearchLoadMorePending(false);
+        }
+    }, [titleSearch, authorSearch, searchSource, searchPage, searchLoadMorePending, totalSearchItems]);
 
     const closeModal = useCallback(() => {
         setModalOpen(false);
@@ -1621,6 +1678,24 @@ export default function SuggestNextBookPage() {
                                                         </li>
                                                     ))}
                                                 </ul>
+                                                {canLoadMoreSearch && (
+                                                    <div className="pt-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                void loadMoreSearchResults()
+                                                            }
+                                                            disabled={
+                                                                searchLoadMorePending
+                                                            }
+                                                            className="text-sm text-primary hover:underline underline-offset-2 disabled:opacity-50"
+                                                        >
+                                                            {searchLoadMorePending
+                                                                ? 'Loading…'
+                                                                : 'Load more'}
+                                                        </button>
+                                                    </div>
+                                                )}
                                                 <p className="text-sm text-muted pt-2 pb-1 border-t border-border">
                                                     Still can&apos;t find it
                                                     using the search?{' '}
