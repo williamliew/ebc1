@@ -21,12 +21,7 @@ type VoteResultsRound = {
     results: VoteResultItem[];
 };
 
-const PIE_COLOURS = [
-    '#3b82f6',
-    '#10b981',
-    '#f59e0b',
-    '#ef4444',
-];
+const PIE_COLOURS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
 function formatMeetingDate(iso: string): string {
     const [y, m, d] = iso.split('-');
@@ -54,83 +49,82 @@ export default function VoteResultsPage() {
     const rounds = data?.rounds ?? [];
     const selectedRound = rounds[selectedIndex] ?? null;
 
-    const pieData =
-        selectedRound?.results.map((r, i) => ({
-            name: r.title,
-            value: r.voteCount > 0 ? r.voteCount : 0.01,
-            voteCount: r.voteCount,
-            fullLabel: `${r.title} (${r.voteCount})`,
-            isWinner: r.isWinner,
-            fill: PIE_COLOURS[i % PIE_COLOURS.length],
-        })) ?? [];
+    const pieData = useMemo(
+        () =>
+            selectedRound?.results.map((r, i) => ({
+                name: r.title,
+                value: r.voteCount > 0 ? r.voteCount : 0.01,
+                voteCount: r.voteCount,
+                fullLabel: `${r.title} (${r.voteCount})`,
+                isWinner: r.isWinner,
+                fill: PIE_COLOURS[i % PIE_COLOURS.length],
+            })) ?? [],
+        [selectedRound],
+    );
 
     const totalVotes =
-        selectedRound?.results.reduce(
-            (sum, r) => sum + r.voteCount,
-            0,
-        ) ?? 0;
+        selectedRound?.results.reduce((sum, r) => sum + r.voteCount, 0) ?? 0;
 
-    const highchartsOptions = useMemo<Highcharts.Options>(() => ({
-        chart: {
-            type: 'pie',
-            backgroundColor: 'transparent',
-            height: 440,
-        },
-        title: { text: undefined },
-        credits: { enabled: false },
-        tooltip: {
-            pointFormatter: function (this: Highcharts.Point) {
-                const voteCount = (this as Highcharts.Point & { voteCount?: number }).voteCount ?? this.y;
-                const n = Number(voteCount);
-                const votes = Math.round(n) === n ? String(Math.round(n)) : String(voteCount);
-                return '<b>' + votes + '</b> vote(s) (' + (this.percentage ?? 0).toFixed(1) + '%)';
-            },
-        },
-        plotOptions: {
-            pie: {
-                borderColor: 'var(--background)',
-                borderWidth: 1,
-                showInLegend: false,
-                allowPointSelect: true,
-                cursor: 'pointer',
-                dataLabels: [
-                    {
-                        enabled: true,
-                        distance: 20,
-                    },
-                    {
-                        enabled: true,
-                        distance: -40,
-                        format: '{point.percentage:.1f}%',
-                        style: {
-                            fontSize: '0.9em',
-                            textOutline: 'none',
-                            opacity: 0.7,
-                        },
-                        filter: {
-                            operator: '>',
-                            property: 'percentage',
-                            value: 10,
-                        },
-                    },
-                ],
-            },
-        },
-        series: [
-            {
+    const highchartsOptions = useMemo<Highcharts.Options>(
+        () => ({
+            chart: {
                 type: 'pie',
-                name: 'Votes',
-                data: pieData.map((entry, index) => ({
-                    name: entry.name,
-                    y: entry.value,
-                    voteCount: entry.voteCount,
-                    color: entry.fill,
-                    sliced: entry.isWinner,
-                    selected: entry.isWinner,
-                })),
+                backgroundColor: 'transparent',
+                height: 440,
             },
-        ],
-    }), [pieData]);
+            title: { text: undefined },
+            credits: { enabled: false },
+            tooltip: {
+                pointFormat:
+                    '<b>{point.voteCount}</b> vote(s) ({point.percentage:.1f}%)',
+            },
+            plotOptions: {
+                pie: {
+                    borderColor: 'var(--background)',
+                    borderWidth: 1,
+                    showInLegend: false,
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: [
+                        {
+                            enabled: true,
+                            distance: 20,
+                        },
+                        {
+                            enabled: true,
+                            distance: -40,
+                            format: '{point.percentage:.1f}%',
+                            style: {
+                                fontSize: '0.9em',
+                                textOutline: 'none',
+                                opacity: 0.7,
+                            },
+                            filter: {
+                                operator: '>',
+                                property: 'percentage',
+                                value: 10,
+                            },
+                        },
+                    ],
+                },
+            },
+            series: [
+                {
+                    type: 'pie',
+                    name: 'Votes',
+                    data: pieData.map((entry) => ({
+                        name: entry.name,
+                        y: entry.value,
+                        voteCount: entry.voteCount,
+                        color: entry.fill,
+                        sliced: entry.isWinner,
+                        selected: entry.isWinner,
+                    })),
+                },
+            ],
+        }),
+        [pieData],
+    );
 
     return (
         <LoadingMinDuration
@@ -162,7 +156,9 @@ export default function VoteResultsPage() {
                             <BackArrowIcon className="size-4 shrink-0" />
                             Back to home
                         </Link>
-                        <h1 className="font-heading text-xl font-semibold">Vote results</h1>
+                        <h1 className="font-heading text-xl font-semibold">
+                            Vote results
+                        </h1>
                         <p className="text-sm text-muted mt-1">
                             View vote counts and results for each round.
                         </p>
@@ -212,7 +208,10 @@ export default function VoteResultsPage() {
                                                 highcharts={Highcharts}
                                                 options={highchartsOptions}
                                                 containerProps={{
-                                                    style: { width: '100%', height: '440px' },
+                                                    style: {
+                                                        width: '100%',
+                                                        height: '440px',
+                                                    },
                                                 }}
                                             />
                                         </div>
@@ -227,7 +226,9 @@ export default function VoteResultsPage() {
                                                             : 0;
                                                     return (
                                                         <li
-                                                            key={item.externalId}
+                                                            key={
+                                                                item.externalId
+                                                            }
                                                             className="flex items-center gap-2 text-sm"
                                                         >
                                                             <span

@@ -272,12 +272,8 @@ export default function ViewSuggestionsPage() {
         title: { text: undefined },
         credits: { enabled: false },
         tooltip: {
-            pointFormatter: function (this: Highcharts.Point) {
-                const count = (this as Highcharts.Point & { suggestionCount?: number }).suggestionCount ?? this.y;
-                const n = Number(count);
-                const str = Math.round(n) === n ? String(Math.round(n)) : String(count);
-                return '<b>' + str + '</b> suggestion(s) (' + (this.percentage ?? 0).toFixed(1) + '%)';
-            },
+            pointFormat:
+                '<b>{point.suggestionCount}</b> suggestion(s) ({point.percentage:.1f}%)',
         },
         plotOptions: {
             pie: {
