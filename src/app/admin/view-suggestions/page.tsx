@@ -249,75 +249,75 @@ export default function ViewSuggestionsPage() {
         },
     });
 
-    const pieData =
-        selectedRound?.results.map((r, i) => ({
-            name: r.title ?? 'Unknown',
-            value: r.suggestionCount > 0 ? r.suggestionCount : 0.01,
-            suggestionCount: r.suggestionCount,
-            fill: PIE_COLOURS[i % PIE_COLOURS.length],
-        })) ?? [];
-
     const totalSuggestions =
         selectedRound?.results.reduce(
             (sum, r) => sum + r.suggestionCount,
             0,
         ) ?? 0;
 
-    const highchartsOptions = useMemo<Highcharts.Options>(() => ({
-        chart: {
-            type: 'pie',
-            backgroundColor: 'transparent',
-            height: 440,
-        },
-        title: { text: undefined },
-        credits: { enabled: false },
-        tooltip: {
-            pointFormat:
-                '<b>{point.suggestionCount}</b> suggestion(s) ({point.percentage:.1f}%)',
-        },
-        plotOptions: {
-            pie: {
-                borderColor: 'var(--background)',
-                borderWidth: 1,
-                showInLegend: false,
-                allowPointSelect: true,
-                cursor: 'pointer',
-                dataLabels: [
-                    {
-                        enabled: true,
-                        distance: 20,
-                    },
-                    {
-                        enabled: true,
-                        distance: -40,
-                        format: '{point.percentage:.1f}%',
-                        style: {
-                            fontSize: '0.9em',
-                            textOutline: 'none',
-                            opacity: 0.7,
-                        },
-                        filter: {
-                            operator: '>',
-                            property: 'percentage',
-                            value: 10,
-                        },
-                    },
-                ],
-            },
-        },
-        series: [
-            {
+    const highchartsOptions = useMemo<Highcharts.Options>(() => {
+        const roundsList = data?.rounds ?? [];
+        const round = roundsList[selectedIndex] ?? null;
+        const seriesData =
+            round?.results.map((r, i) => ({
+                name: r.title ?? 'Unknown',
+                y: r.suggestionCount > 0 ? r.suggestionCount : 0.01,
+                suggestionCount: r.suggestionCount,
+                color: PIE_COLOURS[i % PIE_COLOURS.length],
+            })) ?? [];
+        return {
+            chart: {
                 type: 'pie',
-                name: 'Suggestions',
-                data: pieData.map((entry) => ({
-                    name: entry.name,
-                    y: entry.value,
-                    suggestionCount: entry.suggestionCount,
-                    color: entry.fill,
-                })),
+                backgroundColor: 'transparent',
+                height: 440,
             },
-        ],
-    }), [pieData]);
+            title: { text: undefined },
+            credits: { enabled: false },
+            tooltip: {
+                pointFormat:
+                    '<b>{point.suggestionCount}</b> suggestion(s) ({point.percentage:.1f}%)',
+            },
+            plotOptions: {
+                pie: {
+                    borderColor: 'var(--background)',
+                    borderWidth: 1,
+                    showInLegend: false,
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: [
+                        {
+                            enabled: true,
+                            distance: 20,
+                        },
+                        {
+                            enabled: true,
+                            distance: -40,
+                            format: '{point.percentage:.1f}%',
+                            style: {
+                                fontSize: '0.9em',
+                                textOutline: 'none',
+                                opacity: 0.7,
+                            },
+                            filter: {
+                                operator: '>',
+                                property: 'percentage',
+                                value: 10,
+                            },
+                        },
+                    ],
+                },
+            },
+            series: [
+                {
+                    type: 'pie',
+                    name: 'Suggestions',
+                    enableMouseTracking: false,
+                    animation: { duration: 2000 },
+                    data: seriesData,
+                },
+            ],
+        };
+    }, [selectedIndex, data]);
 
     const awaitingApprovalByRound = (() => {
         return rounds
