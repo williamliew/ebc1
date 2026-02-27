@@ -42,7 +42,7 @@ export function BlurbEditor({
                 safeInitial && safeInitial.trim() !== '' ? safeInitial : undefined,
             editorProps: {
                 attributes: {
-                    class: 'blurb-editor-content focus:outline-none min-h-[80px] text-sm prose prose-sm dark:prose-invert max-w-none',
+                    class: 'blurb-editor-content blurb-prose focus:outline-none min-h-[80px] text-sm prose prose-sm dark:prose-invert max-w-none',
                 },
             },
             immediatelyRender: false,

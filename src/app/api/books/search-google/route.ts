@@ -4,6 +4,8 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import type { BookSearchResult } from '@/app/api/books/search/route';
 
 const PAGE_SIZE = 10;
+/** Request extra items so that after deduplication we can still return PAGE_SIZE. */
+const REQUEST_PAGE_SIZE = 40;
 const RATE_LIMIT_PER_MINUTE = 60;
 const GOOGLE_BOOKS_BASE = 'https://www.googleapis.com/books/v1/volumes';
 
@@ -20,6 +22,7 @@ type GoogleVolumeItem = {
         authors?: string[];
         description?: string;
         categories?: string[];
+        language?: string;
         imageLinks?: {
             thumbnail?: string;
             small?: string;
@@ -28,6 +31,13 @@ type GoogleVolumeItem = {
         infoLink?: string;
     };
 };
+
+/** True if the volume is considered English (langRestrict is also set on the API request). */
+function isEnglishVolume(item: GoogleVolumeItem): boolean {
+    const lang = item.volumeInfo?.language?.toLowerCase();
+    if (!lang) return true;
+    return lang === 'en' || lang.startsWith('en-');
+}
 
 /** True if the volume's categories look fiction-related (for "fiction first" sorting). */
 function isFictionCategory(item: GoogleVolumeItem): boolean {
@@ -51,36 +61,99 @@ function toHttps(url: string | null | undefined): string | null {
     return trimmed;
 }
 
-function toBookSearchResult(item: GoogleVolumeItem): BookSearchResult {
-    const vi = item.volumeInfo ?? {};
-    const title = vi.title?.trim() ?? 'Unknown title';
-    const author =
-        Array.isArray(vi.authors) && vi.authors.length > 0
-            ? vi.authors.join(', ')
-            : 'Unknown author';
-    const imageLinks = vi.imageLinks;
-    const rawCover =
-        imageLinks?.thumbnail ??
-        imageLinks?.small ??
-        imageLinks?.smallThumbnail ??
-        null;
-    const coverUrl = toHttps(rawCover);
-    const coverOptions = coverUrl ? [coverUrl] : [];
-    const blurb =
-        typeof vi.description === 'string' && vi.description.trim()
-            ? vi.description.trim()
-            : null;
-    const link = vi.infoLink ?? null;
+/** Normalise for deduplication: same book in different editions should get the same key. */
+function normaliseKey(title: string, author: string): string {
+    const t = title
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const a = author
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return `${t}|${a}`;
+}
 
-    return {
-        externalId: item.id ?? `google-${title}-${author}`.replace(/\s+/g, '-'),
-        title,
-        author,
-        coverUrl,
-        coverOptions,
-        blurb,
-        link,
-    };
+function getDescriptionLength(item: GoogleVolumeItem): number {
+    const d = item.volumeInfo?.description;
+    if (typeof d !== 'string' || !d.trim()) return 0;
+    return d.trim().length;
+}
+
+/**
+ * Deduplicate by title+author and merge editions into one result.
+ * - Blurb: use the longest description in the group (best chance of a full, correct blurb).
+ * - Cover: prefer a volume that has a cover; merge all cover URLs into coverOptions.
+ * - Link: first non-null infoLink in the group.
+ */
+function dedupeAndMerge(items: GoogleVolumeItem[]): BookSearchResult[] {
+    const byKey = new Map<string, GoogleVolumeItem[]>();
+    for (const item of items) {
+        const vi = item.volumeInfo ?? {};
+        const title = vi.title?.trim() ?? 'Unknown title';
+        const author =
+            Array.isArray(vi.authors) && vi.authors.length > 0
+                ? vi.authors.join(', ')
+                : 'Unknown author';
+        const key = normaliseKey(title, author);
+        const list = byKey.get(key) ?? [];
+        list.push(item);
+        byKey.set(key, list);
+    }
+
+    const results: BookSearchResult[] = [];
+    for (const group of byKey.values()) {
+        const first = group[0];
+        const vi = first.volumeInfo ?? {};
+        const title = vi.title?.trim() ?? 'Unknown title';
+        const author =
+            Array.isArray(vi.authors) && vi.authors.length > 0
+                ? vi.authors.join(', ')
+                : 'Unknown author';
+
+        const bestForBlurb = group.reduce((best, cur) =>
+            getDescriptionLength(cur) > getDescriptionLength(best) ? cur : best,
+        );
+        const blurb =
+            typeof bestForBlurb.volumeInfo?.description === 'string' &&
+            bestForBlurb.volumeInfo.description.trim()
+                ? bestForBlurb.volumeInfo.description.trim()
+                : null;
+
+        const coverOptions: string[] = [];
+        let coverUrl: string | null = null;
+        for (const item of group) {
+            const imageLinks = item.volumeInfo?.imageLinks;
+            const raw =
+                imageLinks?.thumbnail ??
+                imageLinks?.small ??
+                imageLinks?.smallThumbnail ??
+                null;
+            const url = toHttps(raw);
+            if (url && !coverOptions.includes(url)) {
+                coverOptions.push(url);
+                if (!coverUrl) coverUrl = url;
+            }
+        }
+
+        const link =
+            group.map((i) => i.volumeInfo?.infoLink).find(Boolean) ?? null;
+
+        results.push({
+            externalId:
+                first.id ??
+                `google-${title}-${author}`.replace(/\s+/g, '-'),
+            title,
+            author,
+            coverUrl,
+            coverOptions,
+            blurb,
+            link,
+        });
+    }
+    return results;
 }
 
 export async function POST(request: Request) {
@@ -113,13 +186,14 @@ export async function POST(request: Request) {
     if (author) qParts.push(`inauthor:${author.replace(/"/g, '')}`);
     const q = qParts.join('+');
     const page = parsed.data.page;
-    const startIndex = (page - 1) * PAGE_SIZE;
+    const startIndex = (page - 1) * REQUEST_PAGE_SIZE;
 
     const params = new URLSearchParams();
     params.set('q', q);
-    params.set('maxResults', String(PAGE_SIZE));
+    params.set('maxResults', String(REQUEST_PAGE_SIZE));
     params.set('startIndex', String(startIndex));
     params.set('printType', 'books');
+    params.set('langRestrict', 'en');
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
     if (apiKey) params.set('key', apiKey);
 
@@ -159,7 +233,7 @@ export async function POST(request: Request) {
             items?: GoogleVolumeItem[];
         };
         const totalItems = data.totalItems ?? 0;
-        const items = data.items ?? [];
+        const items = (data.items ?? []).filter(isEnglishVolume);
         // Fiction first for book club: sort so fiction-related categories appear at top
         const sorted = [...items].sort((a, b) => {
             const aFiction = isFictionCategory(a);
@@ -168,7 +242,8 @@ export async function POST(request: Request) {
             if (!aFiction && bFiction) return 1;
             return 0;
         });
-        const results: BookSearchResult[] = sorted.map(toBookSearchResult);
+        const merged = dedupeAndMerge(sorted);
+        const results = merged.slice(0, PAGE_SIZE);
 
         return NextResponse.json({
             results,

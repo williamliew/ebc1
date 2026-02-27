@@ -570,7 +570,7 @@ export default function VotePage() {
                                                         </p>
                                                         {book.blurb && (
                                                             <div
-                                                                className="text-sm text-muted mt-3 leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-foreground"
+                                                                className="text-sm text-muted mt-3 leading-relaxed blurb-prose [&_a]:underline [&_a]:text-foreground"
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: sanitiseBlurb(
                                                                         book.blurb,

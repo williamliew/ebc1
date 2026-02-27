@@ -522,7 +522,7 @@ export default function QuestionBuilderPage() {
                                 </p>
                                 {hasAdditionalText && (
                                     <div
-                                        className="additional-text-preview mt-2 opacity-90"
+                                        className="additional-text-preview blurb-prose mt-2 opacity-90"
                                         style={{ fontSize: '0.875em' }}
                                         dangerouslySetInnerHTML={{
                                             __html: sanitiseBlurb(
@@ -660,7 +660,7 @@ export default function QuestionBuilderPage() {
                                 </p>
                                 {hasAdditionalText && (
                                     <div
-                                        className="additional-text-preview mt-2 opacity-90"
+                                        className="additional-text-preview blurb-prose mt-2 opacity-90"
                                         style={{ fontSize: '1em' }}
                                         dangerouslySetInnerHTML={{
                                             __html: sanitiseBlurb(

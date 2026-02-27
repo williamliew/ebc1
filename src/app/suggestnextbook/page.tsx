@@ -1115,7 +1115,7 @@ export default function SuggestNextBookPage() {
                                     </p>
                                     {readMoreBook.blurb ? (
                                         <div
-                                            className="text-sm prose prose-sm dark:prose-invert max-w-none"
+                                            className="text-sm prose prose-sm blurb-prose dark:prose-invert max-w-none"
                                             dangerouslySetInnerHTML={{
                                                 __html: sanitiseBlurb(
                                                     readMoreBook.blurb,
@@ -1162,7 +1162,7 @@ export default function SuggestNextBookPage() {
                                                                 className="border-b border-border pb-3 last:border-0 last:pb-0"
                                                             >
                                                                 <div
-                                                                    className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none"
+                                                                    className="text-sm text-muted-foreground prose prose-sm blurb-prose dark:prose-invert max-w-none"
                                                                     dangerouslySetInnerHTML={{
                                                                         __html: sanitiseSuggestionComment(
                                                                             c.comment!,
@@ -1831,11 +1831,11 @@ export default function SuggestNextBookPage() {
                                                             : 'Description'}
                                                     </p>
                                                     <div
-                                                        className="text-sm prose prose-sm dark:prose-invert max-w-none"
+className="text-sm prose prose-sm blurb-prose dark:prose-invert max-w-none"
                                                         dangerouslySetInnerHTML={{
-                                                            __html: sanitiseBlurb(
-                                                                selectedBook.blurb,
-                                                            ),
+                                                                __html: sanitiseBlurb(
+                                                                    selectedBook.blurb,
+                                                                ),
                                                         }}
                                                     />
                                                     {!blurbFromAi && (

@@ -116,6 +116,18 @@ h1,
   min-height: inherit;
 }
 
+/* Blurb prose: double paragraph spacing so paragraphs don’t run into one block */
+.blurb-prose p {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+.blurb-prose p:first-child {
+  margin-top: 0;
+}
+.blurb-prose p:last-child {
+  margin-bottom: 0;
+}
+
 /* List styling inside editor (site CSS / Tailwind preflight resets lists) */
 .headless-editor-content.ProseMirror ul,
 .headless-editor-content.ProseMirror ol {

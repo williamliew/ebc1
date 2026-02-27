@@ -1280,7 +1280,7 @@ export default function VotingBuilderPage() {
                             <div className="px-4 pb-4 overflow-y-auto flex-1 min-h-0">
                                 {previewBook.blurb ? (
                                     <div
-                                        className="text-sm text-muted leading-relaxed [&_p]:my-1 [&_a]:underline [&_a]:text-foreground"
+                                        className="text-sm text-muted leading-relaxed blurb-prose [&_a]:underline [&_a]:text-foreground"
                                         dangerouslySetInnerHTML={{
                                             __html: sanitiseBlurb(
                                                 previewBook.blurb,

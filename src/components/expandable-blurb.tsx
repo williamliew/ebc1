@@ -23,7 +23,7 @@ export function ExpandableBlurb({
                 style={expanded ? undefined : { overflow: 'hidden' }}
             >
                 <div
-                    className="text-sm text-muted [&_p]:my-1 [&_a]:underline [&_a]:text-foreground"
+                    className="text-sm text-muted blurb-prose [&_a]:underline [&_a]:text-foreground"
                     dangerouslySetInnerHTML={{ __html: html }}
                 />
             </div>

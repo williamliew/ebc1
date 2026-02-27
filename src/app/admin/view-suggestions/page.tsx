@@ -433,7 +433,7 @@ export default function ViewSuggestionsPage() {
                                                                         item.blurb.trim() !==
                                                                             '' && (
                                                                             <div
-                                                                                className="mt-2 text-sm prose prose-sm dark:prose-invert max-w-none"
+                                                                                className="mt-2 text-sm prose prose-sm blurb-prose dark:prose-invert max-w-none"
                                                                                 dangerouslySetInnerHTML={{
                                                                                     __html: sanitiseBlurb(
                                                                                         item.blurb,
