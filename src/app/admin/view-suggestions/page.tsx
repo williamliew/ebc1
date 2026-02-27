@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 import { BackArrowIcon } from '@/components/back-arrow-icon';
 import { BookCoverImage } from '@/components/book-cover-image';
 import { CloseIcon } from '@/components/close-icon';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { LoadingMinDuration } from '@/components/loading-min-duration';
 import { sanitiseSuggestionComment } from '@/lib/sanitize-suggestion-comment';
 import { sanitiseBlurb } from '@/lib/sanitize-blurb';
@@ -41,11 +42,11 @@ type SuggestionResultsRound = {
 };
 
 const PIE_COLOURS = [
-    'var(--chart-1, #3b82f6)',
-    'var(--chart-2, #10b981)',
-    'var(--chart-3, #f59e0b)',
-    'var(--chart-4, #ef4444)',
-    'var(--chart-5, #8b5cf6)',
+    '#3b82f6',
+    '#10b981',
+    '#f59e0b',
+    '#ef4444',
+    '#8b5cf6',
 ];
 
 function formatRoundLabel(round: SuggestionResultsRound): string {
@@ -252,6 +253,7 @@ export default function ViewSuggestionsPage() {
         selectedRound?.results.map((r, i) => ({
             name: r.title ?? 'Unknown',
             value: r.suggestionCount > 0 ? r.suggestionCount : 0.01,
+            suggestionCount: r.suggestionCount,
             fill: PIE_COLOURS[i % PIE_COLOURS.length],
         })) ?? [];
 
@@ -260,6 +262,66 @@ export default function ViewSuggestionsPage() {
             (sum, r) => sum + r.suggestionCount,
             0,
         ) ?? 0;
+
+    const highchartsOptions = useMemo<Highcharts.Options>(() => ({
+        chart: {
+            type: 'pie',
+            backgroundColor: 'transparent',
+            height: 440,
+        },
+        title: { text: undefined },
+        credits: { enabled: false },
+        tooltip: {
+            pointFormatter: function (this: Highcharts.Point) {
+                const count = (this as Highcharts.Point & { suggestionCount?: number }).suggestionCount ?? this.y;
+                const n = Number(count);
+                const str = Math.round(n) === n ? String(Math.round(n)) : String(count);
+                return '<b>' + str + '</b> suggestion(s) (' + (this.percentage ?? 0).toFixed(1) + '%)';
+            },
+        },
+        plotOptions: {
+            pie: {
+                borderColor: 'var(--background)',
+                borderWidth: 1,
+                showInLegend: false,
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: [
+                    {
+                        enabled: true,
+                        distance: 20,
+                    },
+                    {
+                        enabled: true,
+                        distance: -40,
+                        format: '{point.percentage:.1f}%',
+                        style: {
+                            fontSize: '0.9em',
+                            textOutline: 'none',
+                            opacity: 0.7,
+                        },
+                        filter: {
+                            operator: '>',
+                            property: 'percentage',
+                            value: 10,
+                        },
+                    },
+                ],
+            },
+        },
+        series: [
+            {
+                type: 'pie',
+                name: 'Suggestions',
+                data: pieData.map((entry) => ({
+                    name: entry.name,
+                    y: entry.value,
+                    suggestionCount: entry.suggestionCount,
+                    color: entry.fill,
+                })),
+            },
+        ],
+    }), [pieData]);
 
     const awaitingApprovalByRound = (() => {
         return rounds
@@ -613,69 +675,14 @@ export default function ViewSuggestionsPage() {
                                                 selectedRound,
                                             )}
                                         </h2>
-                                        <div className="h-[320px] min-h-[320px] w-full min-w-0">
-                                            <ResponsiveContainer
-                                                width="100%"
-                                                height="100%"
-                                                minHeight={320}
-                                                minWidth={1}
-                                            >
-                                                <PieChart>
-                                                    <defs>
-                                                        <filter
-                                                            id="view-suggestions-pie-shadow"
-                                                            x="-20%"
-                                                            y="-20%"
-                                                            width="140%"
-                                                            height="140%"
-                                                        >
-                                                            <feDropShadow
-                                                                dx={0}
-                                                                dy={1}
-                                                                stdDeviation={
-                                                                    1.5
-                                                                }
-                                                                floodOpacity={
-                                                                    0.12
-                                                                }
-                                                                floodColor="var(--foreground)"
-                                                            />
-                                                        </filter>
-                                                    </defs>
-                                                    <Pie
-                                                        data={pieData}
-                                                        dataKey="value"
-                                                        nameKey="name"
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={0}
-                                                        outerRadius="75%"
-                                                        paddingAngle={0}
-                                                        minAngle={0}
-                                                        isAnimationActive
-                                                        animationDuration={500}
-                                                        animationEasing="ease-out"
-                                                    >
-                                                        {pieData.map(
-                                                            (entry, index) => (
-                                                                <Cell
-                                                                    key={`cell-${index}`}
-                                                                    fill={
-                                                                        entry.fill
-                                                                    }
-                                                                    stroke="var(--background)"
-                                                                    strokeWidth={
-                                                                        1
-                                                                    }
-                                                                    style={{
-                                                                        filter: 'url(#view-suggestions-pie-shadow)',
-                                                                    }}
-                                                                />
-                                                            ),
-                                                        )}
-                                                    </Pie>
-                                                </PieChart>
-                                            </ResponsiveContainer>
+                                        <div className="h-[440px] min-h-[440px] w-full min-w-0">
+                                            <HighchartsReact
+                                                highcharts={Highcharts}
+                                                options={highchartsOptions}
+                                                containerProps={{
+                                                    style: { width: '100%', height: '440px' },
+                                                }}
+                                            />
                                         </div>
                                         <h2 className="text-sm font-medium text-foreground mt-4 mb-2">
                                             By book (count and %):
